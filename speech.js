@@ -8,10 +8,14 @@ const SAY = [[/\*\*|`/g, ''], [/γᵗ/g, 'gamma to the t'], [/γ/g, 'gamma'], [/
   [/\be\.g\./g, 'for example'], [/\bvs\b/g, 'versus'], [/\bRL\b/g, 'R L'], [/\bDQN\b/g, 'D Q N'], [/\bMDP\b/g, 'M D P'], [/\bMCTS\b/g, 'M C T S'], [/\bPPO\b/g, 'P P O'],
   [/\bRLHF\b/g, 'R L H F'], [/\bSAC\b/g, 'sack'], [/\bTD\b/g, 'T D'], [/\bUCB\b/g, 'U C B'], [/\bPOMDPs?\b/g, 'P O M D P'], [/\bTD3\b/g, 'T D 3'], [/\bDDPG\b/g, 'D D P G'], [/\bGAE\b/g, 'G A E'], [/\bKL\b/g, 'K L'], [/\bCQL\b/g, 'C Q L'], [/\bIQL\b/g, 'I Q L'], [/\bDPO\b/g, 'D P O'], [/\bGAIL\b/g, 'gale'], [/\bDAgger\b/g, 'dagger'], [/\bMARL\b/g, 'mar L'], [/\bHRL\b/g, 'H R L'], [/\bIRL\b/g, 'I R L'], [/\bLLMs?\b/g, 'L L M'], [/\p{Extended_Pictographic}|️/gu, ''], [/\s+/g, ' ']];
 const clean = s => SAY.reduce((a, [r, w]) => a.replace(r, w), s || '').trim();
+function capFor(s) { // caption under an animation: slide override, else the animation's default (per mode first)
+  if (!s || !s.a) return ''; if (s.cap) return s.cap;
+  const C = (window.RLAnim && window.RLAnim.CAP) || {}; return C[s.a + ':' + ((s.p && s.p.mode) || '')] || C[s.a] || '';
+}
 function narrationText(t, i) {
   if (i === 0) return `${t.title}. ${t.hook}`;
   if (i === t.slides.length + 1) return 'In a nutshell. ' + t.recap.join('. ') + '.';
-  const s = t.slides[i - 1]; return [s.h && s.h + '.', s.t, s.g && s.g.map(([w, d]) => `${w}: ${d.replace(/\.$/, '')}.`).join(' '), s.ex && 'For example: ' + s.ex].filter(Boolean).join(' ');
+  const s = t.slides[i - 1], cap = capFor(s); return [s.h && s.h + '.', s.t, cap && 'In the animation: ' + cap, s.try && 'Try it: ' + s.try, s.g && s.g.map(([w, d]) => `${w}: ${d.replace(/\.$/, '')}.`).join(' '), s.ex && 'For example: ' + s.ex].filter(Boolean).join(' ');
 }
-window.RLSpeech = { clean, narrationText, clip: (t, i) => clean(narrationText(t, i)) };
+window.RLSpeech = { clean, narrationText, capFor, clip: (t, i) => clean(narrationText(t, i)) };
 })();

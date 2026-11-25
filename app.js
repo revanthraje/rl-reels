@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 8;
+const VERSION = 9;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const { A } = window.RLAnim;
 const KEY = 'rlreels.v1', DAY = 864e5;
@@ -109,7 +109,7 @@ function buildReel(t, startIdx = 0) {
       ${t.pre.length ? `<div class="chips">${t.pre.map(p => chip(p)).join('')}</div>` : ''}
       <div class="hint">${M.autoplay ? 'tap to start · hold to pause' : 'tap to start'}</div></section>`,
     ...t.slides.map((s, i) => `<section class="slide"><div class="num"><span>${SLIDE_EMOJI[i % SLIDE_EMOJI.length]}</span>${i + 1}<small>/${t.slides.length}</small></div>${s.h ? `<h2>${md(s.h)}</h2>` : ''}
-      ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"></canvas></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.g ? `<div class="gloss">${s.g.map(([w, d], k) => `<div style="--k:${k}"><b>${md(w)}</b><span>${md(d)}</span></div>`).join('')}</div>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
+      ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"${RLAnim.TOUCH.has(s.a) ? ' class="touch"' : ''}></canvas></div>` : ''}${s.ctl ? `<div class="ctl">${s.ctl.map(c => `<label><span>${esc(c.l)}</span><input type="range" data-k="${c.k}" min="${c.min}" max="${c.max}" step="${c.step || (c.max - c.min) / 100}" value="${c.v}"><output>${c.v}</output></label>`).join('')}</div>` : ''}${s.a && RLSpeech.capFor(s) ? `<div class="see"><b>👀</b><div>${md(RLSpeech.capFor(s))}${s.try ? `<em>👆 ${md(s.try)}</em>` : ''}</div></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.g ? `<div class="gloss">${s.g.map(([w, d], k) => `<div style="--k:${k}"><b>${md(w)}</b><span>${md(d)}</span></div>`).join('')}</div>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
     `<section class="slide recap"><div class="trophy">${t.emoji}</div><h2>In a nutshell</h2><ul>${t.recap.map((x, k) => `<li style="--k:${k}">${md(x)}</li>`).join('')}</ul>
       <div class="end-status"></div><div class="swipe-up"><span>⌃</span>swipe up for the next reel</div></section>`
   ];
@@ -344,7 +344,17 @@ function prevSlide() { if (!cur) return; if (cur.idx > 0) setSlide(cur, cur.idx 
 
 // gestures
 let g = null;
-stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; g = { x: e.clientX, y: e.clientY, t: performance.now(), held: false }; const gg = g; setTimeout(() => { if (g === gg && !gg.moved) { gg.held = true; setPaused(cur, true); } }, 220); });
+function canvasPt(cv, e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * 400 / r.width, y: (e.clientY - r.top) * 260 / r.height }; }
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('.ctl')) { g = null; return; }
+  const cv = e.target.closest('canvas.touch');
+  if (cv && cur) { g = null; drag = cv; const q = canvasPt(cv, e); (cur.S.taps ||= []).push(q); cur.S.ptr = { ...q, down: true }; try { cv.setPointerCapture(e.pointerId); } catch (_) { } sfx('tick'); return; }
+}, true);
+stage.addEventListener('pointermove', e => { if (drag && cur) { cur.S.ptr = { ...canvasPt(drag, e), down: true }; } }, true);
+addEventListener('pointerup', () => { if (drag && cur && cur.S.ptr) cur.S.ptr.down = false; drag = null; }, true);
+stage.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.k; if (!k || !cur) return; (cur.S.ctl ||= {})[k] = +e.target.value; e.target.nextElementSibling.textContent = e.target.value; });
+stage.addEventListener('pointerdown', e => { if (e.target.closest('button') || e.target.closest('.ctl') || e.target.closest('canvas.touch')) return; g = { x: e.clientX, y: e.clientY, t: performance.now(), held: false }; const gg = g; setTimeout(() => { if (g === gg && !gg.moved) { gg.held = true; setPaused(cur, true); } }, 220); });
 stage.addEventListener('pointermove', e => {
   if (!g || !cur || busy) return; const dy = e.clientY - g.y, dx = e.clientX - g.x;
   if (Math.abs(dx) > 10 || Math.abs(dy) > 10) g.moved = true;
@@ -367,6 +377,7 @@ stage.addEventListener('wheel', e => {
   wheelAcc += e.deltaY; if (Math.abs(wheelAcc) > 80) { wheelAcc > 0 ? nextReel() : prevReel(); wheelAcc = 0; wheelLock = now + 600; }
 }, { passive: false });
 document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
   if (!$('#lib').classList.contains('hidden')) { if (e.key === 'Escape') closeLib(); return; }
   if (e.key === 'ArrowRight' || e.key === ' ') nextSlide(); else if (e.key === 'ArrowLeft') prevSlide();
   else if (e.key === 'ArrowDown' || e.key === 'j') nextReel(); else if (e.key === 'ArrowUp' || e.key === 'k') prevReel();
@@ -396,7 +407,9 @@ function frame() {
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const c = cv.getContext('2d'), s = cur.t.slides[cur.idx - 1];
   c.setTransform(W / 400, 0, 0, H / 260, 0, 0); c.fillStyle = '#0b0e1d'; c.fillRect(0, 0, 400, 260);
-  try { A[s.a](c, Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000, cur.S, s.p || {}); } catch (err) { if (!cv.dataset.err) { console.error(s.a, err); cv.dataset.err = 1; } }
+  if (!cur.S.ctl) { cur.S.ctl = {}; cur.el.querySelectorAll('.slide')[cur.idx].querySelectorAll('.ctl input').forEach(x => cur.S.ctl[x.dataset.k] = +x.value); }
+  cur.S.taps ||= [];
+  try { A[s.a](c, Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000 * (RLAnim.SPEED[s.a] ?? 1), cur.S, s.p || {}); } catch (err) { if (!cv.dataset.err) { console.error(s.a, err); cv.dataset.err = 1; } }
 }
 requestAnimationFrame(frame);
 

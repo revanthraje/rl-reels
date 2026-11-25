@@ -787,4 +787,7 @@ A.domainRand = (c, t) => {
   txt(c, 'train across many randomised simulators', 200, 252, { s: 11, c: C.dim });
 };
 
-window.RLAnim = { A, AW, AH, C };
+// CAP: "what you're seeing" caption per animation (key 'name' or 'name:mode'); SPEED: time multiplier
+// (the original animations play at 0.55x real time); TOUCH: animations that read taps (S.taps / S.ptr).
+const SPEED = {}; for (const k in A) SPEED[k] = .55;
+window.RLAnim = { A, AW, AH, C, CAP: {}, SPEED, TOUCH: new Set() };
