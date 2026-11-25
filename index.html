@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0e1122">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RL Reels</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="stage"></div>
+  <div id="side">
+    <button id="btnLib" title="All topics (L)"><span>📚</span><small>Topics</small></button>
+    <button id="btnAgain" title="Show this again later"><span>↻</span><small>Again</small></button>
+    <button id="btnShare" title="Topic map"><span>🧠</span><small id="memCount">0</small></button>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<div id="lib" class="sheet hidden">
+  <div class="sheet-head">
+    <h2>Your RL map</h2>
+    <button class="close" data-close="lib">✕</button>
+  </div>
+  <div id="libStats"></div>
+  <div id="libBody"></div>
+  <div class="lib-foot">
+    <button id="btnExport">Export memory</button>
+    <button id="btnImport">Import</button>
+    <button id="btnReset" class="danger">Reset</button>
+    <input id="fileImport" type="file" accept="application/json" hidden>
+  </div>
+</div>
+
+<script src="anim.js"></script>
+<script src="topics.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
