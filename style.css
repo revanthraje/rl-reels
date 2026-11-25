@@ -77,6 +77,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .ex { display: flex; gap: 10px; align-items: flex-start; background: rgba(255,255,255,.07); border: 1px solid var(--line); backdrop-filter: blur(10px);
   padding: 12px 14px; border-radius: 16px; font-size: 15.5px; color: #e6f7f4; }
 .ex > span { font-size: 20px; line-height: 1.2; }
+.gloss { display: flex; flex-direction: column; gap: 10px; }
+.gloss > div { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.07);
+  border: 1px solid var(--line); border-left: 4px solid hsl(var(--h) 95% 65%); }
+.gloss b { font-size: 18px; font-weight: 800; color: hsl(var(--h) 100% 82%); }
+.gloss span { font-size: 16px; color: #e3e5fb; line-height: 1.35; }
+.slide.dense { gap: 9px; } .slide.dense h2 { font-size: 23px; } .slide.dense p { font-size: 16px; line-height: 1.38; } .slide.dense .ex { font-size: 14px; padding: 9px 12px; }
+.slide.dense .cvwrap { width: min(100%, calc(30dvh * 400 / 260)); } .slide.dense .gloss > div { padding: 9px 12px; } .slide.dense .gloss span { font-size: 15px; }
+.slide.dense2 { padding-bottom: 150px; } .slide.dense2 p { font-size: 15px; } .slide.dense2 .cvwrap { width: min(100%, calc(24dvh * 400 / 260)); }
 
 /* cover */
 .cover { text-align: center; align-items: center; gap: 12px; }
@@ -176,7 +184,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .aurora, .halo::before, .top .av, .top .av b { animation: none !important; } }
 /* keep text clear of the side buttons (like Instagram captions) and never clip the top of tall slides */
 .slide { justify-content: safe center; }
-.slide:not(.cover) > p, .slide > .ex, .recap ul, .recap .end-status { margin-right: 46px; }
+.slide:not(.cover) > p, .slide > .ex, .slide > .gloss, .recap ul, .recap .end-status { margin-right: 46px; }
 .trophy { font-size: 46px; }
 
 #libVer { text-align: center; font-size: 11px; color: var(--dim); padding: 4px; }

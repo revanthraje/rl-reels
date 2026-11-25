@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 7;
+const VERSION = 8;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const { A } = window.RLAnim;
 const KEY = 'rlreels.v1', DAY = 864e5;
@@ -91,8 +91,8 @@ const SLIDE_EMOJI = ['💡', '⚙️', '🎯', '🧩', '🚀', '🔍', '🌟', '
 function slideDur(t, i) { // seconds a slide auto-plays for
   if (i === 0) return 4.5;
   const s = t.slides[i - 1]; if (!s) return 0;
-  const chars = (s.h || '').length + (s.t || '').length + (s.ex || '').length;
-  return Math.min(16, Math.max(5, 2.5 + chars * .055 + (s.a ? 3.5 : 0)));
+  const chars = (s.h || '').length + (s.t || '').length + (s.ex || '').length + (s.g || []).reduce((a, [w, d]) => a + w.length + d.length, 0);
+  return Math.min(24, Math.max(6, 3 + chars * .068 + (s.a ? 3.5 : 0)));
 }
 function buildReel(t, startIdx = 0) {
   const r = M.t[t.id], n = t.slides.length + 2, hue = HUE[t.track] ?? 265;
@@ -109,7 +109,7 @@ function buildReel(t, startIdx = 0) {
       ${t.pre.length ? `<div class="chips">${t.pre.map(p => chip(p)).join('')}</div>` : ''}
       <div class="hint">${M.autoplay ? 'tap to start · hold to pause' : 'tap to start'}</div></section>`,
     ...t.slides.map((s, i) => `<section class="slide"><div class="num"><span>${SLIDE_EMOJI[i % SLIDE_EMOJI.length]}</span>${i + 1}<small>/${t.slides.length}</small></div>${s.h ? `<h2>${md(s.h)}</h2>` : ''}
-      ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"></canvas></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
+      ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"></canvas></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.g ? `<div class="gloss">${s.g.map(([w, d], k) => `<div style="--k:${k}"><b>${md(w)}</b><span>${md(d)}</span></div>`).join('')}</div>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
     `<section class="slide recap"><div class="trophy">${t.emoji}</div><h2>In a nutshell</h2><ul>${t.recap.map((x, k) => `<li style="--k:${k}">${md(x)}</li>`).join('')}</ul>
       <div class="end-status"></div><div class="swipe-up"><span>⌃</span>swipe up for the next reel</div></section>`
   ];
@@ -125,6 +125,12 @@ function buildReel(t, startIdx = 0) {
   updateLike(reel);
   return reel;
 }
+function fitSlide(sec) { // shrink text/canvas step by step until a long slide fits the screen
+  if (!sec || !sec.clientHeight) return;
+  sec.classList.remove('dense', 'dense2');
+  for (const c of ['dense', 'dense2']) { if (sec.scrollHeight <= sec.clientHeight + 24) break; sec.classList.add(c); }
+}
+addEventListener('resize', () => { if (cur) fitSlide(cur.el.querySelectorAll('.slide')[cur.idx]); });
 function setSlide(reel, i, instant) {
   i = Math.max(0, Math.min(reel.n - 1, i));
   if (!instant && reel.idx >= 0 && i !== reel.idx) sfx(i > reel.idx ? 'tick' : 'back');
@@ -135,6 +141,7 @@ function setSlide(reel, i, instant) {
   if (instant) { tr.style.transition = 'none'; requestAnimationFrame(() => tr.style.transition = ''); }
   tr.style.transform = `translateX(${-i * 100}%)`;
   reel.el.querySelectorAll('.slide').forEach((s, k) => s.classList.toggle('active', k === i));
+  fitSlide(reel.el.querySelectorAll('.slide')[i]);
   reel.el.querySelectorAll('.bars u').forEach((b, k) => b.style.width = k < i ? '100%' : '0%');
   if (i === reel.n - 1) onRecap(reel);
   if (reel === cur) narrate(reel);
@@ -227,7 +234,7 @@ function speakTTS(reel) {
   if (!TTS) return;
   const text = clean(narrationText(reel.t, reel.idx)); if (!text) return;
   const tok = narToken, u = new SpeechSynthesisUtterance(text), est = 1.2 + text.length / 14;
-  if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 1.05; u.pitch = 1;
+  if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 0.95; u.pitch = 1;
   const nar = reel.nar = { state: 'speaking', est, idx: reel.idx, endEl: 0 };
   const finish = ok => { if (tok !== narToken || nar.state !== 'speaking') return; nar.state = ok ? 'done' : 'failed'; nar.endEl = slideElapsed(reel); };
   u.onend = () => finish(true); u.onerror = e => finish(e.error === 'interrupted' || e.error === 'canceled');
@@ -378,7 +385,7 @@ function frame() {
   let pct = Math.min(100, 100 * el / dur);
   if (nar && nar.idx === cur.idx) {                          // narration sets the pace
     if (nar.state === 'speaking' || nar.state === 'resume') { dur = Infinity; pct = Math.min(96, 100 * el / nar.est); }
-    else if (nar.state === 'done') { dur = Math.max(nar.endEl + 1, 2.5); pct = Math.min(100, 96 + 4 * (el - nar.endEl)); }
+    else if (nar.state === 'done') { dur = Math.max(nar.endEl + 2.2, 3.5); pct = Math.min(100, 96 + 4 * (el - nar.endEl)); }
   }
   const bar = cur.el.querySelectorAll('.bars u')[cur.idx];
   if (bar) bar.style.width = (cur.idx === cur.n - 1 || !M.autoplay ? 100 : pct) + '%';
