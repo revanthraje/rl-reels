@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 9;
+const VERSION = 10;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const { A } = window.RLAnim;
 const KEY = 'rlreels.v1', DAY = 864e5;
@@ -41,6 +41,12 @@ function pickNext() {
   const due = warm.filter(t => { const r = M.t[t.id]; return pendingAgain(r) && M.seq >= (r.dueSeq || 0) && now >= (r.dueAt || 0); });
   const review = warm.filter(t => isDone(t.id) && !M.t[t.id].again && now >= (M.t[t.id].dueAt || 0));
   const last = id => M.t[id]?.lastSeen || 0;
+  // preview: about 1 reel in 5 is an advanced topic whose prerequisites aren't watched yet (never two close together)
+  const locked = TOPICS.filter(t => !recent.has(t.id) && !unlocked(t) && !st(t.id) && !cooling(M.t[t.id], now));
+  if (locked.length && (M.seq || 0) >= 2 && R >= .3 && R < .5 && (M.seq || 0) - (M.lastPreview ?? -9) >= 3) {
+    const w = locked.map(t => 1 / (1 + t.pre.filter(p => !isDone(p)).length)), s = w.reduce((a, b) => a + b);
+    let u = Math.random() * s; for (let i = 0; i < locked.length; i++) { u -= w[i]; if (u <= 0) { M.lastPreview = M.seq || 0; return locked[i].id; } }
+  }
   if (fresh.length) {
     if (due.length && R < .3) return oldest(due, t => last(t.id));
     if (review.length && R > .9) return review[Math.floor(Math.random() * review.length)].id;
@@ -81,7 +87,7 @@ const HUE = { 'Foundations': 265, 'Bandits': 28, 'Planning': 195, 'Model-free': 
   'Model-based': 175, 'Rewards': 45, 'Learning from people': 285, 'Bigger worlds': 215 };
 function badgeFor(t) {
   const r = M.t[t.id];
-  if (!unlocked(t)) return '<span class="badge locked">🔒 EARLY ACCESS</span>';
+  if (!unlocked(t)) return '<span class="badge locked">👀 PREVIEW · advanced</span>';
   if (!r || !r.status) return '<span class="badge new">✨ NEW</span>';
   if (r.status === 'done') return r.again ? '<span class="badge again">↻ ROUND 2</span>' : '<span class="badge review">🧠 REFRESH</span>';
   return '<span class="badge again">↻ ROUND 2</span>';
@@ -465,7 +471,7 @@ $('#btnReset').onclick = () => { if (confirm('Forget everything you have watched
 // ---------- start ----------
 function nextReelInitial() { hist.push({ id: pickNext(), idx: 0 }); show(0); }
 updateCount(); nextReelInitial();
-window.__rlDebug = () => ({ idx: cur && cur.idx, nar: cur && cur.nar && { state: cur.nar.state, clip: !!cur.nar.clip }, src: player.src.split('/').pop(), clips: CLIPS ? Object.keys(CLIPS).length : 0, unlocked: audioUnlocked });
+window.__rlDebug = () => ({ id: cur && cur.t.id, locked: cur && !unlocked(cur.t), seq: M.seq, idx: cur && cur.idx, nar: cur && cur.nar && { state: cur.nar.state, clip: !!cur.nar.clip }, src: player.src.split('/').pop(), clips: CLIPS ? Object.keys(CLIPS).length : 0, unlocked: audioUnlocked });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const had = !!navigator.serviceWorker.controller; let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !reloaded) { reloaded = true; location.reload(); } });
