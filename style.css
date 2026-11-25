@@ -129,10 +129,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .foot .chip { font-size: 12px; padding: 5px 11px; }
 
 /* side buttons */
-#side { position: absolute; right: 8px; bottom: calc(env(safe-area-inset-bottom) + 16px); display: flex; flex-direction: column; gap: 10px; z-index: 5; }
+#side { position: absolute; right: 8px; bottom: calc(env(safe-area-inset-bottom) + 16px); display: flex; flex-direction: column; gap: 8px; z-index: 5; }
 #side button { background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-shadow: 0 1px 6px #000; transition: transform .15s; }
 #side button:active { transform: scale(.85); }
-#side button span { font-size: 22px; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: rgba(0,0,0,.35); border: 1px solid var(--line); backdrop-filter: blur(8px); }
+#side button span { font-size: 20px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(0,0,0,.35); border: 1px solid var(--line); backdrop-filter: blur(8px); }
 #side small { font-size: 11px; color: var(--fg); font-weight: 600; }
 #btnLike.on span { animation: bump .5s cubic-bezier(.3,1.8,.5,1); background: rgba(255,92,138,.25); border-color: rgba(255,92,138,.6); }
 .heart { position: absolute; z-index: 25; font-size: 22px; pointer-events: none; animation: heart 1.2s ease-out forwards; }

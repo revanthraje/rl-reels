@@ -106,7 +106,7 @@ function buildReel(t, startIdx = 0) {
     `<section class="slide cover"><div class="halo"><div class="big">${t.emoji}</div></div>${badgeFor(t)}<h1>${esc(t.title)}</h1>
       <div class="hook">${md(t.hook)}</div><div class="meta">${esc(t.track)} · ${n} slides · ~${mins} min</div>${note}
       ${t.pre.length ? `<div class="chips">${t.pre.map(p => chip(p)).join('')}</div>` : ''}
-      <div class="hint">tap to start · hold to pause</div></section>`,
+      <div class="hint">${M.autoplay ? 'tap to start · hold to pause' : 'tap to start'}</div></section>`,
     ...t.slides.map((s, i) => `<section class="slide"><div class="num"><span>${SLIDE_EMOJI[i % SLIDE_EMOJI.length]}</span>${i + 1}<small>/${t.slides.length}</small></div>${s.h ? `<h2>${md(s.h)}</h2>` : ''}
       ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"></canvas></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
     `<section class="slide recap"><div class="trophy">${t.emoji}</div><h2>In a nutshell</h2><ul>${t.recap.map((x, k) => `<li style="--k:${k}">${md(x)}</li>`).join('')}</ul>
@@ -126,6 +126,7 @@ function buildReel(t, startIdx = 0) {
 }
 function setSlide(reel, i, instant) {
   i = Math.max(0, Math.min(reel.n - 1, i));
+  if (!instant && reel.idx >= 0 && i !== reel.idx) sfx(i > reel.idx ? 'tick' : 'back');
   const now = performance.now();
   if (reel.idx >= 0) reel.dwell[reel.idx] += Math.min(60, (now - reel.enteredAt) / 1000);
   reel.idx = i; reel.enteredAt = now; reel.t0 = now; reel.S = {}; reel.max = Math.max(reel.max, i); reel.pausedFor = 0; reel.pausedAt = 0; reel.el.classList.remove('is-paused');
@@ -135,12 +136,88 @@ function setSlide(reel, i, instant) {
   reel.el.querySelectorAll('.slide').forEach((s, k) => s.classList.toggle('active', k === i));
   reel.el.querySelectorAll('.bars u').forEach((b, k) => b.style.width = k < i ? '100%' : '0%');
   if (i === reel.n - 1) onRecap(reel);
+  if (reel === cur) narrate(reel);
   const r = M.t[reel.t.id]; if (r && r.status !== 'done') { r.maxSlide = Math.max(r.maxSlide || 0, i); save(); }
 }
+// ---------- audio: narration (built-in speech voice) + synthesized sound effects ----------
+// M.audio: 2 = voice + effects (default), 1 = effects only, 0 = muted.
+const audioMode = () => M.audio ?? 2;
+const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let AC = null, audioUnlocked = false, voice = null;
+function pickVoice() {
+  if (!TTS) return; const vs = TTS.getVoices().filter(v => /^en(-|_|$)/i.test(v.lang)); if (!vs.length) return;
+  const score = v => (/natural|neural|enhanced|premium/i.test(v.name) ? 8 : 0) + (/google|samantha|daniel|karen|moira|serena|aria|jenny|guy/i.test(v.name) ? 4 : 0)
+    + (/en-(US|GB|IN|AU)/i.test(v.lang) ? 2 : 0) + (v.localService ? 1 : 0) - (/espeak|robot/i.test(v.name) ? 10 : 0);
+  voice = vs.sort((a, b) => score(b) - score(a))[0];
+}
+if (TTS) { pickVoice(); TTS.addEventListener?.('voiceschanged', pickVoice); }
+function unlockAudio() {
+  if (audioUnlocked) return; audioUnlocked = true;
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) { }
+  try { if (TTS) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; TTS.speak(u); } } catch (e) { }
+}
+document.addEventListener('pointerdown', unlockAudio, true); document.addEventListener('keydown', unlockAudio, true);
+
+// --- sound effects ---
+function tone(f, t0, d, type = 'sine', g = .12, f2) {
+  const o = AC.createOscillator(), a = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + d);
+  a.gain.setValueAtTime(0, t0); a.gain.linearRampToValueAtTime(g, t0 + .008); a.gain.exponentialRampToValueAtTime(.0001, t0 + d);
+  o.connect(a).connect(AC.destination); o.start(t0); o.stop(t0 + d + .02);
+}
+function noise(t0, d, f1, f2, g = .08) {
+  const n = AC.createBuffer(1, Math.ceil(AC.sampleRate * d), AC.sampleRate), x = n.getChannelData(0); for (let i = 0; i < x.length; i++) x[i] = Math.random() * 2 - 1;
+  const s = AC.createBufferSource(), bp = AC.createBiquadFilter(), a = AC.createGain(); s.buffer = n; bp.type = 'bandpass'; bp.Q.value = 1.2;
+  bp.frequency.setValueAtTime(f1, t0); bp.frequency.exponentialRampToValueAtTime(f2, t0 + d);
+  a.gain.setValueAtTime(0, t0); a.gain.linearRampToValueAtTime(g, t0 + d * .3); a.gain.exponentialRampToValueAtTime(.0001, t0 + d);
+  s.connect(bp).connect(a).connect(AC.destination); s.start(t0);
+}
+function sfx(name) {
+  if (!audioMode() || !AC || AC.state !== 'running') return; const t = AC.currentTime + .01;
+  try {
+    if (name === 'tick') tone(1250, t, .05, 'sine', .05);
+    else if (name === 'back') tone(800, t, .05, 'sine', .05);
+    else if (name === 'whoosh') noise(t, .32, 300, 2400, .1);
+    else if (name === 'chime') [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => { tone(f, t + i * .085, .5, 'triangle', .1); tone(f * 2, t + i * .085, .25, 'sine', .025); });
+    else if (name === 'pop') tone(900, t, .12, 'sine', .12, 380);
+    else if (name === 'level') [392, 523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => tone(f, t + i * .07, .45, 'square', .045));
+    else if (name === 'like') { tone(600, t, .1, 'sine', .1, 900); tone(900, t + .08, .14, 'sine', .08, 1300); }
+    else if (name === 'pause') tone(420, t, .06, 'triangle', .07);
+    else if (name === 'skim') tone(300, t, .2, 'sawtooth', .04, 200);
+  } catch (e) { }
+}
+
+// --- narration ---
+const SAY = [[/\*\*|`/g, ''], [/γᵗ/g, 'gamma to the t'], [/γ/g, 'gamma'], [/ε/g, 'epsilon'], [/λ/g, 'lambda'], [/α/g, 'alpha'], [/δ/g, 'delta'], [/θ/g, 'theta'],
+  [/π\*/g, 'pi star'], [/π/g, 'pi'], [/Q\(s,\s*a\)/g, 'Q of s, a'], [/V\(s′\)/g, 'V of s prime'], [/V\(s\)/g, 'V of s'], [/s′/g, 's prime'], [/a′/g, 'a prime'],
+  [/←/g, ' becomes '], [/→/g, ' to '], [/↔/g, ' versus '], [/≈/g, ' about '], [/×/g, ' times '], [/−/g, ' minus '], [/≥/g, ' at least '], [/∂/g, 'd '],
+  [/\be\.g\./g, 'for example'], [/\bvs\b/g, 'versus'], [/\bRL\b/g, 'R L'], [/\bDQN\b/g, 'D Q N'], [/\bMDP\b/g, 'M D P'], [/\bMCTS\b/g, 'M C T S'], [/\bPPO\b/g, 'P P O'],
+  [/\bRLHF\b/g, 'R L H F'], [/\bSAC\b/g, 'sack'], [/\bTD\b/g, 'T D'], [/\bUCB\b/g, 'U C B'], [/\bLLMs?\b/g, 'L L M'], [/\p{Extended_Pictographic}|️/gu, ''], [/\s+/g, ' ']];
+const clean = s => SAY.reduce((a, [r, w]) => a.replace(r, w), s || '').trim();
+function narrationText(t, i) {
+  if (i === 0) return `${t.title}. ${t.hook}`;
+  if (i === t.slides.length + 1) return 'In a nutshell. ' + t.recap.join('. ') + '.';
+  const s = t.slides[i - 1]; return [s.h && s.h + '.', s.t, s.ex && 'For example: ' + s.ex].filter(Boolean).join(' ');
+}
+let narToken = 0;
+function stopNarration() { narToken++; if (TTS) try { TTS.cancel(); } catch (e) { } }
+function narrate(reel) {
+  stopNarration(); reel.nar = null;
+  if (audioMode() < 2 || !TTS || !audioUnlocked || document.hidden || reel.pausedAt) return;
+  const text = clean(narrationText(reel.t, reel.idx)); if (!text) return;
+  const tok = narToken, u = new SpeechSynthesisUtterance(text), est = 1.2 + text.length / 14;
+  if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 1.05; u.pitch = 1;
+  const nar = reel.nar = { state: 'speaking', est, idx: reel.idx, endEl: 0 };
+  const finish = ok => { if (tok !== narToken || nar.state !== 'speaking') return; nar.state = ok ? 'done' : 'failed'; nar.endEl = slideElapsed(reel); };
+  u.onend = () => finish(true); u.onerror = e => finish(e.error === 'interrupted' || e.error === 'canceled');
+  nar.safety = setTimeout(() => finish(true), (est * 1.8 + 3) * 1000);   // some browsers never fire onend
+  try { TTS.speak(u); } catch (e) { finish(false); }
+}
+const slideElapsed = reel => ((reel.pausedAt || performance.now()) - reel.enteredAt - reel.pausedFor) / 1000;
+
 function setPaused(reel, on) {
   if (!reel) return; const now = performance.now();
-  if (on && !reel.pausedAt) { reel.pausedAt = now; reel.el.classList.add('is-paused'); }
-  else if (!on && reel.pausedAt) { reel.pausedFor += now - reel.pausedAt; reel.pausedAt = 0; reel.el.classList.remove('is-paused'); }
+  if (on && !reel.pausedAt) { reel.pausedAt = now; reel.el.classList.add('is-paused'); if (reel === cur && reel.nar?.state === 'speaking') { stopNarration(); reel.nar.state = 'resume'; } sfx('pause'); }
+  else if (!on && reel.pausedAt) { reel.pausedFor += now - reel.pausedAt; reel.pausedAt = 0; reel.el.classList.remove('is-paused'); if (reel === cur && reel.nar?.state === 'resume') narrate(reel); }
 }
 function gainXP(n, x, y) {
   const before = Math.floor((M.xp || 0) / 100); M.xp = (M.xp || 0) + n;
@@ -151,7 +228,7 @@ function gainXP(n, x, y) {
   $('#app').appendChild(f); setTimeout(() => f.remove(), 1300);
   document.querySelectorAll('.hud .xp').forEach(e => { e.textContent = '⚡ ' + M.xp; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); });
   document.querySelectorAll('.hud .streak').forEach(e => e.textContent = '🔥 ' + M.streak);
-  if (Math.floor(M.xp / 100) > before) setTimeout(() => { toast(`🏆 Level ${Math.floor(M.xp / 100) + 1}!`); confetti(160); }, 700);
+  if (Math.floor(M.xp / 100) > before) setTimeout(() => { toast(`🏆 Level ${Math.floor(M.xp / 100) + 1}!`); confetti(160); sfx('level'); }, 700);
 }
 function onRecap(reel) {
   const box = reel.el.querySelector('.end-status');
@@ -162,13 +239,13 @@ function onRecap(reel) {
     reel.doneNow = true;
     const first = r.status !== 'done', un = markDone(reel.t.id);
     box.innerHTML = `<div class="done-msg">✓ Added to your brain</div>` + (un.length ? `<div class="unlocked"><div class="ulab">🔓 UNLOCKED</div><div class="chips">${un.map(u => chip(u, 'unlock')).join('')}</div></div>` : '');
-    confetti(un.length ? 140 : 90);
+    confetti(un.length ? 140 : 90); sfx('chime'); if (un.length) setTimeout(() => sfx('pop'), 450);
     const rc = $('#app').getBoundingClientRect();
     setTimeout(() => gainXP(first ? 20 + 5 * un.length : 8, rc.width / 2 - 30, rc.height * .45), 250);
     if (navigator.vibrate) navigator.vibrate(30);
   } else {
     if (r.status !== 'done') r.status = 'skimmed'; else r.again = true;
-    scheduleAgain(reel.t.id, true); save();
+    scheduleAgain(reel.t.id, true); save(); sfx('skim');
     box.innerHTML = `<div class="skim-msg">💨 Speed-run in ${Math.round(content)}s — no XP, and it’ll come back later. Swipe ← to look again.</div>`;
   }
 }
@@ -216,7 +293,7 @@ function show(entryIdx, dir) {
   const old = cur;
   if (old) { finalize(old); hist[pos].idx = old.doneNow ? 0 : old.idx; }
   pos = entryIdx;
-  const e = hist[pos]; cur = buildReel(BY[e.id], e.idx || 0);
+  const e = hist[pos]; stopNarration(); cur = buildReel(BY[e.id], e.idx || 0); if (dir) sfx('whoosh'); narrate(cur);
   stage.appendChild(cur.el);
   if (old && dir) {
     busy = true; old.el.classList.add('leave-' + dir); cur.el.classList.add('enter-' + dir);
@@ -263,7 +340,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowDown' || e.key === 'j') nextReel(); else if (e.key === 'ArrowUp' || e.key === 'k') prevReel();
   else if (e.key === 'l') openLib(); else if (e.key === 'p') setPaused(cur, !cur.pausedAt); else return; e.preventDefault();
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden && cur) { cur.dwell[cur.idx] += Math.min(60, (performance.now() - cur.enteredAt) / 1000); cur.enteredAt = performance.now(); } else if (cur) cur.enteredAt = performance.now(); });
+document.addEventListener('visibilitychange', () => { if (!cur) return; if (document.hidden) setPaused(cur, true); else if ($('#lib').classList.contains('hidden')) setPaused(cur, false); });
 window.addEventListener('pagehide', () => finalize(cur));
 
 // ---------- animation loop ----------
@@ -272,10 +349,15 @@ function frame() {
   if (!cur || document.hidden) return;
   const libOpen = !$('#lib').classList.contains('hidden');
   if (libOpen && !cur.pausedAt) setPaused(cur, true);
-  const dur = slideDur(cur.t, cur.idx), el = ((cur.pausedAt || now) - cur.enteredAt - cur.pausedFor) / 1000;
+  let dur = slideDur(cur.t, cur.idx); const el = ((cur.pausedAt || now) - cur.enteredAt - cur.pausedFor) / 1000, nar = cur.nar;
+  let pct = Math.min(100, 100 * el / dur);
+  if (nar && nar.idx === cur.idx) {                          // narration sets the pace
+    if (nar.state === 'speaking' || nar.state === 'resume') { dur = Infinity; pct = Math.min(96, 100 * el / nar.est); }
+    else if (nar.state === 'done') { dur = Math.max(nar.endEl + 1, 2.5); pct = Math.min(100, 96 + 4 * (el - nar.endEl)); }
+  }
   const bar = cur.el.querySelectorAll('.bars u')[cur.idx];
-  if (bar) bar.style.width = (cur.idx === cur.n - 1 ? 100 : Math.min(100, 100 * el / dur)) + '%';
-  if (dur && el >= dur && cur.idx < cur.n - 1 && !busy && !g) setSlide(cur, cur.idx + 1);
+  if (bar) bar.style.width = (cur.idx === cur.n - 1 || !M.autoplay ? 100 : pct) + '%';
+  if (M.autoplay && dur && el >= dur && cur.idx < cur.n - 1 && !busy && !g) setSlide(cur, cur.idx + 1);
   const cv = cur.canvases[cur.idx]; if (!cv) return;
   const w = cv.clientWidth; if (!w) return;
   const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * dpr), H = Math.round(w * 260 / 400 * dpr);
@@ -295,10 +377,17 @@ $('#btnAgain').onclick = () => {
   if (r.status === 'done') r.again = true; else r.status = 'partial';
   scheduleAgain(cur.t.id, true); cur.doneNow = true; save(); toast('↻ I’ll show this one again soon');
 };
-$('#btnLib').onclick = openLib; $('#btnShare').onclick = openLib;
+const AUDIO_UI = [['🔇', 'Muted'], ['🎵', 'FX only'], ['🔊', 'Voice']];
+function updateAudioBtn() { const [i, l] = AUDIO_UI[audioMode()]; $('#audIco').textContent = i; $('#audLab').textContent = l; }
+$('#btnAudio').onclick = () => { M.audio = (audioMode() + 2) % 3; save(); updateAudioBtn(); unlockAudio(); if (audioMode() === 2 && cur) narrate(cur); else stopNarration(); if (cur && audioMode() < 2) cur.nar = null; toast(AUDIO_UI[audioMode()][0] + ' ' + ['Sound off', 'Sound effects only', 'Narration + sound effects'][audioMode()]); };
+updateAudioBtn();
+function updateAutoBtn() { $('#autoIco').textContent = M.autoplay ? '⏸' : '▶'; $('#autoLab').textContent = M.autoplay ? 'Auto' : 'Manual'; }
+$('#btnAuto').onclick = () => { M.autoplay = !M.autoplay; save(); updateAutoBtn(); if (cur) { cur.enteredAt = performance.now(); cur.pausedFor = 0; if (cur.pausedAt) cur.pausedAt = cur.enteredAt; } toast(M.autoplay ? '▶ Autoplay on — hold the screen to pause' : '⏸ Autoplay off — tap to move on'); };
+updateAutoBtn();
+$('#btnLib').onclick = openLib;
 $('#btnLike').onclick = e => {
   if (!cur) return; const r = rec(cur.t.id); r.liked = !r.liked; save(); updateLike(cur);
-  if (r.liked) { const b = e.currentTarget.getBoundingClientRect(), a = $('#app').getBoundingClientRect();
+  if (r.liked) { sfx('like'); const b = e.currentTarget.getBoundingClientRect(), a = $('#app').getBoundingClientRect();
     for (let i = 0; i < 6; i++) { const h = document.createElement('div'); h.className = 'heart'; h.textContent = '❤️'; h.style.left = (b.left - a.left + 12 + (Math.random() - .5) * 30) + 'px'; h.style.top = (b.top - a.top) + 'px'; h.style.animationDelay = i * 60 + 'ms'; $('#app').appendChild(h); setTimeout(() => h.remove(), 1400); } }
 };
 
