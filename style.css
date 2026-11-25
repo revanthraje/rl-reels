@@ -178,3 +178,5 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .slide { justify-content: safe center; }
 .slide:not(.cover) > p, .slide > .ex, .recap ul, .recap .end-status { margin-right: 46px; }
 .trophy { font-size: 46px; }
+
+#libVer { text-align: center; font-size: 11px; color: var(--dim); padding: 4px; }

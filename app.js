@@ -1,6 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
+const VERSION = 6;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const { A } = window.RLAnim;
 const KEY = 'rlreels.v1', DAY = 864e5;
@@ -158,9 +159,9 @@ function unlockAudio() {
   try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state !== 'running') AC.resume(); } catch (e) { }
   if (audioUnlocked) return; audioUnlocked = true;
   try { const b = AC.createBuffer(1, 1, 22050), src = AC.createBufferSource(); src.buffer = b; src.connect(AC.destination); src.start(0); } catch (e) { }  // iOS
-  try { if (TTS) { TTS.resume(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; TTS.speak(u); } } catch (e) { }
   if (!TTS && audioMode() === 2) setTimeout(() => toast('🔇 This browser has no speech voice — effects only'), 400);
-  setTimeout(() => { if (cur && audioMode() === 2 && (!cur.nar || cur.nar.state === 'failed')) narrate(cur); }, 250);
+  // Safari only allows speech that starts synchronously inside the tap, so start reading the current slide right here
+  if (cur && audioMode() === 2) narrate(cur);
 }
 ['pointerup', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, true));
 
@@ -216,8 +217,10 @@ function narrate(reel) {
   const finish = ok => { if (tok !== narToken || nar.state !== 'speaking') return; nar.state = ok ? 'done' : 'failed'; nar.endEl = slideElapsed(reel); };
   u.onend = () => finish(true); u.onerror = e => finish(e.error === 'interrupted' || e.error === 'canceled');
   nar.safety = setTimeout(() => finish(true), (est * 1.8 + 3) * 1000);   // some browsers never fire onend
-  // Chrome drops a speak() issued right after cancel(), and can get stuck "paused": wait a beat, then resume + speak
-  setTimeout(() => { if (tok !== narToken) return; try { TTS.resume(); TTS.speak(u); } catch (e) { finish(false); } }, 120);
+  // speak synchronously (Safari needs it inside the tap); Chrome sometimes drops a speak() right after cancel(), so retry once
+  let started = false; u.onstart = () => { started = true; };
+  try { TTS.resume(); TTS.speak(u); } catch (e) { finish(false); }
+  setTimeout(() => { if (tok === narToken && !started && nar.state === 'speaking') { try { TTS.cancel(); TTS.resume(); TTS.speak(u); } catch (e) { } } }, 700);
 }
 const slideElapsed = reel => ((reel.pausedAt || performance.now()) - reel.enteredAt - reel.pausedFor) / 1000;
 
@@ -411,6 +414,7 @@ function openLib() {
   const done = TOPICS.filter(t => isDone(t.id)).length, ready = TOPICS.filter(t => unlocked(t) && !st(t.id)).length, again = TOPICS.filter(t => pendingAgain(M.t[t.id])).length;
   $('#libStats').innerHTML = `<div class="stats"><span>⚡ <b>${M.xp || 0}</b> XP · level ${Math.floor((M.xp || 0) / 100) + 1}</span><span>🔥 <b>${M.streak || 0}</b>-day streak</span></div>${done} of ${TOPICS.length} watched · ${ready} ready · ${again} to revisit<div class="meter"><i style="width:${100 * done / TOPICS.length}%"></i></div>`;
   const groups = {}; TOPICS.forEach(t => (groups[t.track] = groups[t.track] || []).push(t));
+  $('#libVer').textContent = 'RL Reels v' + VERSION;
   $('#libBody').innerHTML = Object.entries(groups).map(([g, ts]) => `<div class="grp"><h3>${esc(g)}</h3>${ts.map(t => { const [ic, line] = statusLine(t);
     return `<button class="row ${unlocked(t) ? '' : 'locked'}" data-lib="${t.id}"><span class="e">${t.emoji}</span><span class="tt"><b>${esc(t.title)}${M.t[t.id]?.liked ? ' ❤️' : ''}</b><small>${esc(line)}</small></span><span class="st">${ic}</span></button>`; }).join('')}</div>`).join('');
   $('#lib').classList.remove('hidden');
