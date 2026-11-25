@@ -142,7 +142,8 @@ function setSlide(reel, i, instant) {
 // ---------- audio: narration (built-in speech voice) + synthesized sound effects ----------
 // M.audio: 2 = voice + effects (default), 1 = effects only, 0 = muted.
 const audioMode = () => M.audio ?? 2;
-const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
+try { if (window.parent !== window && window.parent.__mockTTS) TTS = window.parent.__mockTTS; } catch (e) { }  // test hook (same-origin test page only)
 let AC = null, audioUnlocked = false, voice = null;
 function pickVoice() {
   if (!TTS) return; const vs = TTS.getVoices().filter(v => /^en(-|_|$)/i.test(v.lang)); if (!vs.length) return;
@@ -151,12 +152,17 @@ function pickVoice() {
   voice = vs.sort((a, b) => score(b) - score(a))[0];
 }
 if (TTS) { pickVoice(); TTS.addEventListener?.('voiceschanged', pickVoice); }
+// Phones only grant audio permission on a *completed* tap (pointerup / touchend / click), not on touch-down,
+// so unlock on those events, and keep retrying until the audio context is really running.
 function unlockAudio() {
+  try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state !== 'running') AC.resume(); } catch (e) { }
   if (audioUnlocked) return; audioUnlocked = true;
-  try { AC = new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) { }
-  try { if (TTS) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; TTS.speak(u); } } catch (e) { }
+  try { const b = AC.createBuffer(1, 1, 22050), src = AC.createBufferSource(); src.buffer = b; src.connect(AC.destination); src.start(0); } catch (e) { }  // iOS
+  try { if (TTS) { TTS.resume(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; TTS.speak(u); } } catch (e) { }
+  if (!TTS && audioMode() === 2) setTimeout(() => toast('🔇 This browser has no speech voice — effects only'), 400);
+  setTimeout(() => { if (cur && audioMode() === 2 && (!cur.nar || cur.nar.state === 'failed')) narrate(cur); }, 250);
 }
-document.addEventListener('pointerdown', unlockAudio, true); document.addEventListener('keydown', unlockAudio, true);
+['pointerup', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, true));
 
 // --- sound effects ---
 function tone(f, t0, d, type = 'sine', g = .12, f2) {
@@ -210,7 +216,8 @@ function narrate(reel) {
   const finish = ok => { if (tok !== narToken || nar.state !== 'speaking') return; nar.state = ok ? 'done' : 'failed'; nar.endEl = slideElapsed(reel); };
   u.onend = () => finish(true); u.onerror = e => finish(e.error === 'interrupted' || e.error === 'canceled');
   nar.safety = setTimeout(() => finish(true), (est * 1.8 + 3) * 1000);   // some browsers never fire onend
-  try { TTS.speak(u); } catch (e) { finish(false); }
+  // Chrome drops a speak() issued right after cancel(), and can get stuck "paused": wait a beat, then resume + speak
+  setTimeout(() => { if (tok !== narToken) return; try { TTS.resume(); TTS.speak(u); } catch (e) { finish(false); } }, 120);
 }
 const slideElapsed = reel => ((reel.pausedAt || performance.now()) - reel.enteredAt - reel.pausedFor) / 1000;
 
@@ -419,5 +426,9 @@ $('#btnReset').onclick = () => { if (confirm('Forget everything you have watched
 // ---------- start ----------
 function nextReelInitial() { hist.push({ id: pickNext(), idx: 0 }); show(0); }
 updateCount(); nextReelInitial();
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  const had = !!navigator.serviceWorker.controller; let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !reloaded) { reloaded = true; location.reload(); } });
+  navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => { });
+}
 })();
