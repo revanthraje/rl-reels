@@ -16,3 +16,10 @@ Memory heuristic: reaching the recap slide with ≥1.5 s per content slide = wat
 Reaching the end faster = "skimmed"; leaving midway = "partial". Any reel you leave early (even on its cover) cools down for ≥8 reels AND ≥30 min;
 when nothing else is unlocked, a not-yet-unlocked topic (EARLY) is served before any skipped one repeats. "↻ Again" forces a repeat.
 After editing `app/`, bump `VERSION` in app.js, the `?v=` numbers in index.html and `CACHE` in `app/sw.js` (the service worker is network-first, so updates show on the next load).
+
+## Narration audio (pre-recorded, Kokoro neural TTS)
+`app/audio/` holds one MP3 per slide plus `index.json` (key `id:slide` → file, duration, exact text). The app plays a clip
+only if its text still matches what `speech.js` would say; otherwise it falls back to the browser's voice.
+To regenerate after editing topics: serve `app/`, open `app/export.html` (dump `window.__rows` into `tts/clips.json`; a headless
+WebKit helper was used for this), then `cd tts && .venv/bin/python gen.py` (only changed clips are re-recorded; voice `af_heart`).
+`tts/.venv` and `tts/models/` (~340 MB model files from the kokoro-onnx releases) are local only.

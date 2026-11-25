@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 6;
+const VERSION = 7;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const { A } = window.RLAnim;
 const KEY = 'rlreels.v1', DAY = 864e5;
@@ -193,23 +193,38 @@ function sfx(name) {
   } catch (e) { }
 }
 
-// --- narration ---
-const SAY = [[/\*\*|`/g, ''], [/γᵗ/g, 'gamma to the t'], [/γ/g, 'gamma'], [/ε/g, 'epsilon'], [/λ/g, 'lambda'], [/α/g, 'alpha'], [/δ/g, 'delta'], [/θ/g, 'theta'],
-  [/π\*/g, 'pi star'], [/π/g, 'pi'], [/Q\(s,\s*a\)/g, 'Q of s, a'], [/V\(s′\)/g, 'V of s prime'], [/V\(s\)/g, 'V of s'], [/s′/g, 's prime'], [/a′/g, 'a prime'],
-  [/←/g, ' becomes '], [/→/g, ' to '], [/↔/g, ' versus '], [/≈/g, ' about '], [/×/g, ' times '], [/−/g, ' minus '], [/≥/g, ' at least '], [/∂/g, 'd '],
-  [/\be\.g\./g, 'for example'], [/\bvs\b/g, 'versus'], [/\bRL\b/g, 'R L'], [/\bDQN\b/g, 'D Q N'], [/\bMDP\b/g, 'M D P'], [/\bMCTS\b/g, 'M C T S'], [/\bPPO\b/g, 'P P O'],
-  [/\bRLHF\b/g, 'R L H F'], [/\bSAC\b/g, 'sack'], [/\bTD\b/g, 'T D'], [/\bUCB\b/g, 'U C B'], [/\bLLMs?\b/g, 'L L M'], [/\p{Extended_Pictographic}|️/gu, ''], [/\s+/g, ' ']];
-const clean = s => SAY.reduce((a, [r, w]) => a.replace(r, w), s || '').trim();
-function narrationText(t, i) {
-  if (i === 0) return `${t.title}. ${t.hook}`;
-  if (i === t.slides.length + 1) return 'In a nutshell. ' + t.recap.join('. ') + '.';
-  const s = t.slides[i - 1]; return [s.h && s.h + '.', s.t, s.ex && 'For example: ' + s.ex].filter(Boolean).join(' ');
-}
+// --- narration --- (text helpers live in speech.js: RLSpeech.clean / RLSpeech.narrationText)
+const { clean, narrationText } = window.RLSpeech;
 let narToken = 0;
-function stopNarration() { narToken++; if (TTS) try { TTS.cancel(); } catch (e) { } }
-function narrate(reel) {
+// Pre-recorded neural-voice clips (tts/gen.py → audio/index.json); the browser's own voice is only a fallback.
+let CLIPS = null;
+fetch('audio/index.json?v=' + VERSION).then(r => r.ok ? r.json() : null).then(j => { CLIPS = j; }).catch(() => { });
+const player = new Audio(); player.preload = 'auto';
+function clipFor(t, i) { const c = CLIPS && CLIPS[t.id + ':' + i]; return c && c.t === clean(narrationText(t, i)) ? c : null; }
+function prefetchClip(t, i) { const c = clipFor(t, i); if (c && !prefetchClip.done.has(c.f)) { prefetchClip.done.add(c.f); fetch('audio/' + c.f).catch(() => { }); } }
+prefetchClip.done = new Set();
+function stopNarration() { narToken++; if (TTS) try { TTS.cancel(); } catch (e) { } try { player.pause(); } catch (e) { } }
+function narrate(reel, resume) {
   stopNarration(); reel.nar = null;
-  if (audioMode() < 2 || !TTS || !audioUnlocked || document.hidden || reel.pausedAt) return;
+  if (audioMode() < 2 || !audioUnlocked || document.hidden || reel.pausedAt) return;
+  const c = clipFor(reel.t, reel.idx);
+  if (c) return playClip(reel, c, resume);
+  speakTTS(reel);
+}
+function playClip(reel, c, resume) {
+  const tok = narToken, nar = reel.nar = { state: 'speaking', est: c.d + .3, idx: reel.idx, endEl: 0, clip: true };
+  const finish = ok => { if (tok !== narToken || nar.state !== 'speaking') return; nar.state = ok ? 'done' : 'failed'; nar.endEl = slideElapsed(reel); };
+  const fallback = () => { if (tok !== narToken) return; reel.nar = null; speakTTS(reel); };
+  const src = 'audio/' + c.f;
+  if (!player.src.endsWith(src)) { player.src = src; }
+  else if (!resume) player.currentTime = 0;
+  player.onended = () => finish(true); player.onerror = fallback;
+  setTimeout(() => finish(true), (c.d * 1.6 + 5) * 1000);
+  const p = player.play(); if (p && p.catch) p.catch(e => { if (e && e.name === 'NotAllowedError') { if (tok === narToken) reel.nar = null; } else fallback(); });
+  prefetchClip(reel.t, reel.idx + 1);
+}
+function speakTTS(reel) {
+  if (!TTS) return;
   const text = clean(narrationText(reel.t, reel.idx)); if (!text) return;
   const tok = narToken, u = new SpeechSynthesisUtterance(text), est = 1.2 + text.length / 14;
   if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 1.05; u.pitch = 1;
@@ -227,7 +242,7 @@ const slideElapsed = reel => ((reel.pausedAt || performance.now()) - reel.entere
 function setPaused(reel, on) {
   if (!reel) return; const now = performance.now();
   if (on && !reel.pausedAt) { reel.pausedAt = now; reel.el.classList.add('is-paused'); if (reel === cur && reel.nar?.state === 'speaking') { stopNarration(); reel.nar.state = 'resume'; } sfx('pause'); }
-  else if (!on && reel.pausedAt) { reel.pausedFor += now - reel.pausedAt; reel.pausedAt = 0; reel.el.classList.remove('is-paused'); if (reel === cur && reel.nar?.state === 'resume') narrate(reel); }
+  else if (!on && reel.pausedAt) { reel.pausedFor += now - reel.pausedAt; reel.pausedAt = 0; reel.el.classList.remove('is-paused'); if (reel === cur && reel.nar?.state === 'resume') narrate(reel, true); }
 }
 function gainXP(n, x, y) {
   const before = Math.floor((M.xp || 0) / 100); M.xp = (M.xp || 0) + n;
@@ -430,6 +445,7 @@ $('#btnReset').onclick = () => { if (confirm('Forget everything you have watched
 // ---------- start ----------
 function nextReelInitial() { hist.push({ id: pickNext(), idx: 0 }); show(0); }
 updateCount(); nextReelInitial();
+window.__rlDebug = () => ({ idx: cur && cur.idx, nar: cur && cur.nar && { state: cur.nar.state, clip: !!cur.nar.clip }, src: player.src.split('/').pop(), clips: CLIPS ? Object.keys(CLIPS).length : 0, unlocked: audioUnlocked });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const had = !!navigator.serviceWorker.controller; let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !reloaded) { reloaded = true; location.reload(); } });
