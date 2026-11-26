@@ -264,9 +264,24 @@ const STEPS = [
        caption(kk >= P.length - 1 ? (st.why ? (P.length > 1 ? `after ${P.length - 1} steps: ` : '') + st.why : `reached the ${T.term(...P[P.length - 1]) > 0 ? 'cheese' : 'cat'} in ${P.length - 1} steps`) : `step ${kk}`);
      } else { pip(cx(0), cy(3), 1, t); caption('tap a cell to drop Pip there'); }
      txt(g <= .5 ? 'only cells right next to the cheese care about it' : g >= .95 ? 'even far cells feel the cheese (and the cat)' : 'the cheese’s pull fades with distance', W / 2, 312, { s: 17, c: C.soft }); } },
- { h: 'Where you’ve seen this', p: ['Pip’s surprise at the cheese fades toward 0 as the guess beside it climbs. Each rose tick is a walk where Pip stumbled into the cat from that cell: the guess drops, and the surprise comes back.', 'In the 1990s, scientists found that **dopamine** neurons fire much like a TD error. And TD learning powered TD-Gammon (1992), a backgammon program that learned by playing itself.'],
+ { h: 'How surprised is Pip?', p: ['Every time Pip reaches the cheese it gets +1. But how much of that +1 was a **surprise**? Surprise = 1 − what Pip already expected, and what it expected is its guess for the cell beside the cheese.', 'Walk 1: expected 0, so all of the +1 was a surprise. Walk 2: expected 0.2, surprise 0.8. By walk 8 the surprise is only 0.23. Then the cat scare on walk 9 lowers the guess, so the cheese on walk 10 surprises Pip again: 0.55.'],
+   draw(t) { const w = clamp(Math.floor(t / 1.3), 0, 13), cat = ends[w] < 0;
+     maze({ V: Vat(w, E[w].tr.length - 1), nums: 1, t, hi: [[3, 0, C.gold, .25]] }); pip(cx(cat ? 3 : 4), cy(cat ? 1 : 0), 1, t); ghost(3, 0, 'expected', 1, { dy: 20, s: 12, c: '#8a5d08' });
+     if (cat) bubble('−1', cx(3), cy(1) - 18, (t % 1.3)); else bubble('+1', cx(4), cy(0) - 18, (t % 1.3));
+     txt(`walk ${w + 1}`, 40, 298, { s: 16, al: 'left' });
+     const bx = 44, by = 392, bh = 76; rrect(bx, by - bh, 34, bh, 990, { c: '#b8ab9a', w: 1 });
+     if (!cat) { const sp = surprise[w], ex = 1 - sp; ctx.fillStyle = '#f6d58c'; ctx.fillRect(bx + 2, by - ex * bh, 30, ex * bh - 1); ctx.fillStyle = '#ef8f5a'; ctx.fillRect(bx + 2, by - bh + 1, 30, sp * bh - 1);
+       txt(`surprise ${+sp.toFixed(2)}`, bx + 42, by - bh + 10, { s: 15, al: 'left', c: '#c4581f' }); txt(`expected ${+ex.toFixed(2)}`, bx + 42, by - 10, { s: 15, al: 'left', c: '#8a5d08' }); txt('the +1', bx + 17, by + 10, { s: 12, c: C.soft }); }
+     else { txt('cat! no cheese', bx + 42, by - bh + 10, { s: 15, al: 'left', c: '#b54b4b' }); txt('guess drops', bx + 42, by - 10, { s: 15, al: 'left', c: '#b54b4b' }); }
+     const x0 = 236, x1 = 372, y0 = 392, y1 = 316, X = i => x0 + i * (x1 - x0) / 13, Y = v => y0 - v * (y0 - y1);
+     rline(x0 - 6, y0, x1 + 4, y0, 991, { c: '#b8ab9a', w: 1 }); txt('1', x0 - 14, y1, { s: 12, c: C.soft }); txt('0', x0 - 14, y0, { s: 12, c: C.soft }); txt('surprise, walk by walk', x0 - 8, y1 - 14, { s: 13, al: 'left', c: C.soft });
+     for (let i = 0; i <= w; i++) { if (ends[i] < 0) { rline(X(i), y0, X(i), y1, 992 + i, { c: C.rose, w: 1.2, once: true, j: .5 }); continue; } ctx.fillStyle = '#ef8f5a'; ctx.beginPath(); ctx.arc(X(i), Y(surprise[i]), 3.4, 0, 7); ctx.fill(); }
+   } },
+ { h: 'Where you’ve seen this', p: ['Over all 200 walks, Pip’s surprise at the cheese fades toward 0, and jumps back after each cat scare (the rose lines).', 'In the 1990s, Wolfram Schultz recorded **dopamine** neurons in monkeys. An unexpected drop of juice made them fire. Once a light reliably came before the juice, the juice itself barely moved them. That fading signal behaves much like a TD error. TD learning also powered TD-Gammon (1992), a backgammon program that learned by playing itself.'],
    draw(t) { maze({ V: FIN, nums: 1, t }); pip(cx(3), cy(0), 1, t); const n = Math.min(E.length, Math.floor(t * 30));
-     strip(surprise.map(v => v == null ? null : v * 80), ends, n, 'surprise at the cheese, walk by walk', 80, true); caption(n >= E.length ? 'gold = surprise at the cheese · rose = met the cat' : ''); } },
+     strip(surprise.map(v => v == null ? null : v * 80), ends, n, 'surprise at the cheese', 80, true);
+     txt('walk 1', 40, 393, { s: 12, c: C.soft, al: 'left' }); txt('walk 200', 360, 393, { s: 12, c: C.soft, al: 'right' });
+     txt('dots = surprise when Pip reached the cheese · rose = cat', W / 2, 411, { s: 14, c: C.soft, a: n >= E.length ? 1 : 0 }); } },
  { h: 'Recap', p: ['A **value** is the reward still to come from a cell. TD learning improves each guess after every step, using the reward it just saw plus the next cell’s guess.', 'Repeat that enough, and good news spreads backward until the notebook becomes a map.'],
    draw(t) { maze({ V: FIN, nums: 1, t }); arrowsOn(FIN, .9, -5, t + 10); pip(cx(0), cy(3), 1, t);
      card(['target  =  reward  +  γ × next cell’s guess', 'TD error  =  target − old guess', 'new guess  =  old  +  α × TD error', { s: 'γ = 0.9 how much later counts · α = 0.2 step size', c: C.soft }], t - .3, { gap: 1 }); } },
@@ -289,7 +304,7 @@ function strip(vals, ends, n, label, max, dots) {
   rline(x0, y0, x1, y0, 900, { c: '#b8ab9a', w: 1 }); txt(label, x0, y1 - 2, { s: 14, al: 'left', c: C.soft });
   for (let i = 0; i < n; i++) { const v = vals[i]; if (v == null && !(dots && ends[i] < 0)) continue; const h = Math.min(max, v) / max * (y0 - y1 - 14);
     if (dots && ends[i] < 0) { rline(x0 + i * w + w / 2, y0 + 2, x0 + i * w + w / 2, y1 + 10, 950 + i, { c: C.rose, w: 1.2, once: true, j: .6 }); continue; }
-    if (dots) { ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(x0 + i * w + w / 2, y0 - h, 2.1, 0, 7); ctx.fill(); }
+    if (dots) { ctx.fillStyle = '#ef8f5a'; ctx.beginPath(); ctx.arc(x0 + i * w + w / 2, y0 - h, 2.1, 0, 7); ctx.fill(); }
     else { ctx.fillStyle = ends[i] > 0 ? C.teal : C.rose; ctx.fillRect(x0 + i * w + .2, y0 - h, Math.max(1, w - .5), h); } }
   if (!dots) { txt('1', x0, y0 + 10, { s: 12, c: C.soft }); txt('200', x1, y0 + 10, { s: 12, c: C.soft }); }
   else { txt('1.0', x0 - 14, y0 - (y0 - y1 - 14), { s: 12, c: C.soft }); txt('0', x0 - 10, y0, { s: 12, c: C.soft }); }
