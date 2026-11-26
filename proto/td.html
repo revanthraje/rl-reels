@@ -214,9 +214,9 @@ const STEPS = [
    draw(t) { const s = e0[F1]; maze({ V: ZERO(), nums: 1, t, hi: [[s.c, s.r, C.teal, .22], [s.nc, s.nr, C.gold, .18 * clamp(t - 1)]] });
      const m = walkPos(e0, F1, F1 + 1, clamp(t - .3, 0, 1), 1); pip(m.x, m.y, 1, t); ghost(s.c, s.r, 'left', clamp(t - 1.2), { dy: -18, s: 14 }); ghost(s.nc, s.nr, 'landed', clamp(t - 1.6), { dy: -18, s: 14 });
      card(['target  =  reward for the step', '             +  0.9 × guess for where I landed', { s: 'then nudge the left cell’s guess toward it', c: C.soft }], t - 2.2, { gap: 1.3 }); } },
- { h: 'How Pip picks a move', p: ['To move, Pip peeks at the neighbouring cells and goes to the one with the best guess.', 'But one move in five is random. Without those random moves Pip would repeat its first habits forever and never find a better route. This is called **exploring**. Right now every guess is 0, so every move is a coin toss.'],
+ { h: 'How Pip picks a move', p: ['To move, Pip scores each neighbouring cell: the **reward for stepping there, plus 0.9 × that cell’s guess**. It goes to the highest score.', 'But one move in five is random. Without those random moves Pip would repeat its first habits forever and never find a better route. This is called **exploring**. Right now every guess is 0, so every move is a coin toss.'],
    draw(t) { maze({ V: ZERO(), nums: 1, t }); pip(cx(0), cy(3), 1, t); peek(t + .0, [0, 3], [[1, 3], [0, 2]]);
-     if (t > 3.6) card(['best guess: tie (0 and 0), so pick either', { s: 'and 1 move in 5: any direction, at random', c: C.soft }], t - 3.6, { gap: .9 }); } },
+     if (t > 3.6) card(['score = reward there + 0.9 × its guess', 'right now: 0 + 0.9 × 0 = 0 for both, a tie', { s: 'and 1 move in 5: any direction, at random', c: C.soft }], t - 3.6, { gap: .9 }); } },
  { h: 'Step 1: nothing to learn yet', p: ['Pip moves right. No reward, and the new cell’s guess is 0.', 'Target = 0 + 0.9 × 0 = 0. The old guess was 0 too, so nothing changes.'],
    draw(t) { const s = e0[F1]; maze({ V: ZERO(), nums: 1, t, hi: t > 1.3 ? [[s.c, s.r, C.teal, .25]] : null }); const m = walkPos(e0, F1, F1 + 1, clamp(t - .3, 0, 1), 1); pip(m.x, m.y, m.face || 1, t);
      if (t > 1.4) card(['reward 0  +  0.9 × 0   =   target 0', 'old guess 0   →   stays 0'], t - 1.4, { gap: 1.2 }); } },
@@ -248,11 +248,12 @@ const STEPS = [
    draw(t) { maze({ V: FIN, nums: 1, t }); pip(cx(0), cy(3), 1, t); const a = clamp(t - .8);
      Object.keys(IDEAL).forEach(k => { const c = k % 5, r = Math.floor(k / 5); ghost(c, r, 'perfect ' + (+IDEAL[k].toFixed(2)), a, { dy: 20, s: 13, bg: 1, c: '#6d645b' }); });
      if (t > 2.5) card(['beside the cheese:  learned 0.8,  perfect 1', { s: 'perfect = +1 on the very next step, every time', c: C.soft }, { s: '1 in 5 moves random  ·  1 in 20 hits the cat', c: C.soft }], t - 2.5, { gap: .9 }); } },
- { h: 'Read the map', p: ['Turn the notebook into a plan: from each cell, point to the best-looking neighbour. Following the arrows, Pip reaches the cheese in 7 steps, the shortest route. A “?” marks a cell that never got useful news.', 'This works because Pip knows which cell each move leads to. Without that knowledge you would learn a value for each move instead, as Q-learning does.'],
+ { h: 'Read the map', p: ['Turn the notebook into a plan: in each cell, score every neighbour as before (reward for stepping there + 0.9 × its guess) and point to the best. The cheese cell holds no number, yet it wins: stepping onto it pays 1. Following the arrows, Pip reaches the cheese in 7 steps, the shortest route.', 'This needs Pip to know where each move leads and what it pays. Without that, you learn a value for each move instead, as Q-learning does.'],
    draw(t) { maze({ V: FIN, nums: 1, t }); arrowsOn(FIN, .9, .4, t);
      const t2 = t - 3.6, kk = clamp(Math.floor(t2 / .7), 0, PATH.length - 1), u = ease((t2 % .7) / .7 * 1.3), a = PATH[kk], b = PATH[Math.min(PATH.length - 1, kk + 1)];
      if (t2 > 0) trail(PATH.slice(0, kk + 1), .7);
      pip(t2 > 0 ? lerp(cx(a[0]), cx(b[0]), u) : cx(0), t2 > 0 ? lerp(cy(a[1]), cy(b[1]), u) : cy(3), t2 > 0 ? (b[0] - a[0]) : 1, t);
+     const l = FIN[T.key(2, 0)]; card(['scores beside the cheese:   cheese  1 + 0.9 × 0 = 1 ✓', `left  0 + 0.9 × ${+l.toFixed(2)} = ${+(0.9 * l).toFixed(2)}     cat  −1 + 0.9 × 0 = −1`], t - .6, { gap: .9 });
      if (t2 > 0) caption(`following the arrows: ${Math.min(kk + (kk < PATH.length - 1 && u > .5 ? 1 : 0), PATH.length - 1)} steps`); } },
  { h: 'Your turn', ctl: true, p: ['Drag **γ** to rerun all 200 walks. With a small γ, a far-away cheese barely counts, so the values fade quickly away from it.', 'Tap any cell to drop Pip there and watch it follow the arrows. In the corner it never explored, it has no clue which way to go.'],
    draw(t, st) { const g = GAMMAS[st.gi ?? 4], Rn = RUN(g), V1 = Rn.eps[Rn.eps.length - 1].V, prev = st.prevV || V1, u = ease((t - (st.changed ?? -9)) / .9);
