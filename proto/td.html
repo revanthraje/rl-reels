@@ -130,7 +130,7 @@ function maze(o) {
   T.ROCKS.forEach(([c, r], i) => { if (p < .8) return; const x = cx(c), y = cy(r); rcircle(x, y + 4, 19, 60 + i, { fill: '#d9d1c6', j: 4 }); hachure(x - 18, y - 13, 36, 34, '#9d9387', 5, 70 + i, .55); });
   if (o.pop?.cheese !== 0) cheese(cx(T.CHEESE[0]), cy(T.CHEESE[1]), o.pop?.cheese ?? 1);
   if (o.pop?.cat !== 0) cat(cx(T.CAT[0]), cy(T.CAT[1]) + 4, t, o.pop?.cat ?? 1);
-  if (o.labels) { const a = o.labels; txt('+1', cx(4) - 20, cy(0) - 20, { s: 15, c: '#b07d12', a }); txt('−1', cx(3) - 20, cy(1) - 20, { s: 15, c: '#b54b4b', a }); txt('start', cx(0), cy(3) + 24, { s: 13, c: C.soft, a }); }
+  if (o.labels) { const a = o.labels; txt('+1 on arrival', cx(4) - 6, cy(0) - 22, { s: 13, c: '#b07d12', a }); txt('−1', cx(3) - 20, cy(1) - 20, { s: 15, c: '#b54b4b', a }); txt('start', cx(0), cy(3) + 24, { s: 13, c: C.soft, a }); }
   if (V && o.nums) for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) {
     if (T.term(c, r) || T.isRock(c, r)) continue; const k = T.key(c, r), a = typeof o.nums === 'function' ? o.nums(c, r) : 1; if (a <= 0) continue;
     const v = V[k], s = Math.abs(v) < .005 ? '0' : String(+v.toFixed(Math.abs(v) < .1 ? 3 : 2));
@@ -198,14 +198,15 @@ function arrowsOn(V, g, t0, t) { let n = 0; for (let r = 0; r < T.ROWS; r++) for
   const a = clamp((t - t0 - n++ * .18) * 3); if (a <= 0) continue; const [dx, dy] = T.MOVES[T.greedy(V, c, r, g)]; ctx.globalAlpha = a; arrow(cx(c) - dx * 9, cy(r) - dy * 9 + 4, cx(c) + dx * 15, cy(r) + dy * 15 + 4, 400 + k, { c: '#8a5d08', w: 1.5 }); ctx.globalAlpha = 1; } }
 
 const STEPS = [
- { h: 'Meet Pip', p: ['Pip is a mouse in a small maze. In the top corner sits a piece of **cheese**, worth +1. Near it sleeps a **cat**, worth −1. Reaching either one ends the walk.', 'Pip has never seen this maze before.'],
+ { h: 'Meet Pip', p: ['Pip is a mouse in a small maze. In the top corner sits a piece of **cheese**: stepping onto it pays +1. Near it sleeps a **cat**: stepping onto it costs −1. Either one ends the walk.', 'Pip has never seen this maze before.'],
    draw(t) { maze({ draw: t / 1.6, pop: { cheese: ease((t - 1.8) * 3), cat: ease((t - 2.3) * 3) }, labels: clamp(t - 3), t }); if (t > 2.8) pip(cx(0), cy(3), 1, t); caption('two rocks block the middle', clamp(t - 3.5)); } },
  { h: 'What Pip wants to know', p: ['Pip wants a notebook with one number per cell, answering: **starting from here, how much reward can I expect?** That number is the cell’s **value**.', 'Pip knows nothing yet, so every guess starts at 0.'],
    draw(t) { maze({ V: ZERO(), nums: (c, r) => clamp((t - .5 - (r * 5 + c) * .12) * 3), t }); pip(cx(0), cy(3), 1, t); caption('small number in each corner = Pip’s current guess', clamp(t - 3)); } },
- { h: 'What the right answer looks like', p: ['Suppose Pip already knew the shortest way. Next to the cheese, the +1 comes on the very next step: value 1.', 'One cell further, the cheese comes one step later, and later rewards count a bit less. Each extra step multiplies by **γ (gamma)**, here 0.9. So the values go 1, 0.9, 0.81, and so on, down to 0.53 at the start. Pip doesn’t know these numbers. It has to discover them.'],
+ { h: 'What the right answer looks like', p: ['Suppose Pip already knew the shortest way. The +1 is paid for the step **onto** the cheese, and the walk ends there. So the cheese cell itself needs no number: nothing comes after it. The cell next to it gets the +1 on its very next step: value 1.', 'One cell further, the +1 comes one step later, and later rewards count a bit less. Each extra step multiplies by **γ (gamma)**, here 0.9. So the values go 1, 0.9, 0.81, and so on, down to 0.53 at the start. Pip doesn’t know these numbers. It has to discover them.'],
    draw(t) { maze({ V: ZERO(), t, numA: () => .35, nums: 1 });
      const R = PATH.slice(0, -1).reverse(); R.forEach(([c, r], i) => { const a = clamp((t - .8 - i * .9) * 2); if (a <= 0) return; ghost(c, r, String(+IDEAL[T.key(c, r)].toFixed(2)), a, { dy: 6, s: 19, c: '#8a5d08' });
  });
+     ghost(4, 0, 'walk ends', clamp(t - .8), { dy: 20, s: 13 });
      if (t > 7.5) card(['start: 0.9 × 0.9 × 0.9 × 0.9 × 0.9 × 0.9 = 0.53', { s: 'six extra steps, six times 0.9', c: C.soft }], t - 7.5, { gap: .7 }); } },
  { h: 'Learn now, not later', p: ['Pip could wait until a walk ends and only then judge every cell it passed. But it can learn after **every single step**.', 'Think of driving home. You guess 30 minutes. Ten minutes in, you hit a traffic jam, so you revise: 40 minutes. You learned something before you got home. That is the idea behind **temporal-difference learning**, or TD learning.'],
    draw(t) { maze({ V: ZERO(), t }); pip(cx(0), cy(3), 1, t); dim(); commute(t); } },
@@ -246,7 +247,7 @@ const STEPS = [
  { h: 'Why not 1, 0.9, 0.81?', p: ['Compare with the perfect numbers: beside the cheese Pip learned 0.8, not 1. That is not a mistake.', 'Values describe Pip’s real habits. One move in five is random, random moves waste steps, and from that cell about 1 move in 20 lands on the cat. TD learns how good a cell is **for the walker Pip actually is**.'],
    draw(t) { maze({ V: FIN, nums: 1, t }); pip(cx(0), cy(3), 1, t); const a = clamp(t - .8);
      Object.keys(IDEAL).forEach(k => { const c = k % 5, r = Math.floor(k / 5); ghost(c, r, 'perfect ' + (+IDEAL[k].toFixed(2)), a, { dy: 20, s: 13, bg: 1, c: '#6d645b' }); });
-     if (t > 2.5) card(['beside the cheese:  learned 0.8   perfect 1', { s: '1 in 5 moves random  ·  1 in 20 hits the cat', c: C.soft }], t - 2.5, { gap: .9 }); } },
+     if (t > 2.5) card(['beside the cheese:  learned 0.8,  perfect 1', { s: 'perfect = +1 on the very next step, every time', c: C.soft }, { s: '1 in 5 moves random  ·  1 in 20 hits the cat', c: C.soft }], t - 2.5, { gap: .9 }); } },
  { h: 'Read the map', p: ['Turn the notebook into a plan: from each cell, point to the best-looking neighbour. Following the arrows, Pip reaches the cheese in 7 steps, the shortest route. A “?” marks a cell that never got useful news.', 'This works because Pip knows which cell each move leads to. Without that knowledge you would learn a value for each move instead, as Q-learning does.'],
    draw(t) { maze({ V: FIN, nums: 1, t }); arrowsOn(FIN, .9, .4, t);
      const t2 = t - 3.6, kk = clamp(Math.floor(t2 / .7), 0, PATH.length - 1), u = ease((t2 % .7) / .7 * 1.3), a = PATH[kk], b = PATH[Math.min(PATH.length - 1, kk + 1)];
