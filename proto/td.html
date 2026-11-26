@@ -162,53 +162,97 @@ const e0 = E[0].tr, e1 = E[1].tr, LEAK = e1.findIndex(t => !t.rew && t.next > 0)
 const FIN = E[E.length - 1].V, PATH = T.greedyPath(FIN, .9);
 const lens = E.map(e => e.tr.length), ends = E.map(e => e.end);
 const surprise = E.map(e => { const l = e.tr[e.tr.length - 1]; return e.end === 1 ? l.target - l.old : null; });
+const F1 = e0.findIndex(q => q.nc !== q.c || q.nr !== q.r), K30 = T.key(3, 0), V30 = E.slice(0, 14).map(e => e.V[K30]);
+// the "perfect" values along the shortest route: 0.9 ^ (steps to cheese − 1)
+const IDEAL = {}; for (let i = 0; i < PATH.length - 1; i++) IDEAL[T.key(...PATH[i])] = .9 ** (PATH.length - 2 - i);
+const ZERO = () => new Array(20).fill(0);
+function ghost(c, r, s, a = 1, o = {}) { if (o.bg) { ctx.save(); ctx.globalAlpha = .85 * a; ctx.fillStyle = C.card; ctx.fillRect(cx(c) - 28, cy(r) + (o.dy ?? 20) - 9, 56, 18); ctx.restore(); } txt(s, cx(c), cy(r) + (o.dy ?? 20), { s: o.s || 14, c: o.c || '#9a8f84', a }); }
+function dim(a = .62) { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, 285); ctx.restore(); }
+function peek(t, from, to) { const pk = clamp((t - .4) * 1.5) * (1 - clamp((t - 3.2) * 2)); if (pk <= 0) return; to.forEach(([c, r], i) => { const dx = c - from[0], dy = r - from[1]; ctx.globalAlpha = pk; arrow(cx(from[0]) + dx * 14, cy(from[1]) + dy * 14, cx(c) - dx * 14, cy(r) - dy * 14, 300 + i, { c: C.soft }); ctx.globalAlpha = 1; txt('0?', cx(c), cy(r) - 4, { s: 16, c: C.soft, a: pk }); }); }
+function car(x, y) { rrect(x - 13, y - 9, 26, 11, 777, { w: 1.2 }); ctx.fillStyle = '#9fc9c7'; ctx.fillRect(x - 12, y - 8, 24, 9); rcircle(x - 7, y + 3, 3, 778, { fill: C.ink, j: .3 }); rcircle(x + 7, y + 3, 3, 779, { fill: C.ink, j: .3 }); }
+function commute(t) {
+  const y = 362, xs = [52, 150, 252, 350], names = ['office', '10 min in', 'traffic jam!', 'home'];
+  rline(40, y, 362, y, 880, { w: 2 }); xs.forEach((x, i) => { rline(x, y - 5, x, y + 5, 881 + i, { w: 1.5 }); txt(names[i], x, y + 18, { s: 14, c: i === 2 ? '#b54b4b' : C.soft }); });
+  const seg = [[0, 1.5], [1.5, 3.5], [3.5, 6], [6, 9]]; let x = xs[0];
+  if (t > 1.5) x = lerp(xs[0], xs[1], ease((t - 1.5) / 1.5)); if (t > 4) x = lerp(xs[1], xs[2], ease((t - 4) / 1.5));
+  car(x, y - 12);
+  const say = (s, a, col) => txt(s, W / 2, 312, { s: 18, a, c: col });
+  say('at the office: guess 30 min in total', clamp((t - .3) * 2) * (1 - clamp((t - 3) * 2)));
+  if (t > 3.2) say('10 gone + 20 to go = still 30', clamp((t - 3.2) * 2) * (1 - clamp((t - 5.6) * 2)), C.soft);
+  if (t > 5.8) say('10 gone + 30 to go = 40!  update now', clamp((t - 5.8) * 2), '#b54b4b');
+  if (t > 7.5) txt('no need to wait until you get home', W / 2, 408, { s: 14, c: C.soft, a: clamp(t - 7.5) });
+}
+function walkChart(n) {
+  const x0 = 60, x1 = 360, y0 = 392, y1 = 300, X = i => x0 + i * (x1 - x0) / 13, Y = v => y0 - v * (y0 - y1);
+  rline(x0 - 8, y0, x1 + 6, y0, 960, { c: '#b8ab9a', w: 1 }); rline(x0 - 8, Y(1), x1 + 6, Y(1), 961, { c: '#e4d8c7', w: 1, once: true });
+  txt('1', x0 - 22, Y(1) + 4, { s: 12, c: C.soft }); txt('0', x0 - 18, y0, { s: 12, c: C.soft }); txt('guess for the cell beside the cheese, after each walk', x0 - 20, y1 - 12, { s: 14, al: 'left', c: C.soft });
+  for (let i = 0; i < n && i < V30.length; i++) {
+    if (i) rline(X(i - 1), Y(V30[i - 1]), X(i), Y(V30[i]), 970 + i, { c: '#c99a3a', w: 1.4, once: true });
+    const cat = ends[i] < 0; ctx.fillStyle = cat ? C.rose : C.gold; ctx.beginPath(); ctx.arc(X(i), Y(V30[i]), 3.6, 0, 7); ctx.fill();
+    if ([0, 1, 2, 7, 8, 13].includes(i)) txt(String(+V30[i].toFixed(2)), X(i), Y(V30[i]) - 11, { s: 13, c: cat ? '#b54b4b' : '#8a5d08' });
+    if (cat) txt('cat!', X(i) + 18, Y(V30[i]) + 10, { s: 13, c: '#b54b4b' });
+  }
+}
+function arrowsOn(V, g, t0, t) { let n = 0; for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) { const k = T.key(c, r); if (T.term(c, r) || T.isRock(c, r)) continue;
+  if (Math.abs(V[k]) < .004) { txt('?', cx(c), cy(r) + 4, { s: 18, c: '#c2b6a6', a: clamp(t - t0 - 2.6) }); continue; }
+  const a = clamp((t - t0 - n++ * .18) * 3); if (a <= 0) continue; const [dx, dy] = T.MOVES[T.greedy(V, c, r, g)]; ctx.globalAlpha = a; arrow(cx(c) - dx * 9, cy(r) - dy * 9 + 4, cx(c) + dx * 15, cy(r) + dy * 15 + 4, 400 + k, { c: '#8a5d08', w: 1.5 }); ctx.globalAlpha = 1; } }
 
 const STEPS = [
- { h: 'Meet Pip', p: ['Pip is a mouse in a small maze. In the top corner sits a piece of **cheese**, worth +1. Near it sleeps a **cat**, worth −1. Either one ends the walk.', 'Pip has never seen this maze before.'],
+ { h: 'Meet Pip', p: ['Pip is a mouse in a small maze. In the top corner sits a piece of **cheese**, worth +1. Near it sleeps a **cat**, worth −1. Reaching either one ends the walk.', 'Pip has never seen this maze before.'],
    draw(t) { maze({ draw: t / 1.6, pop: { cheese: ease((t - 1.8) * 3), cat: ease((t - 2.3) * 3) }, labels: clamp(t - 3), t }); if (t > 2.8) pip(cx(0), cy(3), 1, t); caption('two rocks block the middle', clamp(t - 3.5)); } },
- { h: 'A guess in every cell', p: ['Pip carries a notebook with one number per cell: **how good is it to stand here?** That number is the cell’s **value**.', 'Pip knows nothing yet, so every guess starts at 0.'],
-   draw(t) { const V = new Array(20).fill(0); maze({ V, nums: (c, r) => clamp((t - .5 - (r * 5 + c) * .12) * 3), t }); pip(cx(0), cy(3), 1, t);
-     if (t > 3.4) card(['value = Pip’s guess of the reward still to come', { s: 'from this cell. Small numbers in the corners.', c: C.soft }], t - 3.4, { gap: .6 }); } },
- { h: 'One step, one tiny lesson', p: ['Pip peeks at the neighbours and walks to the one with the best guess. One move in five is random, to explore. All guesses are 0, so it’s a coin toss.', 'After each step Pip fixes the guess of the cell it **left**: target = reward + 0.9 × guess where it landed. The 0.9 is **γ** (gamma): a reward one step later counts 90%.'],
-   draw(t) { const V = new Array(20).fill(0), s = e0[0]; maze({ V, nums: 1, t, hi: t > 4 && t < 9 ? [[s.c, s.r, C.teal, .25 * clamp((t - 4) * 2)]] : null });
-     const pk = clamp((t - .4) * 1.5) * (1 - clamp((t - 2.6) * 2)); [[1, 3], [0, 2]].forEach(([c, r], i) => { if (pk > 0) { ctx.globalAlpha = pk; arrow(cx(0) + (c ? 14 : 0), cy(3) - (c ? 0 : 14), cx(c) - (c ? 14 : 0), cy(r) + (c ? 0 : 14), 300 + i, { c: C.soft }); txt('0?', cx(c), cy(r) - 4, { s: 16, c: C.soft, a: pk }); ctx.globalAlpha = 1; } });
-     const m = walkPos(e0, 0, 1, Math.max(0, t - 2.9), 1); pip(m.x, m.y, m.face || 1, t);
-     if (t > 4) card(['reward 0  +  0.9 × 0   =   target 0', 'old guess 0  →  stays 0', { s: 'no reward seen yet, so nothing to learn', c: C.soft }], t - 4); } },
- { h: 'Wandering', p: ['Pip keeps wandering, fixing one cell per step. Every fix says “0 stays 0”, because Pip has not met a reward yet.', 'The teal dots are Pip’s footprints. Then, after 13 steps…'],
-   draw(t) { const V = new Array(20).fill(0), n = e0.length - 1, m = walkPos(e0, 1, n, t, .55);
-     trail(e0.slice(0, 1 + m.k).map(s => [s.c, s.r])); maze({ V, nums: 1, t }); pip(m.x, m.y, m.face, t);
-     caption(`step ${Math.min(n, m.k + 1 + (m.done ? 0 : 1))} of the first walk`); } },
- { h: 'Cheese!', p: ['Pip steps onto the cheese: reward +1. The walk ends, so the target for the cell it left is just 1. Its guess was 0.', 'That gap, target minus guess, is the **TD error**: Pip’s surprise. Pip moves its guess only a fifth of the way: 0 + 0.2 × 1 = 0.2. The 0.2 is **α** (alpha), the learning rate.'],
-   draw(t) { const l = e0[e0.length - 1], u = ease((t - 6.2) / 1.2), V = new Array(20).fill(0); V[T.key(l.c, l.r)] = l.nw * u;
-     trail(e0.map(s => [s.c, s.r]), .3); maze({ V, nums: 1, t, hi: t > 2 ? [[l.c, l.r, C.gold, .3]] : null });
+ { h: 'What Pip wants to know', p: ['Pip wants a notebook with one number per cell, answering: **starting from here, how much reward can I expect?** That number is the cell’s **value**.', 'Pip knows nothing yet, so every guess starts at 0.'],
+   draw(t) { maze({ V: ZERO(), nums: (c, r) => clamp((t - .5 - (r * 5 + c) * .12) * 3), t }); pip(cx(0), cy(3), 1, t); caption('small number in each corner = Pip’s current guess', clamp(t - 3)); } },
+ { h: 'What the right answer looks like', p: ['Suppose Pip already knew the shortest way. Next to the cheese, the +1 comes on the very next step: value 1.', 'One cell further, the cheese comes one step later, and later rewards count a bit less. Each extra step multiplies by **γ (gamma)**, here 0.9. So the values go 1, 0.9, 0.81, and so on, down to 0.53 at the start. Pip doesn’t know these numbers. It has to discover them.'],
+   draw(t) { maze({ V: ZERO(), t, numA: () => .35, nums: 1 });
+     const R = PATH.slice(0, -1).reverse(); R.forEach(([c, r], i) => { const a = clamp((t - .8 - i * .9) * 2); if (a <= 0) return; ghost(c, r, String(+IDEAL[T.key(c, r)].toFixed(2)), a, { dy: 6, s: 19, c: '#8a5d08' });
+ });
+     if (t > 7.5) card(['start: 0.9 × 0.9 × 0.9 × 0.9 × 0.9 × 0.9 = 0.53', { s: 'six extra steps, six times 0.9', c: C.soft }], t - 7.5, { gap: .7 }); } },
+ { h: 'Learn now, not later', p: ['Pip could wait until a walk ends and only then judge every cell it passed. But it can learn after **every single step**.', 'Think of driving home. You guess 30 minutes. Ten minutes in, you hit a traffic jam, so you revise: 40 minutes. You learned something before you got home. That is the idea behind **temporal-difference learning**, or TD learning.'],
+   draw(t) { maze({ V: ZERO(), t }); pip(cx(0), cy(3), 1, t); dim(); commute(t); } },
+ { h: 'The update, in words', p: ['After each step, Pip looks back at the cell it just **left** and asks: what did that step pay me, plus 0.9 times what the cell I landed on is worth?', 'That sum is the **target**. It beats the old guess because it contains one real, observed step.'],
+   draw(t) { const s = e0[F1]; maze({ V: ZERO(), nums: 1, t, hi: [[s.c, s.r, C.teal, .22], [s.nc, s.nr, C.gold, .18 * clamp(t - 1)]] });
+     const m = walkPos(e0, F1, F1 + 1, clamp(t - .3, 0, 1), 1); pip(m.x, m.y, 1, t); ghost(s.c, s.r, 'left', clamp(t - 1.2), { dy: -18, s: 14 }); ghost(s.nc, s.nr, 'landed', clamp(t - 1.6), { dy: -18, s: 14 });
+     card(['target  =  reward for the step', '             +  0.9 × guess for where I landed', { s: 'then nudge the left cell’s guess toward it', c: C.soft }], t - 2.2, { gap: 1.3 }); } },
+ { h: 'How Pip picks a move', p: ['To move, Pip peeks at the neighbouring cells and goes to the one with the best guess.', 'But one move in five is random. Without those random moves Pip would repeat its first habits forever and never find a better route. This is called **exploring**. Right now every guess is 0, so every move is a coin toss.'],
+   draw(t) { maze({ V: ZERO(), nums: 1, t }); pip(cx(0), cy(3), 1, t); peek(t + .0, [0, 3], [[1, 3], [0, 2]]);
+     if (t > 3.6) card(['best guess: tie (0 and 0), so pick either', { s: 'and 1 move in 5: any direction, at random', c: C.soft }], t - 3.6, { gap: .9 }); } },
+ { h: 'Step 1: nothing to learn yet', p: ['Pip moves right. No reward, and the new cell’s guess is 0.', 'Target = 0 + 0.9 × 0 = 0. The old guess was 0 too, so nothing changes.'],
+   draw(t) { const s = e0[F1]; maze({ V: ZERO(), nums: 1, t, hi: t > 1.3 ? [[s.c, s.r, C.teal, .25]] : null }); const m = walkPos(e0, F1, F1 + 1, clamp(t - .3, 0, 1), 1); pip(m.x, m.y, m.face || 1, t);
+     if (t > 1.4) card(['reward 0  +  0.9 × 0   =   target 0', 'old guess 0   →   stays 0'], t - 1.4, { gap: 1.2 }); } },
+ { h: 'Wandering', p: ['Pip keeps going, updating one cell per step. Step after step, every update says “0 stays 0”.', 'TD learning passes news from cell to cell, but there is no news yet: Pip has not met a single reward. The teal dots are its footprints.'],
+   draw(t) { const n = e0.length - 1, m = walkPos(e0, F1 + 1, n, t, .55); trail(e0.slice(0, F1 + 1 + m.k).map(s => [s.c, s.r])); maze({ V: ZERO(), nums: 1, t }); pip(m.x, m.y, m.face, t);
+     caption(`step ${Math.min(n, F1 + 1 + m.k + (m.done ? 0 : 1))} of the first walk`); } },
+ { h: 'Cheese!', p: ['On step 14 Pip lands on the cheese: reward +1, and the walk ends, so there is no “next cell” to add. The target for the cell it left is simply 1. Its old guess was 0.', 'The gap, target minus old guess, is the **TD error**: how surprised Pip is. Here the surprise is 1.'],
+   draw(t) { const l = e0[e0.length - 1]; trail(e0.map(s => [s.c, s.r]), .3); maze({ V: ZERO(), nums: 1, t, hi: t > 2 ? [[l.c, l.r, C.gold, .3]] : null });
      const m = walkPos(e0, e0.length - 1, e0.length, Math.max(0, t - .6), 1); pip(m.x, m.y, m.face || 1, t); bubble('+1', cx(4), cy(0) - 18, t - 1.4);
-     if (t > 2.2) card(['target  =  1   (the walk ends here)', 'TD error  =  1 − 0  =  1', 'new guess  =  0 + 0.2 × 1  =  0.2'], t - 2.2, { gap: 1.3 }); } },
- { h: 'The news travels back', p: [`On walk 2, Pip steps into that 0.2 cell from its left. No reward, but the target borrows the neighbour’s guess: 0 + 0.9 × 0.2 = 0.18. So the left cell rises to 0.036.`, 'A guess learned from the next guess: that is **temporal-difference learning**. Then Pip reaches the cheese again, and 0.2 becomes 0.36.'],
-   draw(t) { const fast = .11, t1 = LEAK * fast, s = e1[LEAK], l = e1[LEAK + 1];
-     let m, V = Vat(1, 0);
-     if (t < t1) m = walkPos(e1, 0, LEAK, t, fast);
-     else if (t < t1 + 6.5) { m = walkPos(e1, LEAK, LEAK + 1, Math.min(1, t - t1), 1); V = Vat(1, LEAK); V[T.key(s.c, s.r)] = s.nw * ease((t - t1 - 5.2) / 1); }
-     else { m = walkPos(e1, LEAK + 1, LEAK + 2, Math.min(1, t - t1 - 6.5), 1); V = Vat(1, LEAK + 1); V[T.key(l.c, l.r)] = lerp(l.old, l.nw, ease((t - t1 - 8) / 1)); }
-     trail(e1.slice(0, Math.min(e1.length, (m.k ?? 0) + (t < t1 ? 1 : LEAK + 1))).map(q => [q.c, q.r]), .4);
-     maze({ V, nums: 1, t, hi: t > t1 + 1 ? [[s.c, s.r, C.gold, .25], [s.nc, s.nr, C.gold, .12]] : null }); pip(m.x, m.y, m.face, t);
-     if (t < t1) caption('walk 2 (sped up)');
-     else if (t < t1 + 7.6) card(['reward 0  +  0.9 × 0.2   =   target 0.18', 'new guess  =  0 + 0.2 × (0.18 − 0)', { s: '=  0.036     news moved one cell back', c: '#8a5d08' }], t - t1 - 1.1);
-     else { bubble('+1', cx(4), cy(0) - 18, t - t1 - 7.5); card(['and the cheese neighbour again:', '0.2 + 0.2 × (1 − 0.2)  =  0.36'], t - t1 - 7.8, { gap: .8 }); } } },
+     if (t > 2.2) card(['target  =  1   (walk over: nothing to add)', 'old guess  =  0', { s: 'TD error  =  1 − 0  =  1     surprise!', c: '#8a5d08' }], t - 2.2, { gap: 1.3 }); } },
+ { h: 'Only a fifth of the way', p: ['Pip doesn’t jump straight to 1. It moves its guess a fifth of the way toward the target: 0 + 0.2 × 1 = 0.2. That 0.2 is **α (alpha)**, the **learning rate**.', 'Why so cautious? One walk can be a fluke. Small steps let many walks average out.'],
+   draw(t) { const l = e0[e0.length - 1], V = ZERO(); V[T.key(l.c, l.r)] = l.nw * ease((t - 4.6) / 1.2); maze({ V, nums: 1, t, hi: [[l.c, l.r, C.gold, .3]] }); pip(cx(4), cy(0), 1, t);
+     card(['new guess  =  old  +  α × TD error', '                =  0  +  0.2 × 1  =  0.2', { s: 'α = 0.2: move one fifth of the way', c: C.soft }], t - .5, { gap: 1.5 }); } },
+ { h: 'The news travels back', p: ['Walk 2. Pip steps from the cell on the left into the 0.2 cell. No reward this time, but the target uses the neighbour’s guess: 0 + 0.9 × 0.2 = 0.18. A fifth of that: the left cell becomes 0.036.', 'Learning a guess from another guess is called **bootstrapping**. It is the heart of TD learning.'],
+   draw(t) { const fast = .11, t1 = LEAK * fast, s = e1[LEAK]; let m, V = Vat(1, 0);
+     if (t < t1) m = walkPos(e1, 0, LEAK, t, fast); else { m = walkPos(e1, LEAK, LEAK + 1, Math.min(1, t - t1), 1); V = Vat(1, LEAK); V[T.key(s.c, s.r)] = s.nw * ease((t - t1 - 5.2) / 1); }
+     trail(e1.slice(0, t < t1 ? m.k + 1 : LEAK + 1).map(q => [q.c, q.r]), .4);
+     maze({ V, nums: 1, t, hi: t > t1 + 1 ? [[s.c, s.r, C.teal, .22], [s.nc, s.nr, C.gold, .2]] : null }); pip(m.x, m.y, m.face, t);
+     if (t < t1) caption('walk 2 (sped up)'); else card(['reward 0  +  0.9 × 0.2   =   target 0.18', 'new  =  0 + 0.2 × (0.18 − 0)  =  0.036', { s: 'the news moved one cell back', c: '#8a5d08' }], t - t1 - 1.1); } },
+ { h: 'Small steps add up', p: ['Each walk nudges the cell beside the cheese up: 0.2, 0.36, 0.44 … 0.82 after 8 walks.', 'On walk 9 a random move sends Pip into the cat: target −1, and the guess drops to 0.45. Because each walk only moves it a fifth of the way, the good walks outvote the bad one: by walk 14 it is back at 0.8.'],
+   draw(t) { const n = clamp(Math.floor(t / .7) + 1, 1, 14); maze({ V: E[n - 1].V, nums: 1, t, hi: [[3, 0, C.gold, .25]] }); pip(cx(ends[n - 1] > 0 ? 4 : 3), cy(ends[n - 1] > 0 ? 0 : 1), 1, t); walkChart(n); } },
  { h: '200 walks later', p: ['Repeat for 200 walks. The good news spreads backward from the cheese, one cell at a time, and Pip’s walks get shorter.', 'Its first walks took 14, 33, 68 and 73 steps. Soon most take about 8 to 10. A rose bar means the cat won. Cells Pip never visits keep their 0.'],
    draw(t) { let w, k; if (t < 6) { w = 2 + Math.floor(t / .75); k = (t % .75) / .75; } else { w = 10 + Math.floor((t - 6) / .05); k = ((t - 6) % .05) / .05; }
      const done = w >= E.length; if (done) { w = E.length - 1; k = 1; }
      const tr = E[w].tr, i = Math.min(tr.length - 1, Math.floor(k * tr.length)), q = tr[i];
-     const V = done ? FIN : Vat(w, i); maze({ V, nums: 1, t }); pip(done ? cx(4) : cx(q.c), done ? cy(0) : cy(q.r), 1, t);
+     maze({ V: done ? FIN : Vat(w, i), nums: 1, t }); pip(done ? cx(4) : cx(q.c), done ? cy(0) : cy(q.r), 1, t);
      strip(lens, ends, done ? E.length : w, 'steps per walk', 80); caption(done ? 'walk 200 of 200' : `walk ${w + 1} of 200`); } },
- { h: 'Read the map', p: ['Draw an arrow from each cell to its best-looking neighbour, and the notebook becomes a **route**. Following the arrows, Pip reaches the cheese in 7 steps: the shortest path.', 'Peeking works because Pip knows where each move leads. Without that map, you would learn values for moves instead.'],
-   draw(t) { maze({ V: FIN, nums: 1, t });
-     let n = 0; for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) { const k = T.key(c, r); if (T.term(c, r) || T.isRock(c, r)) continue;
-       if (Math.abs(FIN[k]) < .004) { txt('?', cx(c), cy(r) + 4, { s: 18, c: '#c2b6a6', a: clamp(t - 3) }); continue; }
-       const a = clamp((t - .4 - n++ * .18) * 3); if (a <= 0) continue; const [dx, dy] = T.MOVES[T.greedy(FIN, c, r, .9)]; ctx.globalAlpha = a; arrow(cx(c) - dx * 9, cy(r) - dy * 9 + 4, cx(c) + dx * 15, cy(r) + dy * 15 + 4, 400 + k, { c: '#8a5d08', w: 1.5 }); ctx.globalAlpha = 1; }
+ { h: 'Why not 1, 0.9, 0.81?', p: ['Compare with the perfect numbers: beside the cheese Pip learned 0.8, not 1. That is not a mistake.', 'Values describe Pip’s real habits. One move in five is random, random moves waste steps, and from that cell about 1 move in 20 lands on the cat. TD learns how good a cell is **for the walker Pip actually is**.'],
+   draw(t) { maze({ V: FIN, nums: 1, t }); pip(cx(0), cy(3), 1, t); const a = clamp(t - .8);
+     Object.keys(IDEAL).forEach(k => { const c = k % 5, r = Math.floor(k / 5); ghost(c, r, 'perfect ' + (+IDEAL[k].toFixed(2)), a, { dy: 20, s: 13, bg: 1, c: '#6d645b' }); });
+     if (t > 2.5) card(['beside the cheese:  learned 0.8   perfect 1', { s: '1 in 5 moves random  ·  1 in 20 hits the cat', c: C.soft }], t - 2.5, { gap: .9 }); } },
+ { h: 'Read the map', p: ['Turn the notebook into a plan: from each cell, point to the best-looking neighbour. Following the arrows, Pip reaches the cheese in 7 steps, the shortest route. A “?” marks a cell that never got useful news.', 'This works because Pip knows which cell each move leads to. Without that knowledge you would learn a value for each move instead, as Q-learning does.'],
+   draw(t) { maze({ V: FIN, nums: 1, t }); arrowsOn(FIN, .9, .4, t);
      const t2 = t - 3.6, kk = clamp(Math.floor(t2 / .7), 0, PATH.length - 1), u = ease((t2 % .7) / .7 * 1.3), a = PATH[kk], b = PATH[Math.min(PATH.length - 1, kk + 1)];
      if (t2 > 0) trail(PATH.slice(0, kk + 1), .7);
      pip(t2 > 0 ? lerp(cx(a[0]), cx(b[0]), u) : cx(0), t2 > 0 ? lerp(cy(a[1]), cy(b[1]), u) : cy(3), t2 > 0 ? (b[0] - a[0]) : 1, t);
-     if (t2 > 0) caption(`following the arrows: ${Math.min(kk + (kk < PATH.length - 1 && u > .5 ? 1 : 0), PATH.length - 1)} steps`); else caption('? = no useful guess here yet', clamp(t - 3)); } },
+     if (t2 > 0) caption(`following the arrows: ${Math.min(kk + (kk < PATH.length - 1 && u > .5 ? 1 : 0), PATH.length - 1)} steps`); } },
  { h: 'Your turn', ctl: true, p: ['Drag **γ** to rerun all 200 walks. With a small γ, a far-away cheese barely counts, so the values fade quickly away from it.', 'Tap any cell to drop Pip there and watch it follow the arrows. In the corner it never explored, it has no clue which way to go.'],
    draw(t, st) { const g = GAMMAS[st.gi ?? 4], Rn = RUN(g), V1 = Rn.eps[Rn.eps.length - 1].V, prev = st.prevV || V1, u = ease((t - (st.changed ?? -9)) / .9);
      const V = V1.map((v, i) => lerp(prev[i], v, u)); maze({ V, nums: 1, t });
@@ -218,9 +262,12 @@ const STEPS = [
        caption(kk >= P.length - 1 ? (st.why ? (P.length > 1 ? `after ${P.length - 1} steps: ` : '') + st.why : `reached the ${T.term(...P[P.length - 1]) > 0 ? 'cheese' : 'cat'} in ${P.length - 1} steps`) : `step ${kk}`);
      } else { pip(cx(0), cy(3), 1, t); caption('tap a cell to drop Pip there'); }
      txt(g <= .5 ? 'only cells right next to the cheese care about it' : g >= .95 ? 'even far cells feel the cheese (and the cat)' : 'the cheese’s pull fades with distance', W / 2, 312, { s: 17, c: C.soft }); } },
- { h: 'Where you’ve seen this', p: ['Pip’s surprise at the cheese fades toward 0 as the guess next to it climbs. Each rose tick is a walk where Pip stumbled into the cat from that cell: the guess drops, and the surprise comes back.', 'In the 1990s, scientists found that **dopamine** neurons fire much like a TD error. And TD learning powered TD-Gammon (1992), a backgammon program that learned by playing itself.'],
+ { h: 'Where you’ve seen this', p: ['Pip’s surprise at the cheese fades toward 0 as the guess beside it climbs. Each rose tick is a walk where Pip stumbled into the cat from that cell: the guess drops, and the surprise comes back.', 'In the 1990s, scientists found that **dopamine** neurons fire much like a TD error. And TD learning powered TD-Gammon (1992), a backgammon program that learned by playing itself.'],
    draw(t) { maze({ V: FIN, nums: 1, t }); pip(cx(3), cy(0), 1, t); const n = Math.min(E.length, Math.floor(t * 30));
      strip(surprise.map(v => v == null ? null : v * 80), ends, n, 'surprise at the cheese, walk by walk', 80, true); caption(n >= E.length ? 'gold = surprise at the cheese · rose = met the cat' : ''); } },
+ { h: 'Recap', p: ['A **value** is the reward still to come from a cell. TD learning improves each guess after every step, using the reward it just saw plus the next cell’s guess.', 'Repeat that enough, and good news spreads backward until the notebook becomes a map.'],
+   draw(t) { maze({ V: FIN, nums: 1, t }); arrowsOn(FIN, .9, -5, t + 10); pip(cx(0), cy(3), 1, t);
+     card(['target  =  reward  +  γ × next cell’s guess', 'TD error  =  target − old guess', 'new guess  =  old  +  α × TD error', { s: 'γ = 0.9 how much later counts · α = 0.2 step size', c: C.soft }], t - .3, { gap: 1 }); } },
 ];
 
 // Pip follows its notebook from a cell; stops if every neighbour looks the same (no clue) or it loops
