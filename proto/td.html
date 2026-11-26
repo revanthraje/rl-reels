@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pip Learns the Maze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #fbf3e8; --ink: #3a3632; --soft: #8a8178; --gold: #e9a93b; --rose: #e07a7a; --teal: #6fb7b4; --card: #fffaf1; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: 'Patrick Hand', 'Comic Sans MS', cursive; overscroll-behavior: none; }
+body { display: flex; justify-content: center; }
+#app { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; padding: max(10px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom)); user-select: none; -webkit-user-select: none; touch-action: pan-x; }
+#bars { display: flex; gap: 4px; margin-bottom: 8px; }
+#bars i { flex: 1; height: 3px; border-radius: 2px; background: #e4d8c7; overflow: hidden; }
+#bars i b { display: block; height: 100%; width: 0; background: var(--ink); }
+#bars i.done b { width: 100%; }
+#top { display: flex; align-items: baseline; justify-content: space-between; }
+#kicker { font-size: 14px; color: var(--soft); letter-spacing: .06em; text-transform: uppercase; }
+#count { font-size: 14px; color: var(--soft); }
+h1 { margin: 2px 0 6px; font-size: 28px; font-weight: 400; letter-spacing: .02em; }
+canvas { width: 100%; aspect-ratio: 400 / 420; display: block; }
+#text { flex: 1; font-size: 19px; line-height: 1.38; margin-top: 4px; overflow: auto; }
+#text p { margin: 0 0 8px; transition: opacity .5s; }
+#text b { font-weight: 400; background: linear-gradient(transparent 58%, #f6d58c 58%); padding: 0 2px; }
+#ctl { display: none; align-items: center; gap: 10px; font-size: 18px; margin: 4px 0; }
+#ctl input { flex: 1; accent-color: var(--ink); }
+#ctl output { width: 40px; text-align: right; }
+#hint { text-align: center; font-size: 14px; color: var(--soft); }
+.fade { animation: fade .6s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bars"></div>
+  <div id="top"><span id="kicker">TD learning · a story</span><span id="count"></span></div>
+  <h1 id="h"></h1>
+  <canvas id="cv"></canvas>
+  <div id="ctl"><span>γ</span><input id="g" type="range" min="0" max="6" step="1" value="4"><output id="go">0.9</output></div>
+  <div id="text"></div>
+  <div id="hint">tap the text → next · ← back · tap the picture to replay</div>
+</div>
+<script src="td_sim.js"></script>
+<script>
+(() => {
+'use strict';
+const T = TDSim, W = 400, H = 420, CS = 64, OX = 40, OY = 16;
+const C = { ink: '#3a3632', soft: '#8a8178', gold: '#e9a93b', rose: '#e07a7a', teal: '#6fb7b4', card: '#fffaf1', bg: '#fbf3e8', grey: '#b9b0a6', pink: '#f2b8b8' };
+const SEED = 35, GAMMAS = [.3, .5, .7, .8, .9, .95, .99];
+const runs = {}; const RUN = g => runs[g] ||= T.run({ seed: SEED, gamma: g });
+const S9 = RUN(.9), E = S9.eps;
+const cx = c => OX + c * CS + CS / 2, cy = r => OY + r * CS + CS / 2;
+const lerp = (a, b, u) => a + (b - a) * u, clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = u => (u = clamp(u), u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
+// V after walk e's first i transitions
+function Vat(e, i) { const V = e > 0 ? E[e - 1].V.slice() : new Array(20).fill(0); for (let k = 0; k < i; k++) { const t = E[e].tr[k]; V[T.key(t.c, t.r)] = t.nw; } return V; }
+const visited = new Set(); E.forEach(e => e.tr.forEach(t => visited.add(T.key(t.c, t.r))));
+
+// ───── hand-drawn helpers (seeded jitter, Rough.js-like) ─────
+function rnd(seed) { let a = seed * 9301 + 49297; return () => { a = (a * 9301 + 49297) % 233280; return a / 233280 - .5; }; }
+let ctx;
+function rline(x1, y1, x2, y2, seed, o = {}) {
+  const R = rnd(seed), j = o.j ?? 1.4, p = o.p ?? 1; x2 = lerp(x1, x2, p); y2 = lerp(y1, y2, p);
+  ctx.strokeStyle = o.c || C.ink; ctx.lineWidth = o.w || 1.3; ctx.lineCap = 'round';
+  for (let k = 0; k < (o.once ? 1 : 2); k++) {
+    ctx.beginPath(); ctx.moveTo(x1 + R() * j, y1 + R() * j);
+    ctx.quadraticCurveTo((x1 + x2) / 2 + R() * j * 2, (y1 + y2) / 2 + R() * j * 2, x2 + R() * j, y2 + R() * j); ctx.stroke();
+  }
+}
+function rrect(x, y, w, h, seed, o = {}) { rline(x, y, x + w, y, seed, o); rline(x + w, y, x + w, y + h, seed + 1, o); rline(x + w, y + h, x, y + h, seed + 2, o); rline(x, y + h, x, y, seed + 3, o); }
+function hachure(x, y, w, h, color, gap, seed, alpha = 1) {
+  const R = rnd(seed); ctx.save(); ctx.beginPath(); ctx.rect(x + 2, y + 2, w - 4, h - 4); ctx.clip();
+  ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = 1.6;
+  for (let d = -h; d < w; d += gap) { ctx.beginPath(); ctx.moveTo(x + d + R() * 2, y + h + R() * 2); ctx.lineTo(x + d + h + R() * 2, y + R() * 2); ctx.stroke(); }
+  ctx.restore();
+}
+function rcircle(x, y, r, seed, o = {}) {
+  const R = rnd(seed); ctx.beginPath();
+  for (let k = 0; k <= 22; k++) { const a = k / 22 * Math.PI * 2 + .2, rr = r + R() * (o.j ?? 1.2); k ? ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) : ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  ctx.closePath(); if (o.fill) { ctx.fillStyle = o.fill; ctx.fill(); } ctx.strokeStyle = o.c || C.ink; ctx.lineWidth = o.w || 1.3; ctx.stroke();
+}
+function txt(s, x, y, o = {}) { ctx.fillStyle = o.c || C.ink; ctx.globalAlpha = o.a ?? 1; ctx.font = `${o.s || 16}px 'Patrick Hand', cursive`; ctx.textAlign = o.al || 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); ctx.globalAlpha = 1; }
+function arrow(x1, y1, x2, y2, seed, o = {}) {
+  rline(x1, y1, x2, y2, seed, o); const a = Math.atan2(y2 - y1, x2 - x1), L = o.head || 7;
+  rline(x2, y2, x2 - L * Math.cos(a - .5), y2 - L * Math.sin(a - .5), seed + 5, o); rline(x2, y2, x2 - L * Math.cos(a + .5), y2 - L * Math.sin(a + .5), seed + 6, o);
+}
+
+// ───── characters ─────
+function mouse(x, y, face = 1, s = 1, bob = 0) {
+  ctx.save(); ctx.translate(x, y + Math.sin(bob * 9) * 1.2); ctx.scale(face * s, s);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-12, 4); ctx.bezierCurveTo(-24, 6, -22, -8, -28, -4); ctx.stroke(); // tail
+  ctx.beginPath(); ctx.ellipse(0, 2, 13, 9, 0, 0, Math.PI * 2); ctx.fillStyle = C.grey; ctx.fill(); ctx.stroke();
+  rcircle(4, -8, 5, 3, { fill: C.pink, j: .6 });
+  ctx.beginPath(); ctx.ellipse(11, 0, 7, 6, -.3, 0, Math.PI * 2); ctx.fillStyle = C.grey; ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(13, -2, 1.3, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(18, 1.5, 1.6, 0, 7); ctx.fillStyle = '#d97c8c'; ctx.fill();
+  ctx.restore();
+}
+function cheese(x, y, s = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.beginPath(); ctx.moveTo(-15, 9); ctx.lineTo(15, 9); ctx.lineTo(15, -3); ctx.lineTo(-15, 9); ctx.moveTo(15, -3); ctx.lineTo(-15, 9);
+  ctx.beginPath(); ctx.moveTo(-16, 9); ctx.lineTo(16, 9); ctx.lineTo(16, -6); ctx.closePath(); ctx.fillStyle = '#f7d36b'; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.3; ctx.stroke();
+  ctx.fillStyle = '#e2b54a'; [[8, 3, 2.4], [12, -1, 1.5], [3, 6, 1.6]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(a, b, r, 0, 7); ctx.fill(); });
+  ctx.restore();
+}
+function cat(x, y, t, s = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.beginPath(); ctx.moveTo(-13, -4); ctx.lineTo(-11, -17); ctx.lineTo(-4, -9); ctx.moveTo(13, -4); ctx.lineTo(11, -17); ctx.lineTo(4, -9);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 1.3; ctx.fillStyle = '#c9b9a8'; ctx.fill(); ctx.stroke();
+  rcircle(0, 0, 13, 41, { fill: '#c9b9a8', j: .8 });
+  ctx.beginPath(); ctx.arc(-5, -1, 3, .2, Math.PI - .2); ctx.moveTo(8, -1); ctx.arc(5, -1, 3, .2, Math.PI - .2); ctx.stroke();
+  [[-1, 5, -16, 3], [-1, 6, -16, 8], [1, 5, 16, 3], [1, 6, 16, 8]].forEach(([a, b, c, d]) => rline(a, b, c, d, a * 7 + d, { once: true, w: 1, j: .5 }));
+  ctx.restore();
+  const z = (t * .6) % 1; txt('z', x + 16 + z * 8, y - 16 - z * 12, { s: 13 + z * 5, a: 1 - z, c: C.soft });
+}
+
+// ───── the maze scene ─────
+function vColor(v) { return v >= 0 ? C.gold : C.rose; }
+function maze(o) {
+  const p = o.draw ?? 1, V = o.V, t = o.t || 0;
+  // value tints (hachure, denser = larger)
+  if (V) for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) {
+    const v = V[T.key(c, r)]; if (T.term(c, r) || T.isRock(c, r) || Math.abs(v) < .004) continue;
+    const m = clamp(Math.abs(v) / .8); hachure(OX + c * CS, OY + r * CS, CS, CS, vColor(v), lerp(13, 4.5, m), 100 + c * 7 + r, lerp(.35, .9, m));
+  }
+  if (o.hi) o.hi.forEach(([c, r, col, a]) => { ctx.save(); ctx.globalAlpha = a ?? .35; ctx.fillStyle = col; ctx.fillRect(OX + c * CS + 3, OY + r * CS + 3, CS - 6, CS - 6); ctx.restore(); });
+  for (let k = 0; k <= T.ROWS; k++) rline(OX, OY + k * CS, OX + T.COLS * CS, OY + k * CS, 10 + k, { p: p >= 1 ? 1 : clamp(p * 1.6 - k * .12), w: k % T.ROWS ? 1 : 1.8, c: k % T.ROWS ? '#b8ab9a' : C.ink });
+  for (let k = 0; k <= T.COLS; k++) rline(OX + k * CS, OY, OX + k * CS, OY + T.ROWS * CS, 30 + k, { p: p >= 1 ? 1 : clamp(p * 1.6 - .3 - k * .1), w: k % T.COLS ? 1 : 1.8, c: k % T.COLS ? '#b8ab9a' : C.ink });
+  T.ROCKS.forEach(([c, r], i) => { if (p < .8) return; const x = cx(c), y = cy(r); rcircle(x, y + 4, 19, 60 + i, { fill: '#d9d1c6', j: 4 }); hachure(x - 18, y - 13, 36, 34, '#9d9387', 5, 70 + i, .55); });
+  if (o.pop?.cheese !== 0) cheese(cx(T.CHEESE[0]), cy(T.CHEESE[1]), o.pop?.cheese ?? 1);
+  if (o.pop?.cat !== 0) cat(cx(T.CAT[0]), cy(T.CAT[1]) + 4, t, o.pop?.cat ?? 1);
+  if (o.labels) { const a = o.labels; txt('+1', cx(4) - 20, cy(0) - 20, { s: 15, c: '#b07d12', a }); txt('−1', cx(3) - 20, cy(1) - 20, { s: 15, c: '#b54b4b', a }); txt('start', cx(0), cy(3) + 24, { s: 13, c: C.soft, a }); }
+  if (V && o.nums) for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) {
+    if (T.term(c, r) || T.isRock(c, r)) continue; const k = T.key(c, r), a = typeof o.nums === 'function' ? o.nums(c, r) : 1; if (a <= 0) continue;
+    const v = V[k], s = Math.abs(v) < .005 ? '0' : String(+v.toFixed(Math.abs(v) < .1 ? 3 : 2));
+    txt(s, OX + c * CS + CS - 7, OY + c * 0 + r * CS + 12, { s: 14, al: 'right', a: a * (o.numA?.(c, r) ?? 1), c: v < -.004 ? '#a54444' : v > .004 ? '#8a5d08' : C.soft });
+  }
+}
+function trail(pts, a = .5) { pts.forEach(([c, r], i) => { ctx.globalAlpha = a * (.25 + .75 * i / pts.length); ctx.fillStyle = C.teal; ctx.beginPath(); ctx.arc(cx(c) + ((i * 7) % 13) - 6, cy(r) + ((i * 11) % 13) - 6, 2.2, 0, 7); ctx.fill(); }); ctx.globalAlpha = 1; }
+// Pip walking along transitions tr[from..to) with dur seconds per step; returns progress info
+function walkPos(tr, from, to, t, dur) {
+  const k = Math.floor(t / dur), u = ease((t % dur) / dur * 1.4);
+  if (k >= to - from) { const l = tr[to - 1]; return { c: l.nc, r: l.nr, x: cx(l.nc), y: cy(l.nr), done: true, k: to - from, face: Math.sign(l.nc - l.c) || 1 }; }
+  const s = tr[from + k]; return { x: lerp(cx(s.c), cx(s.nc), u), y: lerp(cy(s.r), cy(s.nr), u), k, s, face: Math.sign(s.nc - s.c) || 0, u };
+}
+let lastFace = 1; function pip(x, y, face, t) { if (face) lastFace = face; mouse(x, y + 3, lastFace, .95, t); }
+// note card with lines that appear one by one
+function card(lines, t, o = {}) {
+  const x = o.x ?? 30, y = o.y ?? 292, w = o.w ?? 340, lh = 23, h = 18 + lines.length * lh, a = clamp(t * 3);
+  if (a <= 0) return; ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.card; ctx.fillRect(x, y, w, h); ctx.restore();
+  rrect(x, y, w, h, 200 + lines.length, { c: '#b8ab9a', w: 1.1 });
+  lines.forEach((l, i) => { const u = clamp((t - (o.gap ?? 1.1) * i) * 2.5); if (u > 0) txt(l.s ?? l, x + 14, y + 20 + i * lh, { s: 17, al: 'left', a: u, c: l.c }); });
+}
+function bubble(s, x, y, t, col) { const u = clamp(t * 3), d = clamp(t - 1.2); if (t < 0) return; txt(s, x, y - 14 * ease(u) - d * 6, { s: 20, c: col || '#b07d12', a: u * (1 - d) }); }
+function caption(s, a = 1) { txt(s, W / 2, 404, { s: 15, c: C.soft, a }); }
+function fmt(v) { return (Math.abs(v) < .1 && v !== 0 ? v.toFixed(3) : v.toFixed(2)).replace(/\.?0+$/, m => m.startsWith('.') && m.length > 1 ? '' : m) || '0'; }
+const f2 = v => +v.toFixed(3) + '';
+
+// ───── the steps ─────
+const e0 = E[0].tr, e1 = E[1].tr, LEAK = e1.findIndex(t => !t.rew && t.next > 0);
+const FIN = E[E.length - 1].V, PATH = T.greedyPath(FIN, .9);
+const lens = E.map(e => e.tr.length), ends = E.map(e => e.end);
+const surprise = E.map(e => { const l = e.tr[e.tr.length - 1]; return e.end === 1 ? l.target - l.old : null; });
+
+const STEPS = [
+ { h: 'Meet Pip', p: ['Pip is a mouse in a small maze. In the top corner sits a piece of **cheese**, worth +1. Near it sleeps a **cat**, worth −1. Either one ends the walk.', 'Pip has never seen this maze before.'],
+   draw(t) { maze({ draw: t / 1.6, pop: { cheese: ease((t - 1.8) * 3), cat: ease((t - 2.3) * 3) }, labels: clamp(t - 3), t }); if (t > 2.8) pip(cx(0), cy(3), 1, t); caption('two rocks block the middle', clamp(t - 3.5)); } },
+ { h: 'A guess in every cell', p: ['Pip carries a notebook with one number per cell: **how good is it to stand here?** That number is the cell’s **value**.', 'Pip knows nothing yet, so every guess starts at 0.'],
+   draw(t) { const V = new Array(20).fill(0); maze({ V, nums: (c, r) => clamp((t - .5 - (r * 5 + c) * .12) * 3), t }); pip(cx(0), cy(3), 1, t);
+     if (t > 3.4) card(['value = Pip’s guess of the reward still to come', { s: 'from this cell. Small numbers in the corners.', c: C.soft }], t - 3.4, { gap: .6 }); } },
+ { h: 'One step, one tiny lesson', p: ['Pip peeks at the neighbours and walks to the one with the best guess. One move in five is random, to explore. All guesses are 0, so it’s a coin toss.', 'After each step Pip fixes the guess of the cell it **left**: target = reward + 0.9 × guess where it landed. The 0.9 is **γ** (gamma): a reward one step later counts 90%.'],
+   draw(t) { const V = new Array(20).fill(0), s = e0[0]; maze({ V, nums: 1, t, hi: t > 4 && t < 9 ? [[s.c, s.r, C.teal, .25 * clamp((t - 4) * 2)]] : null });
+     const pk = clamp((t - .4) * 1.5) * (1 - clamp((t - 2.6) * 2)); [[1, 3], [0, 2]].forEach(([c, r], i) => { if (pk > 0) { ctx.globalAlpha = pk; arrow(cx(0) + (c ? 14 : 0), cy(3) - (c ? 0 : 14), cx(c) - (c ? 14 : 0), cy(r) + (c ? 0 : 14), 300 + i, { c: C.soft }); txt('0?', cx(c), cy(r) - 4, { s: 16, c: C.soft, a: pk }); ctx.globalAlpha = 1; } });
+     const m = walkPos(e0, 0, 1, Math.max(0, t - 2.9), 1); pip(m.x, m.y, m.face || 1, t);
+     if (t > 4) card(['reward 0  +  0.9 × 0   =   target 0', 'old guess 0  →  stays 0', { s: 'no reward seen yet, so nothing to learn', c: C.soft }], t - 4); } },
+ { h: 'Wandering', p: ['Pip keeps wandering, fixing one cell per step. Every fix says “0 stays 0”, because Pip has not met a reward yet.', 'The teal dots are Pip’s footprints. Then, after 13 steps…'],
+   draw(t) { const V = new Array(20).fill(0), n = e0.length - 1, m = walkPos(e0, 1, n, t, .55);
+     trail(e0.slice(0, 1 + m.k).map(s => [s.c, s.r])); maze({ V, nums: 1, t }); pip(m.x, m.y, m.face, t);
+     caption(`step ${Math.min(n, m.k + 1 + (m.done ? 0 : 1))} of the first walk`); } },
+ { h: 'Cheese!', p: ['Pip steps onto the cheese: reward +1. The walk ends, so the target for the cell it left is just 1. Its guess was 0.', 'That gap, target minus guess, is the **TD error**: Pip’s surprise. Pip moves its guess only a fifth of the way: 0 + 0.2 × 1 = 0.2. The 0.2 is **α** (alpha), the learning rate.'],
+   draw(t) { const l = e0[e0.length - 1], u = ease((t - 6.2) / 1.2), V = new Array(20).fill(0); V[T.key(l.c, l.r)] = l.nw * u;
+     trail(e0.map(s => [s.c, s.r]), .3); maze({ V, nums: 1, t, hi: t > 2 ? [[l.c, l.r, C.gold, .3]] : null });
+     const m = walkPos(e0, e0.length - 1, e0.length, Math.max(0, t - .6), 1); pip(m.x, m.y, m.face || 1, t); bubble('+1', cx(4), cy(0) - 18, t - 1.4);
+     if (t > 2.2) card(['target  =  1   (the walk ends here)', 'TD error  =  1 − 0  =  1', 'new guess  =  0 + 0.2 × 1  =  0.2'], t - 2.2, { gap: 1.3 }); } },
+ { h: 'The news travels back', p: [`On walk 2, Pip steps into that 0.2 cell from its left. No reward, but the target borrows the neighbour’s guess: 0 + 0.9 × 0.2 = 0.18. So the left cell rises to 0.036.`, 'A guess learned from the next guess: that is **temporal-difference learning**. Then Pip reaches the cheese again, and 0.2 becomes 0.36.'],
+   draw(t) { const fast = .11, t1 = LEAK * fast, s = e1[LEAK], l = e1[LEAK + 1];
+     let m, V = Vat(1, 0);
+     if (t < t1) m = walkPos(e1, 0, LEAK, t, fast);
+     else if (t < t1 + 6.5) { m = walkPos(e1, LEAK, LEAK + 1, Math.min(1, t - t1), 1); V = Vat(1, LEAK); V[T.key(s.c, s.r)] = s.nw * ease((t - t1 - 5.2) / 1); }
+     else { m = walkPos(e1, LEAK + 1, LEAK + 2, Math.min(1, t - t1 - 6.5), 1); V = Vat(1, LEAK + 1); V[T.key(l.c, l.r)] = lerp(l.old, l.nw, ease((t - t1 - 8) / 1)); }
+     trail(e1.slice(0, Math.min(e1.length, (m.k ?? 0) + (t < t1 ? 1 : LEAK + 1))).map(q => [q.c, q.r]), .4);
+     maze({ V, nums: 1, t, hi: t > t1 + 1 ? [[s.c, s.r, C.gold, .25], [s.nc, s.nr, C.gold, .12]] : null }); pip(m.x, m.y, m.face, t);
+     if (t < t1) caption('walk 2 (sped up)');
+     else if (t < t1 + 7.6) card(['reward 0  +  0.9 × 0.2   =   target 0.18', 'new guess  =  0 + 0.2 × (0.18 − 0)', { s: '=  0.036     news moved one cell back', c: '#8a5d08' }], t - t1 - 1.1);
+     else { bubble('+1', cx(4), cy(0) - 18, t - t1 - 7.5); card(['and the cheese neighbour again:', '0.2 + 0.2 × (1 − 0.2)  =  0.36'], t - t1 - 7.8, { gap: .8 }); } } },
+ { h: '200 walks later', p: ['Repeat for 200 walks. The good news spreads backward from the cheese, one cell at a time, and Pip’s walks get shorter.', 'Its first walks took 14, 33, 68 and 73 steps. Soon most take about 8 to 10. A rose bar means the cat won. Cells Pip never visits keep their 0.'],
+   draw(t) { let w, k; if (t < 6) { w = 2 + Math.floor(t / .75); k = (t % .75) / .75; } else { w = 10 + Math.floor((t - 6) / .05); k = ((t - 6) % .05) / .05; }
+     const done = w >= E.length; if (done) { w = E.length - 1; k = 1; }
+     const tr = E[w].tr, i = Math.min(tr.length - 1, Math.floor(k * tr.length)), q = tr[i];
+     const V = done ? FIN : Vat(w, i); maze({ V, nums: 1, t }); pip(done ? cx(4) : cx(q.c), done ? cy(0) : cy(q.r), 1, t);
+     strip(lens, ends, done ? E.length : w, 'steps per walk', 80); caption(done ? 'walk 200 of 200' : `walk ${w + 1} of 200`); } },
+ { h: 'Read the map', p: ['Draw an arrow from each cell to its best-looking neighbour, and the notebook becomes a **route**. Following the arrows, Pip reaches the cheese in 7 steps: the shortest path.', 'Peeking works because Pip knows where each move leads. Without that map, you would learn values for moves instead.'],
+   draw(t) { maze({ V: FIN, nums: 1, t });
+     let n = 0; for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) { const k = T.key(c, r); if (T.term(c, r) || T.isRock(c, r)) continue;
+       if (Math.abs(FIN[k]) < .004) { txt('?', cx(c), cy(r) + 4, { s: 18, c: '#c2b6a6', a: clamp(t - 3) }); continue; }
+       const a = clamp((t - .4 - n++ * .18) * 3); if (a <= 0) continue; const [dx, dy] = T.MOVES[T.greedy(FIN, c, r, .9)]; ctx.globalAlpha = a; arrow(cx(c) - dx * 9, cy(r) - dy * 9 + 4, cx(c) + dx * 15, cy(r) + dy * 15 + 4, 400 + k, { c: '#8a5d08', w: 1.5 }); ctx.globalAlpha = 1; }
+     const t2 = t - 3.6, kk = clamp(Math.floor(t2 / .7), 0, PATH.length - 1), u = ease((t2 % .7) / .7 * 1.3), a = PATH[kk], b = PATH[Math.min(PATH.length - 1, kk + 1)];
+     if (t2 > 0) trail(PATH.slice(0, kk + 1), .7);
+     pip(t2 > 0 ? lerp(cx(a[0]), cx(b[0]), u) : cx(0), t2 > 0 ? lerp(cy(a[1]), cy(b[1]), u) : cy(3), t2 > 0 ? (b[0] - a[0]) : 1, t);
+     if (t2 > 0) caption(`following the arrows: ${Math.min(kk + (kk < PATH.length - 1 && u > .5 ? 1 : 0), PATH.length - 1)} steps`); else caption('? = no useful guess here yet', clamp(t - 3)); } },
+ { h: 'Your turn', ctl: true, p: ['Drag **γ** to rerun all 200 walks. With a small γ, a far-away cheese barely counts, so the values fade quickly away from it.', 'Tap any cell to drop Pip there and watch it follow the arrows. In the corner it never explored, it has no clue which way to go.'],
+   draw(t, st) { const g = GAMMAS[st.gi ?? 4], Rn = RUN(g), V1 = Rn.eps[Rn.eps.length - 1].V, prev = st.prevV || V1, u = ease((t - (st.changed ?? -9)) / .9);
+     const V = V1.map((v, i) => lerp(prev[i], v, u)); maze({ V, nums: 1, t });
+     for (let r = 0; r < T.ROWS; r++) for (let c = 0; c < T.COLS; c++) { if (T.term(c, r) || T.isRock(c, r) || Math.abs(V1[T.key(c, r)]) < .004) continue; const [dx, dy] = T.MOVES[T.greedy(V1, c, r, g)]; ctx.globalAlpha = .45; arrow(cx(c) - dx * 9, cy(r) - dy * 9 + 4, cx(c) + dx * 13, cy(r) + dy * 13 + 4, 500 + c * 5 + r, { c: '#8a5d08', w: 1.2 }); ctx.globalAlpha = 1; }
+     const P = st.path; if (P) { const t2 = t - st.pt, kk = clamp(Math.floor(t2 / .45), 0, P.length - 1), uu = ease((t2 % .45) / .45 * 1.3), a = P[kk], b = P[Math.min(P.length - 1, kk + 1)];
+       trail(P.slice(0, kk + 1), .7); pip(lerp(cx(a[0]), cx(b[0]), uu), lerp(cy(a[1]), cy(b[1]), uu), b[0] - a[0], t);
+       caption(kk >= P.length - 1 ? (st.why ? (P.length > 1 ? `after ${P.length - 1} steps: ` : '') + st.why : `reached the ${T.term(...P[P.length - 1]) > 0 ? 'cheese' : 'cat'} in ${P.length - 1} steps`) : `step ${kk}`);
+     } else { pip(cx(0), cy(3), 1, t); caption('tap a cell to drop Pip there'); }
+     txt(g <= .5 ? 'only cells right next to the cheese care about it' : g >= .95 ? 'even far cells feel the cheese (and the cat)' : 'the cheese’s pull fades with distance', W / 2, 312, { s: 17, c: C.soft }); } },
+ { h: 'Where you’ve seen this', p: ['Pip’s surprise at the cheese fades toward 0 as the guess next to it climbs. Each rose tick is a walk where Pip stumbled into the cat from that cell: the guess drops, and the surprise comes back.', 'In the 1990s, scientists found that **dopamine** neurons fire much like a TD error. And TD learning powered TD-Gammon (1992), a backgammon program that learned by playing itself.'],
+   draw(t) { maze({ V: FIN, nums: 1, t }); pip(cx(3), cy(0), 1, t); const n = Math.min(E.length, Math.floor(t * 30));
+     strip(surprise.map(v => v == null ? null : v * 80), ends, n, 'surprise at the cheese, walk by walk', 80, true); caption(n >= E.length ? 'gold = surprise at the cheese · rose = met the cat' : ''); } },
+];
+
+// Pip follows its notebook from a cell; stops if every neighbour looks the same (no clue) or it loops
+function follow(V, g, from) {
+  let [c, r] = from; const P = [[c, r]], seen = new Set([T.key(c, r)]);
+  while (!T.term(c, r) && P.length < 30) {
+    const qs = []; for (let m = 0; m < 4; m++) { const [nc, nr] = T.step(c, r, m); if (nc === c && nr === r) continue; const rw = T.term(nc, nr); qs.push(rw + (rw ? 0 : g * V[T.key(nc, nr)])); }
+    if (Math.max(...qs) - Math.min(...qs) < 1e-9) return { P, why: 'no clue here: every direction looks the same' };
+    [c, r] = T.step(c, r, T.greedy(V, c, r, g)); P.push([c, r]);
+    if (seen.has(T.key(c, r))) return { P, why: 'going in circles' }; seen.add(T.key(c, r));
+  }
+  return { P, why: null };
+}
+// small chart under the maze (walk lengths or surprises)
+function strip(vals, ends, n, label, max, dots) {
+  const x0 = 40, x1 = 360, y0 = 384, y1 = 300, w = (x1 - x0) / vals.length;
+  rline(x0, y0, x1, y0, 900, { c: '#b8ab9a', w: 1 }); txt(label, x0, y1 - 2, { s: 14, al: 'left', c: C.soft });
+  for (let i = 0; i < n; i++) { const v = vals[i]; if (v == null && !(dots && ends[i] < 0)) continue; const h = Math.min(max, v) / max * (y0 - y1 - 14);
+    if (dots && ends[i] < 0) { rline(x0 + i * w + w / 2, y0 + 2, x0 + i * w + w / 2, y1 + 10, 950 + i, { c: C.rose, w: 1.2, once: true, j: .6 }); continue; }
+    if (dots) { ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(x0 + i * w + w / 2, y0 - h, 2.1, 0, 7); ctx.fill(); }
+    else { ctx.fillStyle = ends[i] > 0 ? C.teal : C.rose; ctx.fillRect(x0 + i * w + .2, y0 - h, Math.max(1, w - .5), h); } }
+  if (!dots) { txt('1', x0, y0 + 10, { s: 12, c: C.soft }); txt('200', x1, y0 + 10, { s: 12, c: C.soft }); }
+  else { txt('1.0', x0 - 14, y0 - (y0 - y1 - 14), { s: 12, c: C.soft }); txt('0', x0 - 10, y0, { s: 12, c: C.soft }); }
+}
+
+// ───── app shell ─────
+const cv = document.getElementById('cv'), $h = document.getElementById('h'), $t = document.getElementById('text'), $bars = document.getElementById('bars'), $ctl = document.getElementById('ctl'), $g = document.getElementById('g'), $go = document.getElementById('go'), $count = document.getElementById('count');
+$bars.innerHTML = STEPS.map(() => '<i><b></b></i>').join('');
+let cur = 0, t0 = performance.now(), st = {};
+const md = s => s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+function go(i) {
+  cur = clamp(i, 0, STEPS.length - 1); t0 = performance.now(); const prevG = st.gi; st = { gi: prevG ?? 4 };
+  const s = STEPS[cur]; $h.textContent = s.h; $h.className = 'fade'; $t.innerHTML = s.p.map(p => `<p>${md(p)}</p>`).join(''); $t.className = 'fade';
+  void $h.offsetWidth; $ctl.style.display = s.ctl ? 'flex' : 'none'; $count.textContent = `${cur + 1} / ${STEPS.length}`;
+  [...$bars.children].forEach((b, k) => b.className = k < cur ? 'done' : ''); try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+}
+function resize() { const d = Math.min(3, devicePixelRatio || 1); cv.width = W * d; cv.height = H * d; }
+function frame(now) {
+  const t = (now - t0) / 1000; ctx = cv.getContext('2d'); const d = cv.width / W; ctx.setTransform(d, 0, 0, d, 0, 0);
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  try { STEPS[cur].draw(t, st); } catch (e) { console.error(e); }
+  const b = $bars.children[cur]?.firstChild; if (b) b.style.width = Math.min(100, t / 14 * 100) + '%';
+  requestAnimationFrame(frame);
+}
+$g.addEventListener('input', () => { const R0 = RUN(GAMMAS[st.gi ?? 4]); st.prevV = R0.eps[R0.eps.length - 1].V; st.gi = +$g.value; $go.textContent = GAMMAS[st.gi]; st.changed = (performance.now() - t0) / 1000; st.path = null; });
+cv.addEventListener('click', e => {
+  const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
+  if (STEPS[cur].ctl) { const c = Math.floor((x - OX) / CS), rr = Math.floor((y - OY) / CS);
+    if (c >= 0 && c < T.COLS && rr >= 0 && rr < T.ROWS && !T.isRock(c, rr) && !T.term(c, rr)) { const g = GAMMAS[st.gi ?? 4], Rn = RUN(g); const f = follow(Rn.eps[Rn.eps.length - 1].V, g, [c, rr]); st.path = f.P; st.why = f.why; st.pt = (performance.now() - t0) / 1000; }
+    return; }
+  const keep = st.gi; t0 = performance.now(); st = { gi: keep };
+});
+$t.addEventListener('click', e => { const r = $t.getBoundingClientRect(); go(cur + (e.clientX - r.left < r.width * .3 ? -1 : 1)); });
+let sx = null, sy = null;
+document.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+document.addEventListener('touchend', e => { if (sx == null || e.target === $g) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(cur + (dx < 0 ? 1 : -1)); else if (Math.abs(dy) > 60) go(cur + (dy < 0 ? 1 : -1)); sx = null; });
+addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(cur + 1); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(cur - 1); });
+addEventListener('resize', resize); resize();
+go((+location.hash.slice(1) || 1) - 1); requestAnimationFrame(frame);
+window.__td = { go, STEPS, get cur() { return cur; }, setT(s) { t0 = performance.now() - s * 1000; } };
+})();
+</script>
+</body>
+</html>
