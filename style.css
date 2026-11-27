@@ -236,3 +236,5 @@ canvas.touch { cursor: pointer; touch-action: none; outline: 2px dashed hsl(var(
 .reel.story .foot .lab { color: #6d6a78; }
 .reel.story .foot { padding-top: 10px; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
 .reel > .paused { position: absolute; }   /* was pushed into the flow by ".reel > *" and stole 84px under every slide */
+.reel.story.mid .foot { display: none; }
+.reel.story .stext.scroll { -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); padding-bottom: 18px; }   /* hint that more text is below (tiny screens only) */

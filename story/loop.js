@@ -108,7 +108,7 @@ const STEPS = [
      alpha(a2, () => { rrect(OX - 7, OY - 7, 5 * CS + 14, 4 * CS + 14, 805, { c: C.gold, w: 2.4 }); });
      card([{ s: 'agent = Pip, the one who chooses', c: '#2f7f7b' }, { s: 'environment = the maze and all its rules', c: C.goldInk }, { s: 'they take turns, step after step', c: C.soft }], t - .8, { gap: 2 }); } },
 
- { h: 'State: where things stand', p: ['The **state** describes the situation now. Here the cheese, the cat and the rocks never move, so the state is just Pip’s cell. We number the cells 1 to 20; Pip starts in cell 16.', 'What the agent senses is its **observation**. Pip always knows its cell, so here the two are the same. A robot with a camera sees only part of a room; then they differ, and the agent must act on what it observes.'],
+ { h: 'State: where things stand', p: ['The **state** describes the situation now. Since the cheese, cat and rocks never move, it is just Pip’s cell. Cells are numbered 1 to 20; Pip starts in 16.', 'What the agent senses is its **observation**. Pip always knows its cell, so here they match. A camera robot sees only part of a room; then they differ, and it must act on what it observes.'],
    shot: [3, 9],
    draw(t) { maze({ t, hi: t > 3.5 ? [[0, 3, C.teal, .25]] : null }); nums(clamp((t - .6) * 1.5), t > 3.5); pip(cx(0), cy(3), 1, t);
      card(['state = which cell Pip is in', 'Pip starts in cell 16', { s: 'cells 7 and 13 are rocks: 18 cells Pip can be in', c: C.soft }], t - 3.6, { gap: 1.2 }); } },
@@ -126,7 +126,7 @@ const STEPS = [
      if (t > 7.5) rcard([`down from 16: wall  →  still in 16`, `left from 16: wall  →  still in 16`], 1 + t - 7.5, { y: 300, gap: 0 });
      if (t > 5.6 && t < 6.6) bumpMark(0, 3, 2, 1); if (t > 8.1 && t < 9.1) bumpMark(0, 3, 3, 1); } },
 
- { h: 'Reward: one number per step', p: ['After every action the environment hands Pip a **reward**, a single number. The rule: stepping onto the cheese pays +1, stepping onto the cat pays −1, and every other step pays 0, bumps included. Cheese or cat ends the walk.', 'The task’s designer chose these numbers. Pip cannot change them and does not know them in advance. The one thing built into Pip is that more reward is better.'],
+ { h: 'Reward: one number per step', p: ['After every action the environment hands Pip a **reward**, a single number. Stepping onto the cheese pays +1, onto the cat −1, and every other step 0, bumps included. Cheese or cat ends the walk.', 'The task’s designer chose these numbers. Pip cannot change them and does not know them in advance. Built into Pip is only this: more reward is better.'],
    shot: [4, 10],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { if (G.isRock(c, r)) continue; const v = G.term(c, r), a = clamp((t - .8 - (v ? 1.5 : 0)) * 2);
@@ -147,7 +147,7 @@ const STEPS = [
      if (t > 4.5) { const u = ((t - 4.5) / 4) % 1, P = u < .5 ? [lerp(A.x + 20, E.x - 20, u * 2), A.y - 50] : [lerp(E.x - 20, A.x + 20, (u - .5) * 2), A.y + 52]; dot(P[0], P[1], 5, C.rose); }
      card(['1. agent sees the state', '2. agent picks an action', '3. environment answers: next state + reward', { s: '4. back to 1, from the new state', c: C.soft }], t - 4.6, { gap: 1, lh: 22 }); } },
 
- { h: 'Counting time', p: ['We count time: t = 0, 1, 2, and so on. At time t, Pip is in state S t and picks action A t.', 'The answer comes one tick later, so it carries the next number: R t+1 is the reward for action A t. A walk reads S0, A0, R1, S1, A1, R2, and on. So the third move is A2, it pays R3, and a walk of 14 moves ends at t = 14.'],
+ { h: 'Counting time', p: ['Time counts t = 0, 1, 2, and on. At time t, Pip is in state S t and picks action A t.', 'The answer comes one tick later, so R t+1 is the reward for A t. A walk reads S0, A0, R1, S1, A1, R2, and on. The third move, A2, pays R3; a 14-move walk ends at t = 14.'],
    shot: [6, 12],
    draw(t) {
      const items = [['S', '0', 0], ['A', '0', 0], ['R', '1', 1], ['S', '1', 1], ['A', '1', 1], ['R', '2', 2], ['S', '2', 2], ['A', '2', 2], ['R', '3', 3], ['S', '3', 3]];
@@ -195,13 +195,13 @@ const STEPS = [
      if (t > 9.6) caption('Pip is back in cell 16: episode 2 starts', clamp(t - 9.6));
      rcard([[['S', String(N1 - 1)], ' = 10,   ', ['A', String(N1 - 1)], ' = up'], [['R', String(N1)], ' = +1,   ', ['S', String(N1)], ' = 5: cheese, walk over'], { parts: [`episode 1: ${N1} moves, total reward 1`], c: C.goldInk }], t + .2, { gap: 1.3 }); } },
 
- { h: 'Episode after episode', p: ['Let random Pip walk episode after episode. Here is a chart to keep score. Each bar is **one episode**: the further right, the later it was walked. Its height is how many steps it took.', `Teal means it ended at the cheese, rose means the cat. The first ten: 14 steps to the cheese, 13 to the cat, 67 to the cat, and so on. Only ${ENDS.slice(0, 10).filter(v => v > 0).length} of these 10 reach the cheese.`],
+ { h: 'Episode after episode', p: ['Let random Pip walk episode after episode. On this chart each bar is **one episode**: further right means walked later. Its height is how many steps it took.', `Teal ended at the cheese, rose at the cat. The first ten: 14 steps to the cheese, 13 to the cat, 67 to the cat, and so on. Only ${ENDS.slice(0, 10).filter(v => v > 0).length} of these 10 reach the cheese.`],
    shot: [5, 12],
    draw(t) { const n = clamp(Math.floor((t - 1.2) / .9) + 1, 0, 10); maze({ t }); nums(.35);
      if (n > 0) { const e = n - 1, l = EPS[e][LENS[e] - 1]; trail(EPS[e].map(q => [q.c, q.r]).slice(-40), .45); pip(cx(l.nc), cy(l.nr) + (ENDS[e] > 0 ? 0 : 14), 1, t); caption(`episode ${n}: ${LENS[e]} steps, ${ENDS[e] > 0 ? 'cheese' : 'cat'} · dots: its last steps`); }
      epChart(n, { slots: 10, label: () => true }); } },
 
- { h: 'What blind wandering gets', p: [`After 100 episodes only ${NCHEESE} reached the cheese. One clear reason: the cat can be entered from four open cells, the cheese from only two, and the cat sits on the way to the cheese.`, `Episodes are long, ${Math.round(MEANLEN)} steps on average; we counted about ${Math.round(BUMPS * 10)} moves in 10 being bumps. Some bars are too tall to draw, so a small arrow marks them; those episodes still ran to the cheese or cat.`],
+ { h: 'What blind wandering gets', p: [`After 100 episodes only ${NCHEESE} reached the cheese. One clear reason: the cat can be entered from four open cells, the cheese from only two, and the cat sits on the way to the cheese.`, `Episodes average ${Math.round(MEANLEN)} steps; about ${Math.round(BUMPS * 10)} moves in 10 are bumps. A small arrow marks bars too tall to draw; those episodes still ended at the cheese or cat.`],
    shot: [4, 11],
    draw(t) { maze({ t });
      const into = (from, to, col, a, sd) => { if (a <= 0) return; const dx = to[0] - from[0], dy = to[1] - from[1]; alpha(a, () => arrow(cx(from[0]) + dx * 8, cy(from[1]) + dy * 8, cx(to[0]) - dx * 22, cy(to[1]) - dy * 22, sd, { c: col, w: 2 })); };
@@ -229,7 +229,7 @@ const STEPS = [
        txt('grey arrows = bumps', 44, 268, { s: 12, al: 'left', c: C.soft, a: clamp(t - 8) }); }
      card([{ s: 'the reward never says which move was right', c: C.soft }, { s: 'it only says how things turned out', c: C.soft }], t - 9, { y: 300, gap: 1 }); } },
 
- { h: 'The goal', p: ['So what is Pip trying to do? Collect as much reward as it can **in total** over an episode, not just on the next step. Here every move but the last pays 0, so the next reward alone says almost nothing.', `A rule for choosing actions is called a **policy**. Rolling the die is one, the random policy, and it averages ${AVGR.toFixed(2).replace('-', '−')} per episode. Later reels find much better ones.`],
+ { h: 'The goal', p: ['What is Pip trying to do? Collect the most reward **in total** over an episode, not just on the next step. Every move but the last pays 0, so the next reward alone says almost nothing.', `A rule for choosing actions is a **policy**. Rolling the die is one, the random policy; it averages ${AVGR.toFixed(2).replace('-', '−')} per episode. Later reels find much better ones.`],
    shot: [4, 10],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      const a = clamp(t - .8); txt(`× ${NCHEESE}`, cx(4) - 34, cy(0) + 2, { s: 18, c: C.goldInk, a, al: 'right' }); txt(`× ${NCAT}`, cx(3) - 30, cy(1) + 4, { s: 18, c: C.roseInk, a, al: 'right' });
@@ -253,7 +253,7 @@ const STEPS = [
      caption(st.done ? 'tap anywhere for a new episode' : '');
    } },
 
- { h: 'The same loop, everywhere', p: ['The loop is the same in far bigger problems. DeepMind’s Atari player DQN, in 2015, saw the screen pixels, chose joystick moves, and was rewarded by the change in game score.', 'AlphaGo, in 2016, got its reward only at the end of a game: win or lose. Chat assistants are tuned with RL from human feedback, RLHF: often the whole reply counts as one action, scored once by a model of which answers people prefer.'],
+ { h: 'The same loop, everywhere', p: ['Bigger problems use the same loop. DeepMind’s Atari player DQN, in 2015, saw screen pixels, chose joystick moves, and was rewarded by score changes.', 'AlphaGo, in 2016, was rewarded only at a game’s end: win or lose. Chat assistants are tuned with RL from human feedback, RLHF: often the whole reply is one action, scored once by a model of which answers people prefer.'],
    shot: [4, 10],
    draw(t) {
      const xs = [16, 108, 200, 288], head = ['agent', 'observes', 'acts', 'reward'];

@@ -279,26 +279,26 @@ function proj(h, g) { const out = new Array(NB).fill(0); h.forEach((v, i) => { c
 function tapSummary(st) { if (!st.tap) return null; if (!st.sum) st.sum = summary(walksFrom(nA().net, st.tap[0], st.tap[1], -1, 400, 77)); return st.sum; }
 
 const STEPS = [
- { h: 'Six upgrades', p: ['Pip’s DQN has a replay memory and a frozen copy for the targets, and the last reel added the Double DQN trick. Each came from a different paper. In 2017, Matteo Hessel and colleagues at DeepMind stacked **six** such upgrades into one agent and called it **Rainbow**.', 'Two of the six are new to you. This reel opens them up in the meadow: **dueling heads** and **distributional** learning. Then the whole list.'],
+ { h: 'Six upgrades', p: ['Pip’s DQN has a replay memory, a frozen copy for the targets and, from the last reel, the Double DQN trick. Each came from a different paper. In 2017 Matteo Hessel and colleagues at DeepMind stacked **six** such upgrades into one agent: **Rainbow**.', 'This reel opens up two new ones in the meadow, **dueling heads** and **distributional** learning, then lists all six.'],
    shot: [3, 10],
    draw(t) { D.meadow({ t, labels: clamp(t - .5) }); D.pipAt(.1, .1, 1, t);
      card(['so far: replay, frozen copy, Double DQN', { s: 'new here: dueling heads', c: C.goldInk }, { s: 'new here: distributional learning', c: C.goldInk }, { s: 'Rainbow (2017): six upgrades in one agent', c: C.soft }], t - 2, { gap: 1.2 }); } },
- { get p() { const N = nA(); return [`Here is Pip’s trained network from the DQN reel, run 1, after 8000 moves, without the Double trick. At the start, bottom left, its four Q-values are ${N.qStart.map(f2).join(', ')}. They are close: from out here, every move leaves a long way to go.`,
-     `Across the 30 test spots, the best Q-value runs from ${f2(N.lo)} to ${f2(N.hi)}, while at a typical test spot the best and worst move differ by only ${f2(N.sp)}. **Where** Pip stands often matters more than **which** move it makes.`]; },
+ { get p() { const N = nA(); return [`Pip’s DQN-reel network, run 1, after 8000 moves, no Double trick: at the bottom-left start its Q-values are ${N.qStart.map(f2).join(', ')}. Close: from out here, every move leaves a long way to go.`,
+     `Over the 30 test spots the best Q-value spans ${f2(N.lo)} to ${f2(N.hi)}, but best and worst moves typically differ by only ${f2(N.sp)}. **Where** Pip stands often matters more than **which** move.`]; },
    h: 'Does the move matter?', shot: [4, 11],
    draw(t) { if (busyKeys(['p0'], 330)) { D.meadow({ t }); return; } const N = nA(); D.meadow({ t, heat: (x, y) => Math.max(...D.qOf(N.net, x, y)), heatA: clamp(t - 5) * .8 });
      D.pipAt(.1, .1, 1, t); spotMark(.1, .1, '', 1);
      qRow(N.qStart, 76, 312, { a: i => clamp(t - .8 - i * .3), hi: D.argmax(N.qStart) }); txt('start', 40, 325, { s: 15, c: C.soft });
      if (t > 5) caption('gold squares: best Q-value at each spot (for drawing only)', clamp(t - 5)); } },
- { get p() { return ['Split each Q-value in two: a part for the spot, **V**, and a part for the move, its **advantage** **A**: Q = V + A. But adding 0.1 to V and taking 0.1 from every A leaves every Q the same, so the split needs a rule.',
-     'The rule: subtract the average of the four A’s. Then V is the plain average of the four Q’s, the value of a random first move: not the values reel’s V, which weights moves by how often Pip picks them. Just a convenient middle point.']; },
+ { get p() { return ['Split each Q-value into a spot part, **V**, and a move part, its **advantage** **A**: Q = V + A. Shifting 0.1 between V and the A’s changes no Q, so the split needs a rule.',
+     'The rule: subtract the four A’s average. V then equals the four Q’s plain average, the value of a random first move; not the values reel’s V, which weights moves by Pip’s choices.']; },
    h: 'Spot plus move', shot: [4, 12],
    draw(t) { D.meadow({ t }); dimScene(.75);
      txt('Q (spot, move)  =  V (spot)  +  A (spot, move)', W / 2, 70, { s: 19, a: clamp(t - .5) });
      txt('V: the spot’s part (here: average of the 4 Q’s)', W / 2, 115, { s: 17, c: C.goldInk, a: clamp(t - 2) }); txt('A: how far this move is above or below that', W / 2, 145, { s: 17, c: TEAL, a: clamp(t - 3.2) });
      card(['V + 0.1 and every A − 0.1: same Q-values', { s: 'so: subtract the average of the four A’s', c: C.goldInk }, { s: 'V = average Q, not the value under Pip’s habit', c: C.soft }], t - 5.5, { gap: 1.3 }); } },
- { get p() { const N = nD(), q = N.qS; return ['A **dueling network** builds this into its shape (Ziyu Wang and colleagues, 2016). The same hidden layer feeds two heads: one output for V, four for the advantages. Then Q = V + A − the average of the A’s.',
-     `This one was trained like Pip’s DQN, same seeds. At the start it says V = ${f2(N.oS[0])}; the four A’s average ${f2(N.aM)}. So the four Q-values come out ${q.map(f2).join(', ')}, and they average ${f2(N.oS[0])}, the V.`]; },
+ { get p() { const N = nD(), q = N.qS; return ['A **dueling network** builds this into its shape (Ziyu Wang and colleagues, 2016). One hidden layer feeds two heads: one output for V, four for the advantages. Then Q = V + A − average A.',
+     `Trained like Pip’s DQN, same seeds, it starts at V = ${f2(N.oS[0])}; the four A’s average ${f2(N.aM)}. The Q-values come out ${q.map(f2).join(', ')}, averaging ${f2(N.oS[0])}: the V.`]; },
    h: 'Two heads', shot: [4, 12],
    draw(t) { if (busyKeys(['d0'], 200)) return; const N = nD(), f = D.feats(D.START[0], D.START[1]), q = qDuel(N.Dn.net, f);
      D.drawNet(N.Dn.net, { x: 110, y: 30, w: 150, h: 200 }, { inL: D.FNAMES, outL: ['V', 'A up', 'A right', 'A down', 'A left'], f, a: clamp(t - .3), build: clamp((t - .3) / 2), outFmt: f2 });
@@ -306,7 +306,7 @@ const STEPS = [
      txt('at the start spot', 110, 250, { s: 14, c: C.soft, a: clamp(t - 3) });
      if (t > 5) { txt(`average of the four A’s: ${f2(N.aM)}, subtracted`, W / 2, 292, { s: 15, a: clamp(t - 5) }); txt('Q = V + A − average A', W / 2, 316, { s: 15, c: C.soft, a: clamp(t - 6) });
        qRow(q, 76, 350, { a: i => clamp(t - 7 - i * .3), hi: D.argmax(q) }); } } },
- { h: 'Why bother?', p: ['Each card in the replay memory is about one move: where Pip stood, which move, what followed. In a plain Q-network, the card is a lesson for that move’s output.', 'A plain network’s outputs share hidden knobs, so a card nudges the other three a little too, but only indirectly. In a dueling network, V sits inside every Q-value, so every card trains V directly, whatever the move. The advantage head only has to learn the differences, small in most of the meadow.'],
+ { h: 'Why bother?', p: ['Each replay card is about one move: where Pip stood, which move, what followed. In a plain Q-network, it teaches that move’s output; shared hidden knobs nudge the other three only indirectly.', 'In a dueling network, V sits inside every Q-value, so every card trains V directly, whatever the move. The advantage head only learns the differences, small in most of the meadow.'],
    shot: [4, 12],
    draw(t) { D.meadow({ t }); dimScene(.7); const n = D.newNet(4, 8, 4, 7000), m = D.newNet(4, 8, 5, 7000); dimScene(.25);
      txt('plain', 105, 40, { s: 17, c: ORG, a: clamp(t - .5) }); D.drawNet(n, { x: 50, y: 56, w: 100, h: 130 }, { a: clamp(t - .5), outL: MN, hl: t > 2 ? 0 : -1, wa: .5 });
@@ -314,23 +314,23 @@ const STEPS = [
      if (t > 2) txt('a card about “up”: one output learns', 105, 210, { s: 14, c: ORG, a: clamp(t - 2) });
      if (t > 5) txt('the same card also teaches V', 285, 210, { s: 14, c: TEAL, a: clamp(t - 5) });
      card(['V hears from every card', 'A learns only the differences', { s: 'helps most where the move barely matters', c: C.soft }], t - 7, { gap: 1.2 }); } },
- { get p() { const N = nA(); return ['Here is what the dueling network learned, run 1, after 8000 moves. Left: **V** at every spot, deeper gold for higher. It rises toward the cheese and is lowest just below and left of the cat, where every route has to go the long way round.',
-     'Right: how much the move matters there, the largest advantage minus the smallest. It is strongest all around the cat, where one wrong step costs a lot, and palest in the bottom-left corner and in a band below the cat, where several moves are about equally good. The two heads split the question as hoped.']; },
+ { get p() { const N = nA(); return ['Dueling network, run 1, 8000 moves. Left: **V** at every spot, rising toward the cheese, lowest just below and left of the cat, where every route goes the long way round.',
+     'Right: how much the move matters, largest advantage minus smallest. Strongest around the cat, where one wrong step costs a lot; palest bottom left and in a band below the cat, where moves are about equally good. The heads split the question as hoped.']; },
    h: 'Two maps', shot: [4, 11],
    draw(t) { if (busyKeys(['d0'], 150)) return; const N = nD(), s = .7;
      mini(12 - D.FX * s, 46 - D.FY * s, s, () => D.meadow({ t, heat: (x, y) => vMap(N.Dn.net)(x, y) - .2, vmax: .5, heatA: clamp(t - .5), tufts: .4 }));
      mini(208 - D.FX * s, 46 - D.FY * s, s, () => D.meadow({ t, heat: aMap(N.Dn.net), heatA: clamp(t - 2.5), vmax: .45, tufts: .4 }));
      txt('V: value of the spot', 102, 30, { s: 16, c: C.goldInk, a: clamp(t - .5) }); txt('how much the move matters', 298, 30, { s: 16, c: TEAL, a: clamp(t - 2.5) });
      card(['left: V, the dueling net’s spot value', 'right: largest A − smallest A', { s: 'deeper colour = bigger; squares only for drawing', c: C.soft }], t - 4, { y: 252, gap: 1.2 }); } },
- { get p() { const N = nR(), last = v => v[v.length - 1]; return ['Does it learn faster? Eight runs of each, same seeds: the same dice for starts, wobble and random moves, and the same 30 test spots, tested every 500 moves. Orange: plain. Teal: dueling. Thin: single runs; thick: averages.',
-     `After 8000 moves: ${f1(last(N.mP))} of 30 for plain, ${f1(last(N.mD))} for dueling. Single runs spread widely, so this gap is within the noise: about the same here, with four moves. Wang and colleagues saw clearer gains on Atari, with up to 18 moves.`]; },
+ { get p() { const N = nR(), last = v => v[v.length - 1]; return ['Does it learn faster? Eight runs each, same seeds for starts, wobble and random moves, same 30 test spots, tested every 500 moves.',
+     `After 8000 moves: ${f1(last(N.mP))} of 30 for plain, ${f1(last(N.mD))} for dueling. Single runs spread widely, so this gap is within the noise: about equal with four moves. Wang and colleagues saw clearer gains on Atari, with up to 18 moves.`]; },
    h: 'A fair race', shot: [5, 13],
    draw(t) { if (busyKeys(PK.concat(DK))) return; const N = nR(), n = clamp(Math.floor((t - .5) * 2.5), 0, 16), ser = [];
      KS.forEach(k => { ser.push({ v: N.evP[k], col: C.orange, w: 1, a: .3, n }); ser.push({ v: N.evD[k], col: C.teal, w: 1, a: .3, n }); });
      ser.push({ v: N.mP, col: ORG, w: 2.6, n }, { v: N.mD, col: TEAL, w: 2.6, n }); raceChart(ser);
      card([{ s: 'orange: plain DQN', c: ORG }, { s: 'teal: dueling DQN', c: TEAL }, { s: 'thin: single runs · thick: average of 8', c: C.soft }], t - 1, { y: 296, gap: 1.1 }); } },
- { get p() { const N = nA(); return [`Now the second upgrade. Take one spot, below and right of the cat, and let Pip walk from it ${NW} times, following its network with one move in five random, as in training. Each walk ends on the cheese, on the cat, or after 60 moves.`,
-     'The **return** of a walk counts the final +1 or −1, discounted by 0.9 for each move before it: cheese after 3 moves gives 0.9 × 0.9 = 0.81. Drawn here: six walks that found the cheese and two that met the cat. Same spot, same habit, different luck.']; },
+ { get p() { const N = nA(); return [`Now the second upgrade. From one spot, below and right of the cat, Pip walks ${NW} times, following its network, one move in five random. Each walk ends on the cheese, the cat, or after 60 moves.`,
+     'A walk’s **return** is the final +1 or −1, discounted by 0.9 per move before it: cheese after 3 moves gives 0.81. Drawn: six cheese walks, two cat walks. Same spot, same habit, different luck.']; },
    h: 'One spot, many futures', shot: [5, 12],
    draw(t) { if (busyKeys(['p0'], 330)) { D.meadow({ t }); return; } const N = nA(); D.meadow({ t });
      N.sh.forEach((w, i) => { const u = t - 1 - i * 1; if (u <= 0) return; D.path(w.P, Math.floor(u * 8) + 1, { c: w.end > 0 ? '#c99a3a' : w.end < 0 ? C.rose : C.grey, a: i === Math.min(7, Math.floor(t - 1)) ? 1 : .45 }); });
@@ -338,30 +338,30 @@ const STEPS = [
      N.sh.slice(0, clamp(Math.floor(t - 1.5), 0, 8)).forEach((w, i) => txt(w.end > 0 ? '+' + w.G.toFixed(2) : w.end < 0 ? '−' + Math.abs(w.G).toFixed(2) : '0', 46 + i * 44, 300, { s: 16, c: w.end < 0 ? C.roseInk : C.goldInk }));
      if (t > 2) txt('returns of eight of the walks', W / 2, 322, { s: 13, c: C.soft });
      card(['cheese after n moves: +0.9 to the power n − 1', 'cat after n moves: −0.9 to the power n − 1'], t - 9, { y: 340, gap: 1 }); } },
- { get p() { const N = nA(), S = N.S0; return [`Now sort all ${NW} returns into a **histogram**. Across: the return, from −1 on the left to +1 on the right, in slices 0.1 wide. Height: how many walks landed in that slice.`,
+ { get p() { const N = nA(), S = N.S0; return [`Now sort all ${NW} returns into a **histogram**. Across: the return, −1 to +1, in slices 0.1 wide. Height: how many walks landed in that slice.`,
      `Gold bars are walks that reached the cheese: ${S.ch} of them, spread by how many moves they took. Rose bars on the far left are walks that met the cat: ${S.cat}. ${S.to ? `${S.to} ran out of time.` : 'None ran out of time.'}`]; },
    h: 'A histogram of returns', shot: [4, 12],
    draw(t) { if (busyKeys(['p0'], 330)) return; const N = nA(); D.meadow({ t }); dimScene(.5); spotMark(SPOT[0], SPOT[1], 'the spot');
      histo(N.S0, { x0: 50, x1: 350, y0: 380, hh: 74, n: clamp(Math.floor((t - 1) * 3), 0, NB) });
      if (t > 2) txt('how many walks', 52, 296, { s: 13, c: C.soft, al: 'left', a: clamp(t - 2) }); txt('return of the walk', W / 2, 408, { s: 13, c: C.soft, a: clamp(t - 1) });
      if (t > 7) { txt(`cat: ${N.S0.cat}`, 64, 340, { s: 15, c: C.roseInk, a: clamp(t - 7) }); txt(`cheese: ${N.S0.ch}`, 330, 296, { s: 15, c: C.goldInk, a: clamp(t - 8), al: 'right' }); } } },
- { get p() { const N = nA(), S = N.S0; return [`A Q-value keeps just one number: the average return, here ${f2(S.m)}. Only ${S.near} of the ${NW} walks came within 0.1 of it; the rest scattered above and below, and the cat walks sit far off on the left.`,
+ { get p() { const N = nA(), S = N.S0; return [`A Q-value keeps just one number: the average return, here ${f2(S.m)}. Only ${S.near} of the ${NW} walks came within 0.1 of it; the rest scattered, the cat walks far off on the left.`,
      `And it hides the risk: ${pc(S.cat, NW)} of walks from here end on the cat. A single number cannot say whether ${f2(S.m)} is a sure thing or a gamble.`]; },
    h: 'The average hides it', shot: [4, 11],
    draw(t) { if (busyKeys(['p0'], 330)) return; const N = nA(); D.meadow({ t }); dimScene(.5); spotMark(SPOT[0], SPOT[1], 'the spot');
      histo(N.S0, { x0: 50, x1: 350, y0: 380, hh: 74, mean: t > 1.5 ? N.S0.m : null, ba: t > 4 ? .5 : .85 });
      if (t > 4) { const X = v => 50 + (v + 1) / 2 * 300; box(X(N.S0.m - .1), 300, X(N.S0.m + .1) - X(N.S0.m - .1), 80, C.teal, .18); txt(`${N.S0.near} walks within 0.1`, X(N.S0.m - .1) - 6, 318, { s: 14, c: TEAL, al: 'right', a: clamp(t - 4) }); }
      if (t > 6.5) txt(`cat: ${pc(N.S0.cat, NW)} of walks`, 60, 348, { s: 15, c: C.roseInk, al: 'left', a: clamp(t - 6.5) }); } },
- { get p() { const N = nA(); return [`From the same spot, force the first move, then carry on as before. First move up, past the cat’s edge: average ${f2(N.Su.m)}. First move down, away from it: average ${f2(N.Sd.m)}. Almost the same number.`,
-     `But up meets the cat in ${pc(N.Su.cat, NW)} of walks, down in only ${pc(N.Sd.cat, NW)}. Two moves with nearly equal averages carry very different risks. Unforced, the network goes right here; down averages a little lower because its way round is longer.`]; },
+ { get p() { const N = nA(); return [`Force the first move from the same spot, then carry on. Up first, past the cat’s edge: average ${f2(N.Su.m)}. Down first, away from it: ${f2(N.Sd.m)}. Almost the same.`,
+     `But up meets the cat in ${pc(N.Su.cat, NW)} of walks, down in only ${pc(N.Sd.cat, NW)}. Nearly equal averages, very different risks. Unforced, the network goes right here; down averages slightly lower because its way round is longer.`]; },
    h: 'Same average, different risk', shot: [4, 12],
    draw(t) { if (busyKeys(['p0'], 200)) return; const N = nA(), mx = Math.max(...N.Su.h, ...N.Sd.h);
      txt('first move up', 50, 40, { s: 16, al: 'left', c: C.ink }); histo(N.Su, { x0: 50, x1: 350, y0: 150, hh: 70, max: mx, mean: t > 2 ? N.Su.m : null, a: clamp(t - .3) });
      txt('first move down', 50, 205, { s: 16, al: 'left', c: C.ink, a: clamp(t - 3) }); histo(N.Sd, { x0: 50, x1: 350, y0: 315, hh: 70, max: mx, mean: t > 4.5 ? N.Sd.m : null, a: clamp(t - 3) });
      if (t > 6) { txt(`cat ${pc(N.Su.cat, NW)}`, 60, 120, { s: 15, c: C.roseInk, al: 'left', a: clamp(t - 6) }); txt(`cat ${pc(N.Sd.cat, NW)}`, 60, 285, { s: 15, c: C.roseInk, al: 'left', a: clamp(t - 6.5) }); }
      caption(`from the spot (${SPOT[0]}, ${SPOT[1]}), ${NW} walks each`, clamp(t - 1)); } },
- { p: ['**Distributional** RL learns the whole histogram for every move (Marc Bellemare, Will Dabney and Rémi Munos, 2017). Their **C51** network gives, for each move, the chances of 51 fixed return values.',
-     'The target: Pip moved right, reward 0. Take the histogram where it landed, squeeze it toward 0 by 0.9, add the reward. Here the histograms come from walks, not a trained network, and real C51 uses the best move at the landing spot: this shows the idea.'],
+ { p: ['**Distributional** RL learns the whole histogram for every move (Marc Bellemare, Will Dabney and Rémi Munos, 2017). Their **C51** network gives each move the chances of 51 fixed return values.',
+     'Target: Pip moved right, reward 0; take the landing spot’s histogram, squeeze it toward 0 by 0.9, add the reward. Ours come from walks; real C51 learns them, using the best move where it landed.'],
    h: 'Learning a histogram', shot: [4, 12],
    draw(t) { if (busyKeys(['p0'], 200)) return; const N = nA(), mx = Math.max(...N.Sl.h), u = ease((t - 4) / 2), q = lerp(1, .9, u);
      D.meadow({ t }); dimScene(.55); spotMark(SPOT[0], SPOT[1], ''); spotMark(N.land.x, N.land.y, 'landed', 1, TEAL);
@@ -370,15 +370,15 @@ const STEPS = [
      if (t > 4) histo(N.Sl, { x0: 50, x1: 350, y0: 380, hh: 70, max: mx, ba: .2 }); histo(N.Sl, { x0: 50, x1: 350, y0: 380, hh: 70, max: mx, sq: q, a: clamp(t - 1.5) });
      txt(t < 4 ? 'returns from the landing spot' : 'squeezed by 0.9, plus reward 0: the target', W / 2, 296, { s: 15, c: t < 4 ? TEAL : C.goldInk, a: clamp(t - 1.5) });
      } },
-  { h: 'Back onto the bins', p: ['The squeezed bars no longer sit on the fixed return values. So each squeezed bar is split between its two nearest fixed values, more to the nearer one. Now the target is again one chance per fixed value.',
-     'The network’s histogram for that move is then nudged toward the target. The loss measures how far apart the two histograms are (cross-entropy), much as squared error measured the gap between two numbers.'],
+  { h: 'Back onto the bins', p: ['The squeezed bars no longer sit on the fixed return values. So each is split between its two nearest fixed values, more to the nearer. Now the target is again one chance per fixed value.',
+     'The network’s histogram for that move is then nudged toward the target. The loss, cross-entropy, measures how far apart the histograms are, as squared error did for two numbers.'],
    shot: [4, 11],
    draw(t) { if (busyKeys(['p0'], 200)) return; const N = nA(), P = proj(N.Sl.h, .9), mx = Math.max(...N.Sl.h, ...P), u = clamp((t - 3) / 1.5);
      txt('squeezed bars (faint) split back onto the fixed bins', W / 2, 60, { s: 15, c: C.goldInk });
      histo(N.Sl, { x0: 50, x1: 350, y0: 200, hh: 100, max: mx, sq: .9, ba: lerp(.85, .25, u) });
      if (t > 3) histo({ h: P }, { x0: 50, x1: 350, y0: 200, hh: 100, max: mx, ba: .85 * u });
      card(['squeezed bar between two fixed values:', { s: '   split it, more to the nearer one', c: C.goldInk }, { s: 'loss: how far the histograms are apart', c: C.soft }], t - 5, { y: 260, gap: 1.2 }); } },
-{ h: 'Why it helps', p: ['Pip still picks moves by the average, which the histogram contains. Yet on Atari games, learning the whole shape gave clearly better scores than learning the average alone. Why exactly is still debated; one idea is that the histogram is a much richer lesson per card.', 'It also opens the door to **risk-aware** choices, like preferring the move that rarely meets the cat, though C51 itself did not do that.'],
+{ h: 'Why it helps', p: ['Pip still picks moves by the average, which the histogram contains. Yet on Atari, learning the whole shape scored clearly better than the average alone. Why is still debated; perhaps the histogram is a much richer lesson per card.', 'It also opens the door to **risk-aware** choices, like preferring the move that rarely meets the cat, though C51 itself did not do that.'],
    shot: [3, 10],
    draw(t) { if (busyKeys(['p0'], 330)) return; const N = nA(), mx = Math.max(...N.Su.h, ...N.Sd.h); D.meadow({ t }); dimScene(.6);
      card(['one number per move: the average', { s: 'C51: 51 chances per move, the whole shape', c: C.goldInk }, 'choose moves: still by the average', { s: 'why it helps: still debated', c: C.soft }], t - .5, { y: 60, gap: 1.2 });
@@ -391,7 +391,7 @@ const STEPS = [
      const u = t - st.tt; spotMark(st.tap[0], st.tap[1], `(${st.tap[0].toFixed(2)}, ${st.tap[1].toFixed(2)})`);
      histo(S, { x0: 50, x1: 350, y0: 380, hh: 62, n: clamp(Math.floor(u * 12), 0, NB), mean: u > 1.6 ? S.m : null });
      txt(`cheese ${S.ch} · cat ${S.cat} · out of time ${S.to}`, W / 2, 408, { s: 13, c: C.soft, a: clamp(u - 1.6) }); } },
- { h: 'All six', p: ['Rainbow stacks six upgrades on DQN. You have now seen four of them: Double DQN, dueling heads and distributional learning, plus prioritised replay, mentioned in the replay reel.', 'The other two: **multi-step** targets use three real rewards, discounted as usual, then 0.9 cubed × a guess. **Noisy networks** add random wiggles to the knobs, learn how big the wiggles should be, and pick moves greedily on the wiggled Q-values, instead of one random move in five.'],
+ { h: 'All six', p: ['You have seen four of the six: Double DQN, dueling heads, distributional learning, and prioritised replay, mentioned in the replay reel.', 'The other two: **multi-step** targets use three real rewards, discounted, then 0.9 cubed × a guess. **Noisy networks** add random wiggles to the knobs, learn how big they should be, and pick greedily on the wiggled Q-values, instead of one random move in five.'],
    shot: [4, 12],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); dimScene(.72);
      card(['Double DQN: live picks, copy scores', 'prioritised replay: surprising cards more often', 'dueling: value of the spot + advantage', 'multi-step: 3 real rewards, then a guess', 'distributional: the spread, not just the average', 'noisy nets: explore with learned wiggles'], t - .5, { y: 60, gap: 1.2, fs: 16, lh: 30 }); } },

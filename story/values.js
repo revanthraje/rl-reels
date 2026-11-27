@@ -95,11 +95,11 @@ function tapCell(x, y, st, t) {
 }
 
 const STEPS = [
- { h: 'Back in the maze', p: ['Pip is back in its maze. Stepping **onto** the cheese pays +1, onto the cat −1, and either one ends the walk. Other steps pay 0. The **return** adds up the rewards, each step later multiplied by one more **γ (gamma)**, here 0.9.', 'One change: the floor is dry again, so every move goes where Pip intends. All randomness now comes from Pip’s own habit, so the numbers differ from the policy reel’s on purpose.'],
+ { h: 'Back in the maze', p: ['Stepping **onto** the cheese pays +1, onto the cat −1, and either ends the walk; other steps pay 0. The **return** adds the rewards, each step later multiplied by one more **γ (gamma)**, here 0.9.', 'The floor is dry again: every move goes where Pip intends. All randomness now is Pip’s own habit, so numbers differ from the policy reel’s on purpose.'],
    shot: [5, 10],
    draw(t) { maze({ draw: t / 1.6, pop: { cheese: ease((t - 1.8) * 3), cat: ease((t - 2.3) * 3) }, labels: clamp(t - 3), t }); if (t > 2.8) pip(cx(0), cy(3), 1, t);
      if (t > 5) card(['cheese: +1 on the step onto it, walk ends', 'cat: −1 on the step onto it, walk ends', { s: 'any other step: 0  ·  γ = 0.9  ·  dry floor', c: C.soft }], t - 5, { gap: .9 }); } },
- { h: 'Pip’s policy', p: ['Pip uses **policy A** from the policy reel, the rule card with an arrow in every cell, with the ε (epsilon) dial at 0.2: one move in five, Pip picks one of the four directions at random. So the arrow wins 85 times in 100, and each other move 5 times.', 'Bumping into a wall or a rock leaves Pip where it is, and that still counts as a step.'],
+ { h: 'Pip’s policy', p: ['Pip uses **policy A** from the policy reel, the rule card with an arrow in every cell, with the ε (epsilon) dial at 0.2: one move in five is a random direction. So the arrow wins 85 times in 100, each other move 5 times.', 'Bumping into a wall or rock leaves Pip in place, and still counts as a step.'],
    shot: [4, 11],
    draw(t) { maze({ t }); arrows(1, .5, t, { gap: .18 }); pip(cx(0), cy(3), 1, t);
      if (t > 4) card(['policy A arrows, ε = 0.2: arrow 85 in 100', '1 move in 5: a random direction  (shown as ?)', { s: 'bump into a wall or rock: stay put, still a step', c: C.soft }], t - 4, { gap: 1.1 }); } },
@@ -109,7 +109,7 @@ const STEPS = [
      if (m.done) bubble('+1', cx(4), cy(0) - 18, t - .6 - w.n * .6);
      if (!m.done) caption(`step ${Math.min(w.n, m.k + 1)}`);
      if (t > 5.4) card([`walk 1: cheese on step ${w.n}`, `return = 0.9 × 0.9 × 0.9 × 0.9 × 0.9 × 0.9 × 1 = ${f2(RET[0])}`, { s: 'reward on step 7 is discounted 6 times', c: C.soft }], t - 5.4, { gap: 1.1 }); } },
- { h: 'Same start, different walks', p: [`Walk 2: Pip gets distracted twice. Once it steps back down, once it bumps into the top wall. Cheese on step ${SI.w2.n}, return ${f2(RET[1])}.`, `Walk 3: right beside the cheese, a random move points down, onto the cat. Return ${f2(RET[2])} after ${SI.w3.n} steps. Walk 4 has one random move, at the very start, but it happens to pick up, the arrow’s own direction, so nothing changes: ${f2(RET[3])}. Same cell, same policy, different returns.`],
+ { h: 'Same start, different walks', p: [`Walk 2: Pip gets distracted twice, once stepping back down, once bumping the top wall. Cheese on step ${SI.w2.n}, return ${f2(RET[1])}.`, `Walk 3: beside the cheese, a random move points down, onto the cat. Return ${f2(RET[2])} after ${SI.w3.n} steps. Walk 4’s only random move, at the start, picks up, the arrow’s own direction, so nothing changes: ${f2(RET[3])}. Same cell, same policy, different returns.`],
    shot: [4, 13],
    draw(t) { maze({ t }); arrows(.3); const D = .32, ts = [0, SI.w2.n * D + 1.2]; ts.push(ts[1] + SI.w3.n * D + 1.2); const ends = ts.map((s, i) => s + [SI.w2, SI.w3, SI.w4][i].n * D);
      const i = t < ts[1] ? 0 : t < ts[2] ? 1 : 2, w = [SI.w2, SI.w3, SI.w4][i], m = animWalk(w, t - ts[i], D);
@@ -148,12 +148,12 @@ const STEPS = [
    draw(t) { maze({ t }); const D = Math.min(.25, 9 / WW.n), m = animWalk(WW, t - .8, D, { q: false, ta: .4 }); if (!m.done) caption(`Wanderer, step ${Math.min(WW.n, m.k + 1)}`);
      else { bubble(WW.rew > 0 ? '+1' : '−1', cx(WW.rew > 0 ? 4 : 3), cy(WW.rew > 0 ? 0 : 1) - 18, t - .8 - WW.n * D, WW.rew > 0 ? null : C.roseInk); caption(`${WW.n} steps, return ${f2(WW.ret)}`); }
      if (t > 1) card(['Wanderer: up, right, down or left,', '                 1 in 4 each, every move', { s: m.done ? `this walk: 0.9 multiplied ${WW.n - 1} times = ${f2(WW.ret)}` : ' ', c: C.goldInk }], t - 1, { gap: .9 }); } },
- { h: 'The Wanderer’s notebook', p: [`${NW} Wanderer walks from every cell give a new notebook. Every value is **negative**: the start is worth ${f2(NBW[SK])}, the cell left of the cat ${f2(NBW[key(2, 1)])}.`, `Why? A random walker usually meets the cat first: from the start, ${PCAT} walks in 100 end there, about three in four. The cat can be entered from four cells, the cheese from only two. And long walks shrink any reward to almost nothing.`],
+ { h: 'The Wanderer’s notebook', p: [`${NW} Wanderer walks from every cell give a new notebook. Every value is **negative**: the start is worth ${f2(NBW[SK])}, the cell left of the cat ${f2(NBW[key(2, 1)])}.`, `Why? A random walker usually meets the cat first: from the start, ${PCAT} walks in 100 end there, about three in four. The cat has four entry cells, the cheese two. Long walks shrink any reward to almost nothing.`],
    shot: [6, 13],
    draw(t) { const { V, a } = counted((c, r) => walksFrom(c, r, 1), CELLS, t, .4, .35); maze({ V, t }); nums(V, (c, r) => a.some(q => q[0] === c && q[1] === r) ? 1 : 0);
      if (t > 7) { const u = clamp(t - 7); [[3, 0], [2, 1], [4, 1], [3, 2]].forEach(([c, r], i) => alpha(u, () => edgeArrow(c, r, [2, 1, 3, 0][i], 1400 + i, C.roseInk))); [[3, 0], [4, 1]].forEach(([c, r], i) => alpha(clamp(t - 8.5), () => edgeArrow(c, r, [1, 0][i], 1410 + i, C.goldInk)));
        card([{ s: 'ways onto the cat: 4 cells', c: C.roseInk }, { s: 'ways onto the cheese: 2 cells', c: C.goldInk }], t - 7, { gap: 1.5 }); } } },
- { h: 'Values belong to a policy', p: [`Same maze, same cell, two numbers: the start is worth ${f2(NBA[SK])} under the arrows and ${f2(NBW[SK])} under the Wanderer. A value only means something **for a given policy**, so we may write V with a small π (pi).`, 'Here the arrows win in every single cell, so they are the better policy wherever Pip starts. If each policy won in some cells, neither would be better everywhere: the answer would depend on where Pip starts.'],
+ { h: 'Values belong to a policy', p: [`Same cell, two numbers: the start is worth ${f2(NBA[SK])} under the arrows, ${f2(NBW[SK])} under the Wanderer. A value means something only **for a given policy**, so we may write V with a small π (pi).`, 'The arrows win in every cell, so they are the better policy wherever Pip starts. If each won somewhere, neither would be better everywhere; it would depend on the start.'],
    shot: [4, 11],
    draw(t) { const a = clamp(t - .3), b = clamp(t - 1.8);
      alpha(a, () => { GA.maze({ V: NBA, t }); nums(NBA, 1, GA, 12); txt('arrows (1 in 5 random)', GA.ox + 95, 28, { s: 15, c: C.goldInk }); });
@@ -165,14 +165,14 @@ const STEPS = [
    draw(t) { maze({ t, hi: [[3, 0, C.teal, .2]] }); arrows(.2); const qa = clamp(t - 1); [0, 1, 2, 3].forEach(m => alpha(qa, () => edgeArrow(3, 0, m, 1500 + m, C.ink, 17)));
      if (t > 4) { const qs = qWalks(3, 0, 3), w = qs.find(q => q.tr.length && q.n === 3) || qs[0]; const m = animWalk(w, t - 4, .5); if (m.done) caption(`forced left, then the arrows: ${w.n} steps, return ${f2(w.ret)}`); else caption('first move forced: left, then the policy'); } else pip(cx(3), cy(0), 1, t);
      card(['Q(s, a) = average return when Pip', '               takes move a first, then follows the policy', { s: 'measured with walks forced to start with a', c: C.soft }], t - 1.5, { gap: 1.1, fs: 16 }); } },
- { h: 'The four moves beside the cheese', p: [`Right pays +1 at once: Q = 1. Down is the cat: −1. Left gives ${QFMT[3]}, and up bumps the wall and wastes a step: ${QFMT[0]}. The best move has the biggest Q.`, `The value mixes these with the policy’s chances, π(a | s): the arrow 85 times in 100, 80 by habit and 5 by chance, each other move 5 times. 0.85 × 1 + 0.05 × (${QFMT[0]} − 1 + ${QFMT[3]}) = ${f2(MIX)}, the notebook value.`],
+ { h: 'The four moves beside the cheese', p: [`Right pays +1 at once: Q = 1. Down is the cat: −1. Left gives ${QFMT[3]}; up bumps the wall, wasting a step: ${QFMT[0]}. The best move has the biggest Q.`, `Weighted by the policy’s chances, π(a | s), 0.85 for the arrow, 0.05 per other move: 0.85 × 1 + 0.05 × (${QFMT[0]} − 1 + ${QFMT[3]}) = ${f2(MIX)}, the notebook value.`],
    shot: [4, 12],
    draw(t) { maze({ t, hi: [[3, 0, C.teal, .2]] }); arrows(.2); pip(cx(3), cy(0), 1, t);
      const pos = [[cx(3), 7], [cx(4), cy(0) + 22], [cx(3), cy(1) + 25], [cx(2), cy(0) + 20]], order = [1, 2, 3, 0], lab = ['Q = ' + QFMT[0] + '  (bump)', 'Q = 1', 'Q = −1', 'Q = ' + QFMT[3]];
      order.forEach((m, i) => { const u = clamp(t - .5 - i * .9); if (u <= 0) return; alpha(u, () => edgeArrow(3, 0, m, 1500 + m, C.ink, 17)); const [x, y] = pos[m], v = Q30[m], wd = lab[m].length * 6.4 + 10;
        const best = m === 1 && t > 4.5; box(x - wd / 2, y - 8, wd, 17, best ? C.yellow : C.card, .92 * u); txt(lab[m], x, y, { s: 14, c: v < 0 ? C.roseInk : C.goldInk, a: u }); });
      if (t > 5) card(['V = 0.85 × Q(right) + 0.05 × (Q(up) + Q(down) + Q(left))', `   = 0.85 × 1 + 0.05 × (${QFMT[0]} − 1 + ${QFMT[3]}) = ${f2(MIX)}`, { s: `notebook value of this cell: ${f2(NBA[key(3, 0)])}`, c: C.goldInk }], t - 5, { gap: 1.3, fs: 15 }); } },
- { h: 'Why values are worth having', p: ['V answers “how good is it to be here?”: compare cells, and policies cell by cell.', 'Q answers “how good is this move?”: the biggest Q is the best next move if Pip follows the policy afterwards. And if a move has a bigger Q than the policy’s habit, switching to it can only help: on every visit to that cell Pip now does better, and those gains add up. Much of RL builds on this.'],
+ { h: 'Why values are worth having', p: ['V answers “how good is it here?”: compare cells, and policies cell by cell.', 'Q answers “how good is this move?”: the biggest Q is the best next move if Pip follows the policy afterwards. If a move’s Q beats the habit’s value, switching to it only helps: every visit to that cell gains, and gains add up. Much of RL builds on this.'],
    shot: [3, 12],
    draw(t) { const a1 = clamp(t - .5), a2 = clamp(t - 4.5); maze({ V: NBA, t, hi: [[0, 3, C.teal, .25 * a1 * (1 - a2)], [3, 0, C.gold, .3 * a2]] }); nums(NBA, .9); arrows(.3);
      card([{ s: 'V(s): how good is this cell?  compare cells, policies', c: C.goldInk }, { s: 'Q(s, a): how good is this move?  pick the biggest', c: C.ink }, { s: 'a move with bigger Q than the policy’s → better policy', c: C.soft }], t - .5, { gap: 3.8, fs: 16 }); } },
@@ -189,7 +189,7 @@ const STEPS = [
        caption(m.done ? `this walk: ${w.n} steps, return ${f2(w.ret)}  ·  notebook: ${f2(V1[key(...st.wc)])}` : `step ${m.k + 1}`); }
      else { pip(cx(0), cy(3), 1, t); caption('tap a cell to send Pip on a walk'); }
      txt(eps === 0 ? 'no randomness: every walk is the shortest route' : eps === 1 ? 'the Wanderer: every value negative' : `1 move in ${Math.round(1 / eps)} random`, W / 2, 300, { s: 17, c: C.soft }); } },
- { h: 'Where values show up', p: ['AlphaGo, in 2016, had a **value network**: shown a Go position, it estimated the expected result of the game for the player to move, with +1 for a win and −1 for a loss.', 'Chess programs score positions in a similar spirit. And many modern learners, including those used to fine-tune chatbots, train a value estimate called a **critic** to judge how well things are going.'],
+ { h: 'Where values show up', p: ['AlphaGo, in 2016, had a **value network**: shown a Go position, it estimated the game’s expected result for the player to move, +1 for a win, −1 for a loss.', 'Chess programs score positions in a similar spirit. Many modern learners, including those used to fine-tune chatbots, train a value estimate called a **critic** to judge how well things are going.'],
    shot: [4, 10],
    draw(t) { goBoard(70, 40, 30); const a = clamp(t - 1.5); alpha(a, () => { rrect(270, 70, 110, 70, 1250, { fill: C.card, c: C.line }); txt('value network', 325, 90, { s: 15 }); txt('expected result', 325, 112, { s: 14, c: C.soft }); txt('≈ +0.3', 325, 130, { s: 15, c: C.goldInk }); arrow(256, 130, 270, 110, 1260, { c: C.soft }); });
      txt('a position  →  a number', 160, 248, { s: 16, c: C.soft, a: clamp(t - 3) });

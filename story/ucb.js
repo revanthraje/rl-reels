@@ -204,7 +204,7 @@ const STEPS = [
    draw(t) { B.arcade({ per: k => ({ secret: clamp((t - 4 - k * .5) * 2) }) }); pip(lerp(-20, 200, ease(t / 2.5)), t);
      if (t > 4) txt('hidden chances: only we can see them', 200, 300, { s: 15, c: C.soft, a: clamp(t - 6) }); caption('C is the best machine; Pip doesn’t know that', clamp(t - 7.5)); } },
 
- { h: 'Random pulls are blind', p: () => [`With ε = 0.1, every tenth pull goes to a machine picked at random, even one Pip already knows is bad. Over 1000 pulls, averaged over 2000 visits, D gets ${r0(EPS1().pulls[3])} pulls, and almost all of them are dice rolls.`, 'The dice never stop. Pip pays for them on pull 10 and on pull 10,000 alike. Fair warning: in the first 1000 pulls, UCB will check D just as often. The difference is what happens after that.'],
+ { h: 'Random pulls are blind', p: () => [`With ε = 0.1, every tenth pull goes to a random machine, even one Pip knows is bad. Over 1000 pulls, averaged over 2000 visits, D gets ${r0(EPS1().pulls[3])} pulls, almost all dice rolls.`, 'The dice never stop: Pip pays for them on pull 10 and pull 10,000 alike. Yet in the first 1000 pulls, UCB checks D just as often; the difference comes after.'],
    draw(t) { const e = EPS1(); B.arcade({ per: k => ({ glow: k === 3 ? clamp(t - 4) * .8 : 0 }) }); pip(X[3], t);
      for (let k = 0; k < K; k++) txt(r0(e.pulls[k]), X[k], 264, { s: 18, c: INK[k], a: clamp(t - .8 - k * .6) });
      txt('average pulls of each machine, ε-greedy, 1000 pulls', 200, 292, { s: 14, c: C.soft, a: clamp(t - .5) });
@@ -219,7 +219,7 @@ const STEPS = [
        box(40 + 320 * .06, y - 12, 320 * .2, 8, COL[3], .7); txt('Y: about here', 40 + 320 * .3, y - 8, { s: 14, c: INK[3], al: 'left' }); }); }
      caption('X and Y are made up for this picture', clamp(t - 6)); } },
 
- { h: 'How much does an average wobble?', p: () => [`Take machine B, true chance 55 percent, and 30 different visits. Each dot is the average of B’s first 3 pulls in one visit. With 3 pulls only four averages are possible, and the dots use all of them, from ${+Math.min(...WOB[0]).toFixed(2)} to ${+Math.max(...WOB[0]).toFixed(2)}.`, `Now the average of the first 30 pulls: from ${+Math.min(...WOB[1]).toFixed(2)} to ${+Math.max(...WOB[1]).toFixed(2)}. More pulls, less wobble. Roughly, 4 times the pulls halves the wobble.`],
+ { h: 'How much does an average wobble?', p: () => [`Take machine B, true chance 55 percent, over 30 visits. Each dot is the average of B’s first 3 pulls in one visit. With 3 pulls only four averages are possible, and the dots use all of them, ${+Math.min(...WOB[0]).toFixed(2)} to ${+Math.max(...WOB[0]).toFixed(2)}.`, `Averages of the first 30 pulls: ${+Math.min(...WOB[1]).toFixed(2)} to ${+Math.max(...WOB[1]).toFixed(2)}. More pulls, less wobble; roughly, 4 times the pulls halves it.`],
    shot: [5, 12],
    draw(t) { B.machine(200, 1, {}); txt('true chance 55%', 200, 198, { s: 15, c: INK[1] });
      const row = (vals, y, lab, a0) => { const x0 = 50, x1 = 350, a = clamp(t - a0); if (a <= 0) return;
@@ -236,7 +236,7 @@ const STEPS = [
      if (t > 2.5) txt('gold cap = bonus', 175, 274, { s: 14, c: '#b07d12', a: clamp(t - 2.5), al: 'left' });
      caption('top = score. Highest score gets pulled (made-up numbers)', clamp(t - 6)); } },
 
- { h: 'Upper Confidence Bound', p: ['Think of the bonus as stretching each estimate up to the **top of the range** the true chance could plausibly reach. Few pulls, wide range, tall cap.', 'That top is called an **upper confidence bound**, which gives UCB its name. If a machine is truly worse than C, pulling it shrinks its cap until its top drops below C’s top. After that, Pip checks it only rarely.'],
+ { h: 'Upper Confidence Bound', p: ['Think of the bonus as stretching each estimate up to the **top of the range** the true chance could plausibly reach. Few pulls, wide range, tall cap.', 'That top is an **upper confidence bound**, hence the name UCB. If a machine is truly worse than C, pulling it shrinks its cap until its top drops below C’s. After that, Pip checks it only rarely.'],
    draw(t) { const y = 250, x0 = 40, x1 = 360, S = v => x0 + v * (x1 - x0);
      B.arcade({ per: k => ({ a: .35 }) });
      txt('chance of a crumb', x0, y - 14, { s: 13, c: C.soft, al: 'left' }); rline(x0, y, x1, y, 640, { c: C.ink }); [0, .5, 1].forEach(v => txt(String(v), S(v), y + 10, { s: 12, c: C.soft }));
@@ -246,7 +246,7 @@ const STEPS = [
          rline(S(hi), yy - 12, S(hi), yy + 12, 650 + j, { c: '#c48a1a', w: 2.2 }); txt(lab, 40, yy - 18, { s: 14, c: INK[k], al: 'left' }); txt('upper bound', S(hi) + 4, yy - 18, { s: 13, c: '#b07d12', al: 'left' }); }); });
      caption('dot = estimate, band = plausible range (sketch)', clamp(t - 5)); } },
 
- { h: 'The bonus, in words', p: ['UCB uses **bonus = c × square root of (2 × ln t ÷ n)**. **c** is a bonus scale; the classic version, **UCB1**, sets c = 1. **n** is how often this machine was pulled: 4 times the pulls, half the bonus, just like the wobble.', '**t** is the total pulls so far. Its natural logarithm, **ln t**, grows forever but slowly: 4.6 at 100 pulls, 6.9 at 1000. So an ignored machine’s bonus creeps up: it always gets another look, but rarely.'],
+ { h: 'The bonus, in words', p: ['UCB’s bonus: **c × square root of (2 × ln t ÷ n)**. **c** is a scale, 1 in the classic **UCB1**; **n**, this machine’s pulls: 4 times the pulls, half the bonus, like the wobble.', '**t**: total pulls. Its natural log, **ln t**, grows forever, slowly: 4.6 at 100, 6.9 at 1000. An ignored machine’s bonus thus creeps up: always another look, but rarely.'],
    shot: [4, 13],
    draw(t) { txt('bonus  =  c × √( 2 × ln t ÷ n )', 200, 44, { s: 24, c: C.ink, a: clamp(t * 2) });
      [['n', 'pulls of this machine', INK[1], 1.5], ['t', 'pulls so far, all machines', INK[0], 6], ['c', 'bonus scale: 1 in UCB1', '#b07d12', 9]].forEach(([s, d, col, a0], i) => { const a = clamp(t - a0); txt(s + ':', 70, 84 + i * 26, { s: 19, c: col, a, al: 'right' }); txt(d, 80, 84 + i * 26, { s: 17, c: C.ink, a, al: 'left' }); });
@@ -264,7 +264,7 @@ const STEPS = [
      else { B.arcade({ per: k => ({ glow: k === 1 && t > 9 ? .7 : 0 }) }); pip(t > 9 ? lerp(X[3], X[1], ease((t - 9) * 1.5)) : X[3], t, t > 9 ? -1 : 1); tallies(GV, 4);
        scoreChart(qAt(GV, 4), nAt(GV, 4).map(n => bonus(1, 4, n)), { capA: clamp((t - 5.5) / 1.2), chosen: t > 8.5 ? 1 : -1, labels: t > 6.8 }); } } },
 
- { h: 'C gets a second look', p: () => [`Pulls 5 to 8 go to B twice, then A, then D. On pull 9, C has still been pulled only once, so its bonus is the biggest. Scores: A ${S9[0].toFixed(2)}, B ${S9[1].toFixed(2)}, C ${S9[2].toFixed(2)}, D ${S9[3].toFixed(2)}.`, `Pip pulls C… and gets nothing again: 0 of 2. Plain greedy, in this same visit 24 with the same dice, never went back to C. It pulled B ${GG.n[999][1]} times out of 1000.`],
+ { h: 'C gets a second look', p: () => [`Pulls 5 to 8 go to B twice, then A, then D. On pull 9, C, still pulled only once, has the biggest bonus. Scores: A ${S9[0].toFixed(2)}, B ${S9[1].toFixed(2)}, C ${S9[2].toFixed(2)}, D ${S9[3].toFixed(2)}.`, `Pip pulls C… nothing again: 0 of 2. Plain greedy, in this same visit 24 with the same dice, never went back to C; it pulled B ${GG.n[999][1]} times in 1000.`],
    draw(t) { const tt = 8, show = t < 6.5;
      if (show) { B.arcade({ per: k => ({ glow: k === 2 && t > 4.5 ? .7 : 0 }) }); pip(t > 4.5 ? lerp(X[3], X[2], ease((t - 4.5) * 1.5)) : X[3], t, -1); tallies(GV, tt);
        scoreChart(qAt(GV, tt), nAt(GV, tt).map(n => bonus(1, tt, n)), { capA: clamp((t - .8) / 1.2), chosen: t > 4 ? 2 : -1, labels: t > 2 }); }
@@ -280,7 +280,7 @@ const STEPS = [
      scoreChart(qAt(GV, sh), nAt(GV, sh).map(n => bonus(1, sh, n)), { max: 3, chosen: done ? -1 : GV.arms[i], labels: true });
      caption(done ? 'after 40 pulls' : `pull ${i + 1}`); } },
 
- { h: 'Where the checks go', p: () => [`After 1000 pulls in this visit: A ${N1000[0]}, B ${N1000[1]}, C ${N1000[2]}, D ${N1000[3]} pulls. Look at the scores: all four tops sit at about the same height, ${(Q1000.reduce((a, v, k) => a + v + B1000[k], 0) / 4).toFixed(2)}.`, 'UCB always pulls the highest top, which pushes the tops level. D’s estimate is far below C’s, so it can keep a tall cap: few pulls. B is close to C, so its cap must be thin: many pulls. **Promising machines get checked more, hopeless ones less.**'],
+ { h: 'Where the checks go', p: () => [`After 1000 pulls here: A ${N1000[0]}, B ${N1000[1]}, C ${N1000[2]}, D ${N1000[3]}. All four tops sit near one height, ${(Q1000.reduce((a, v, k) => a + v + B1000[k], 0) / 4).toFixed(2)}.`, 'UCB pulls the highest top, which levels the tops. D’s estimate is far below C’s, so it keeps a tall cap: few pulls. B is close to C, so its cap must be thin: many pulls. **Promising machines get checked more, hopeless ones less.**'],
    shot: [5, 12],
    draw(t) { B.arcade({}); pip(X[2], t); for (let k = 0; k < K; k++) txt(`${N1000[k]} pulls`, X[k], 264, { s: 15, c: INK[k], a: clamp(t - .5 - k * .4) });
      scoreChart(Q1000, B1000, { max: 1, ticks: [0, .5, 1], capA: clamp((t - 2.5) / 1.5), labels: t > 4, a: clamp(t - 1.5) });
@@ -290,7 +290,7 @@ const STEPS = [
    draw(t) { regChart([{ v: EPS1().reg, col: TEAL, label: 'ε-greedy', n: (t - 3) / 4 }], { y0: 250, y1: 80, max: 80, yt: [0, 40, 80] });
      card(['regret per pull:  C 0,  B 0.15,  A 0.40,  D 0.55'], t - .5, { y: 300 }); } },
 
- { h: 'A surprise', p: () => [`Now UCB1, in gold. After 1000 pulls its regret is ${r0(UCB(1).reg[999])}: worse than ε-greedy! Its early bonuses are big, so it checks B a lot: ${r0(UCB(1).pulls[1])} pulls on average, against ${r0(EPS1().pulls[1])} for ε-greedy.`, 'Both lines are still climbing. But ε-greedy can never stop paying: one pull in ten is a dice roll, forever. UCB’s checks get rarer as its caps shrink, so its climb keeps slowing.'],
+ { h: 'A surprise', p: () => [`Now UCB1, in gold. After 1000 pulls its regret is ${r0(UCB(1).reg[999])}: worse than ε-greedy! Big early bonuses make it check B a lot: ${r0(UCB(1).pulls[1])} pulls on average, against ${r0(EPS1().pulls[1])} for ε-greedy.`, 'Both lines still climb. But ε-greedy never stops paying: one pull in ten is a dice roll, forever. UCB’s checks get rarer as its caps shrink, so its climb keeps slowing.'],
    draw(t) { regChart([{ v: EPS1().reg, col: TEAL, label: 'ε-greedy', ly: 12 }, { v: UCB(1).reg, col: GOLD, label: 'UCB1', n: (t - 1) / 4 }], { y0: 250, y1: 80, max: 80, yt: [0, 40, 80] });
      if (t > 6) card([`pulls of B:  UCB1 ${r0(UCB(1).pulls[1])},  ε-greedy ${r0(EPS1().pulls[1])}`, { s: 'B is close to C, so UCB keeps checking it', c: C.soft }], t - 6, { y: 300 }); } },
 
@@ -298,7 +298,7 @@ const STEPS = [
    draw(t) { regChart([{ v: LONG('eps').reg, col: TEAL, label: 'ε-greedy', n: (t - .5) / 3, ly: -14 }, { v: LONG('ucb').reg, col: GOLD, label: 'UCB1', n: (t - .5) / 3, ly: -14 }], { y0: 250, y1: 80, T: LONG_T, max: 300, yt: [0, 150, 300], xt: [0, 5000, 10000] });
      if (t > 5) { const le = LONG('eps'), lu = LONG('ucb'); card(['pulls of D:   by 1000     by 10,000', { s: `ε-greedy        ${r0(le.at[0][3])}              ${r0(le.pulls[3])}`, c: TEAL }, { s: `UCB1              ${r0(lu.at[0][3])}              ${r0(lu.pulls[3])}`, c: GOLD }], t - 5, { y: 296, gap: 1 }); } } },
 
- { h: 'A fair comparison', p: () => { const c = CMP(); return [`The earlier reels found strong rules for this arcade too. Shrinking ε, with ε = 10 ÷ t, ended 1000 pulls at ${r0(c[1].short)}; trying each machine 10 times first, at ${r0(c[2].short)}. Both beat UCB1’s ${r0(c[3].short)}. Even at 10,000 pulls, shrinking ε wins: ${r0(c[1].long)} against ${r0(c[3].long)}.`, `So what does UCB buy? No schedule to pick: the 10s in those rules were chosen for this arcade. A proven guarantee for any arcade. And a tuned bonus, c = 0.25, beats them all.`]; },
+ { h: 'A fair comparison', p: () => { const c = CMP(); return [`From earlier reels: shrinking ε = 10 ÷ t ended 1000 pulls at ${r0(c[1].short)}; trying each machine 10 times first, ${r0(c[2].short)}. Both beat UCB1’s ${r0(c[3].short)}. Even at 10,000 pulls, shrinking ε wins: ${r0(c[1].long)} to ${r0(c[3].long)}.`, 'What does UCB buy? No schedule to pick; those 10s suit only this arcade. A guarantee, proven for any arcade. A tuned bonus, c = 0.25, beats them all.']; },
    shot: [6, 12],
    draw(t) { const c = CMP(), y0 = 96; txt('total regret, lower is better', 200, 62, { s: 15, c: C.soft, a: clamp(t - .3) });
      txt('1000 pulls', 268, y0 - 8, { s: 14, c: C.soft, a: clamp(t - .5) }); txt('10,000 pulls', 352, y0 - 8, { s: 14, c: C.soft, a: clamp(t - .5) });
@@ -306,7 +306,7 @@ const STEPS = [
        alpha(a, () => { if (i === 3) box(20, y - 15, 362, 30, C.yellow, .4); txt(r.lab, 26, y, { s: 16, c: col, al: 'left' }); txt(r0(r.short), 268, y, { s: 17, c: C.ink }); txt(r0(r.long), 352, y, { s: 17, c: C.ink }); }); });
      if (t > 6) card(['UCB1: no schedule, a guarantee anywhere', { s: `averages over 2000 visits (${LONG_GAMES} for 10,000)`, c: C.soft }], t - 6, { y: 300, gap: 1 }); } },
 
- { h: 'Your turn', ctl: { label: 'c', values: CS, def: 4, fmt: v => v }, p: () => [`Drag **c**, the bonus scale, to replay the 2000 visits. At c = 0 there is no bonus: UCB becomes plain greedy, and in ${UCB(0).stuck} of the 2000 visits it settles on the wrong machine.`, `Too big, and Pip keeps re-checking machines it already knows. Here c = 0.25 does best, ending at ${r0(UCB(.25).reg[999])}. But that value is tuned to this one arcade; with c = 0.1, C gets under half the pulls in ${UCB(.1).stuck} visits.`],
+ { h: 'Your turn', ctl: { label: 'c', values: CS, def: 4, fmt: v => v }, p: () => [`Drag **c**, the bonus scale, to replay 2000 visits. At c = 0, no bonus: plain greedy, settling on the wrong machine in ${UCB(0).stuck} of 2000 visits.`, `Too big, and Pip re-checks machines it already knows. Here c = 0.25 does best, ending at ${r0(UCB(.25).reg[999])}, but that is tuned to this arcade; with c = 0.1, C gets under half the pulls in ${UCB(.1).stuck} visits.`],
    shot: [3, 8],
    draw(t, st) { const ci = st.ci ?? 4, c = CS[ci], u = UCB(c), e = EPS1();
      regChart([{ v: e.reg, col: TEAL, label: 'ε-greedy', ly: -12 }, { v: u.reg, col: GOLD, label: 'UCB, c = ' + c, n: (t - (st.changed ?? 0)) / 1.2, ly: u.reg[999] > e.reg[999] ? -14 : 14 }], { y0: 210, y1: 40, max: 140, yt: [0, 70, 140] });
@@ -314,12 +314,12 @@ const STEPS = [
      for (let k = 0; k < K; k++) { const x = 50 + k * 82, w = 70, h = sh[k] / 1000 * 80; box(x, 392 - h, w, h, COL[k], .85); rrect(x, 312, w, 80, 790 + k, { c: C.line, w: 1 }); txt(`${NAMES[k]}  ${r0(sh[k])}`, x + w / 2, 300, { s: 14, c: INK[k] }); }
      caption(c >= 2 ? 'too much optimism: A, B and D keep getting checked' : (c === 0 ? 'no bonus = greedy: ' : c === 1 ? 'UCB1, slow to settle: ' : '') + (u.stuck ? `C got under half the pulls in ${u.stuck} of 2000 visits` : 'C got most pulls in every visit')); } },
 
- { h: 'The fine print', p: () => [`UCB1’s **guarantee**: in any arcade with rewards between 0 and 1, regret grows at most like the logarithm of the pulls, so each doubling adds about the same amount. Here: ${r0(DBL()[0])} from pull 2500 to 5000, ${r0(DBL()[1])} from 5000 to 10,000. The proof relies on the bonus being at least this big.`, 'It also assumes the chances **never change**. If C, pulled hundreds of times, suddenly got worse, its thin cap would make Pip slow to notice.'],
+ { h: 'The fine print', p: () => [`UCB1’s **guarantee**: for rewards from 0 to 1, regret grows at most logarithmically, so each doubling of the pulls adds about the same. Here: ${r0(DBL()[0])} from 2500 to 5000 pulls, ${r0(DBL()[1])} from 5000 to 10,000. The proof needs the bonus at least this big.`, 'It assumes the chances **never change**. If a much-pulled C got worse, its thin cap would make Pip slow to notice.'],
    draw(t) { B.arcade({ per: k => ({ secret: k === 2 ? 0 : 1 }) }); const a = clamp(t - 1.5), sw = clamp((t - 3) / 1.5);
      txt(sw < .5 ? '70%' : '40%?', X[2], Y0 + MH + 14, { s: 15, c: INK[2], a }); if (t > 3) txt('what if C changed?', X[2], 264, { s: 15, c: C.roseInk, a: clamp(t - 3), al: 'center' }); pip(X[2], t);
      if (t > 5) card(['guarantee: each doubling adds about the same regret', 'needs: rewards between 0 and 1  (or rescale c)', { s: 'and chances that stay fixed', c: C.roseInk }], t - 5, { y: 296, gap: 1.1 }); } },
 
- { h: 'Where it is used', p: ['The optimism idea goes back to Lai and Robbins in 1985. The simple UCB1 rule and its guarantee were published by Auer, Cesa-Bianchi and Fischer in 2002.', 'A game program tries out moves in its head before playing: each candidate move is like an arm. In 2006, Kocsis and Szepesvári used the UCB score at every such choice, an algorithm called **UCT**. It powered strong Go programs, and AlphaGo’s search used a related rule to choose which moves to explore.'],
+ { h: 'Where it is used', p: ['Optimism goes back to Lai and Robbins, 1985; UCB1 and its guarantee to Auer, Cesa-Bianchi and Fischer, 2002.', 'A game program tries moves in its head before playing; each candidate is like an arm. In 2006 Kocsis and Szepesvári used the UCB score at every such choice: **UCT**. It powered strong Go programs; AlphaGo’s search used a related rule to pick moves to explore.'],
    draw(t) { // a tiny game tree whose branches show estimate + bonus
      const nodes = [[200, 50], [110, 130], [200, 130], [290, 130], [80, 210], [140, 210], [260, 210], [320, 210]], edges = [[0, 1], [0, 2], [0, 3], [1, 4], [1, 5], [3, 6], [3, 7]];
      edges.forEach(([a, b], i) => { const u = clamp((t - .5 - i * .3) * 2); if (u > 0) rline(nodes[a][0], nodes[a][1] + 10, lerp(nodes[a][0], nodes[b][0], u), lerp(nodes[a][1] + 10, nodes[b][1] - 10, u), 820 + i, { c: C.ink }); });

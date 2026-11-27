@@ -258,17 +258,17 @@ function twoNets(t, o = {}) { const net = need('n0_0') ? force('n0_0').snaps[S0]
 }
 
 const STEPS = [
- { h: 'Where replay left off', p: ['The DQN reel spotted the problem: the target is computed by the same network that is being nudged, so it moves with the guess. Here Pip keeps the replay memory from the last reel, and we look at that chase up close.', 'A card’s target is the reward plus 0.9 × the largest Q-value at the spot where Pip landed. And who supplies that Q-value? The very network being trained.'],
+ { h: 'Where replay left off', p: ['The DQN reel spotted the problem: the target is computed by the same network being nudged, so it moves with the guess. Pip keeps the replay memory from the last reel; now we look at that chase up close.', 'A card’s target is the reward plus 0.9 × the largest Q-value where Pip landed. Who supplies that Q-value? The very network being trained.'],
    shot: [3, 9],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); twoNets(t);
      if (t > 3) dimScene(.6 * clamp(t - 3)); card(['target = reward + 0.9 × largest Q where it landed', { s: '          ↑ read off the same network', c: C.roseInk }], t - 3, { y: 110, gap: 1.6, fs: 16 }); } },
- { h: 'One card, many steps', get p() { const N = nums(); return [`To see what that does, try an experiment. Take Pip’s network after 3000 moves of training and one card: from the spot (0.50, 0.20) Pip moved right and landed at (0.65, 0.20), reward 0.`,
-     `The network says this move is worth ${f2(N.live.q[0])}, and its target is 0 + 0.9 × the best Q-value at the landing spot = ${f2(N.live.g[0])}. Now take ${NSTEP} small gradient steps on this one card and watch both numbers.`]; },
+ { h: 'One card, many steps', get p() { const N = nums(); return [`An experiment: take Pip’s network after 3000 moves of training, and one card. From (0.50, 0.20) Pip moved right to (0.65, 0.20), reward 0.`,
+     `The network values this move at ${f2(N.live.q[0])}; its target is 0 + 0.9 × the best Q-value at the landing spot = ${f2(N.live.g[0])}. Now take ${NSTEP} small gradient steps on this one card and watch both.`]; },
    shot: [3, 9],
    draw(t) { cardScene(t, clamp(t - .5)); D.pipAt(lerp(A[0], B[0], ease((t - 1) / 1.2)), A[1] + .05, 1, t); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums();
      card([`this move’s Q-value:  ${f2(N.live.q[0])}`, `target:  0 + 0.9 × ${f2(N.live.g[0] / D.GAM)}  =  ${f2(N.live.g[0])}`, { s: 'experiment: learn from this one card only', c: C.soft }], t - 2, { gap: 1.3 }); } },
- { h: 'Chasing your own shadow', get p() { const N = nums(); return [`Gold is the move’s Q-value, teal the target. Each step pulls gold toward teal, but teal moves too: after ${NSTEP} steps gold is ${f2(last(N.live.q))} and the target has climbed to ${f2(last(N.live.g))}, levelling off. No new information came in: whatever the true value is, this climb came from the chase alone.`,
-     'Why? The landing spot is close by and shares the same 76 knobs. Raising the value here also raises it there, so the target runs ahead, like **chasing your own shadow**.']; },
+ { h: 'Chasing your own shadow', get p() { const N = nums(); return [`Each step pulls gold toward teal, but teal moves too. After ${NSTEP} steps gold is ${f2(last(N.live.q))} and the target ${f2(last(N.live.g))}, levelling off. No new information came in; whatever the true value, this climb came from the chase alone.`,
+     'Why? The nearby landing spot shares the same 76 knobs. Raising the value here raises it there, so the target runs ahead: **chasing your own shadow**.']; },
    shot: [4, 12],
    draw(t) { cardScene(t, .8); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums(), n = clamp(Math.floor((t - .8) * 25), 0, NSTEP + 1);
      const c = expChart({ title: 'one card, step by step', series: [{ v: N.live.g, col: gcol, w: 2, n }, { v: N.live.q, col: qcol, w: 2, n }] });
@@ -284,14 +284,14 @@ const STEPS = [
    draw(t) { cardScene(t, .8); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums(), n = clamp(Math.floor((t - .8) * 25), 0, NSTEP + 1);
      expChart({ title: 'one card, target from the frozen copy', series: [{ v: N.live.g, col: gcol, w: 1, a: .25 }, { v: N.live.q, col: qcol, w: 1, a: .25 }, { v: N.frozen.g, col: gcol, w: 2, n }, { v: N.frozen.q, col: qcol, w: 2, n }] });
      txt('faint: the chase from before', W / 2, 411, { s: 13, c: C.soft, a: clamp(t - 2) }); } },
- { h: 'Refresh every N updates', get p() { const N = nums(); return [`A copy frozen forever would never learn. So every **N** updates the live network’s knobs are copied into it. Here N = ${REF}: the target holds still, gold catches up, then the target jumps.`,
-     `With one card nothing anchors the numbers, so the drift remains, only slower: ${f2(last(N.stairs.q))} after ${NSTEP} steps instead of ${f2(last(N.live.q))}. The copy slows the loop; it does not remove it. In real training, the other cards bring real information.`]; },
+ { h: 'Refresh every N updates', get p() { const N = nums(); return [`A copy frozen forever would never learn, so every **N** updates the live knobs are copied into it. Here N = ${REF}: the target holds, gold catches up, the target jumps.`,
+     `One card anchors nothing, so the drift remains, slower: ${f2(last(N.stairs.q))} after ${NSTEP} steps instead of ${f2(last(N.live.q))}. The copy slows the loop but does not remove it. In real training, other cards bring real information.`]; },
    shot: [4, 11],
    draw(t) { cardScene(t, .8); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums(), n = clamp(Math.floor((t - .8) * 25), 0, NSTEP + 1);
      const c = expChart({ title: `one card, copy refreshed every ${REF} steps`, series: [{ v: N.stairs.g, col: gcol, w: 2, n, step: 1 }, { v: N.stairs.q, col: qcol, w: 2, n }] });
      for (let i = REF; i < Math.min(n, NSTEP); i += REF) txt('copy', c.X(i), 411, { s: 12, c: C.soft });
      if (n < 2) return; } },
- { h: 'Back to real training', p: ['Now the real thing: full training, 8000 moves with replay, once with targets from the live network and once with a copy refreshed every 100 updates. Same seeds.', 'The chart follows one number during training: the largest Q-value at Pip’s start spot, bottom left. Across: moves of experience, 0 to 8000. Up: that Q-value. Orange: live targets. Teal: with the copy. At move 0 the number comes from random knobs.'],
+ { h: 'Back to real training', p: ['Now full training: 8000 moves with replay, once with live targets and once with a copy refreshed every 100 updates. Same seeds.', 'The chart tracks the largest Q-value at Pip’s start spot, bottom left, over 8000 moves of experience. Orange: live targets. Teal: with the copy. At move 0 the number comes from random knobs.'],
    shot: [4, 12],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); spotDot(.1, .1, C.ink, 'start', clamp(t - 1), -22); if (busyKeys(['n0_0', 'n100_0'])) return; const N = nums(), n = clamp(Math.floor((t - 3) * 1100), 0, 8000), samp = r => Array.from(r.probe).filter((_, i) => i % 50 === 0);
      chart({ x0: 64, x1: 356, y0: 388, y1: 316, lo: -.2, hi: .8, xmax: 160, yt: [0, .4, .8], xl: ['move 0', '8000'], title: 'largest Q-value at the start (run 1)',

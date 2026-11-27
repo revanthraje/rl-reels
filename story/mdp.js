@@ -139,7 +139,7 @@ const STEPS = [
      if (t > 6.4) bubble('0', cx(1), cy(3) - 26, t - 6.4, C.soft);
      if (t > 3) card([{ s: 'state: the cell Pip is in (shaded)', c: '#3f7f7c' }, { s: 'action: the move it picks, here right', c: C.goldInk }, 'reward: 0 for this step', { s: 'and again from the new state, until the walk ends', c: C.soft }], t - 3, { gap: 1.4 }); } },
 
- { h: 'Ingredient one: states', p: ['First, list every situation Pip can be in. Here a state is simply Pip’s cell. We keep the numbers from the first reel, 1 to 20. Cells 7 and 13 are rocks, so there are **18 states**.', 'Two of them are special: landing on the cheese or the cat ends the walk. These are called **terminal states**. That leaves 16 cells where Pip still has to choose a move.'],
+ { h: 'Ingredient one: states', p: ['First, list every situation Pip can be in. Here a state is simply Pip’s cell, numbered as in the first reel, 1 to 20. Cells 7 and 13 are rocks, so there are **18 states**.', 'Two are special: landing on the cheese or the cat ends the walk. These are **terminal states**. That leaves 16 cells where Pip still has to choose a move.'],
    shot: [4, 10],
    draw(t) { maze({ t }); let n = 0;
      for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { if (G.isRock(c, r)) continue; const k = n++, a = clamp((t - .6 - k * .2) * 3); if (a <= 0) continue;
@@ -159,7 +159,7 @@ const STEPS = [
        if (t > 6.6) bubble('bump: stays', cx(0) + 10, cy(3) + 40, t - 6.6, C.soft); }
      if (t > 7.4) card(['actions: up, right, down, left, in every cell', { s: 'into a wall or rock: stay put, still one step', c: C.soft }], t - 7.4, { gap: 1 }); } },
 
- { h: 'Ingredient three: rewards', p: ['Then the rewards. The reward is paid for the step that **lands** on a cell: +1 for landing on the cheese, −1 for landing on the cat, and the walk ends there.', 'Every other step pays 0, bumps included. In general a reward may depend on the cell, the move and where Pip lands, written R(s, a, s′). In this maze only the landing cell matters.'],
+ { h: 'Ingredient three: rewards', p: ['Then the rewards. A reward is paid for the step that **lands** on a cell: +1 for the cheese, −1 for the cat, and the walk ends there.', 'Every other step pays 0, bumps included. In general a reward may depend on the cell, the move and the landing cell, written R(s, a, s′). Here only the landing cell matters.'],
    shot: [3, 8],
    draw(t) { maze({ t, labels: 0 }); pip(cx(0), cy(3), 1, t); let n = 0;
      for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { if (G.isRock(c, r) || G.term(c, r)) continue; ghost(c, r, '0', clamp((t - 2.5 - n++ * .08) * 3), { dy: 22, dx: 18, s: 14 }); }
@@ -188,13 +188,13 @@ const STEPS = [
      [[1, 3, 0], [0, 2, 1]].forEach(([c, r, i]) => ghost(c, r, fmtN(cnt[i]), 1, { dy: 22, s: 16, c: i ? '#3f7f7c' : C.goldInk })); ghost(0, 3, fmtN(cnt[2]) + ' stayed', 1, { dy: -22, s: 14, c: '#4f74a0' });
      tally(cnt, 1000, `where each try ended, after ${fmtN(n)} tries`, 1, [[800, '800'], [100, '100']]); } },
 
- { h: 'Transition probabilities', p: ['These chances are written **P(s′ | s, a)**, read “P of s prime given s and a”: the probability that Pip lands in cell s′, the next state, when it is in state s and takes action a.', 'If Pip bumps and stays put, s′ is simply s. For every cell and move, the chances over all landing cells add up to 1. Sixteen cells times four moves: 64 little lists like this one.'],
+ { h: 'Transition probabilities', p: ['These chances are written **P(s′ | s, a)**, read “P of s prime given s and a”: the probability that Pip lands in cell s′, the next state, after taking action a in state s.', 'If Pip bumps and stays put, s′ is s. For each cell and move, the landing chances add up to 1. Sixteen cells times four moves: 64 such lists.'],
    shot: [3, 10],
    draw(t) { wet(); maze({ t }); pip(cx(0), cy(3), 1, t); fan(0, 3, RIGHT, SLIP, t - .3, { gap: .5 });
      ghost(0, 3, 's', clamp(t - .3), { dy: -20, dx: -22, s: 17, c: C.ink }); ghost(1, 3, 's′', clamp(t - .8), { dy: -22, dx: 18, s: 16, c: C.goldInk }); ghost(0, 2, 's′', clamp(t - 1.3), { dy: -22, dx: 18, s: 16, c: '#3f7f7c' });
      if (t > 2.4) card(['P( s′ | s, a ): chance of landing in s′', { s: 'from s = start with a = right (total 1):', c: C.soft }, { s: '0.8 next cell · 0.1 slid up · 0.1 stayed, s′ = s', c: C.ink }], t - 2.4, { gap: 1.2 }); } },
 
- { h: 'The whole rulebook', p: ['Put the pieces together: states, actions, transition probabilities, rewards, and **γ (gamma)**, the discount, here 0.9. Like the rewards, γ is chosen by the designer: it says what we want, not how the floor behaves. That list is an MDP.', 'Pip does **not** get to read this rulebook; it learns by trying, like those 1000 tries. When a reel computes the best plan from the rulebook itself, as the discount reel did, that is called **planning**.'],
+ { h: 'The whole rulebook', p: ['The pieces together: states, actions, transition probabilities, rewards, and the discount **γ (gamma)**, here 0.9. Like rewards, the designer picks γ: it says what we want, not how the floor behaves. That list is an MDP.', 'Pip does **not** read this rulebook; it learns by trying, like those 1000 tries. Computing the best plan from the rulebook, as the discount reel did, is called **planning**.'],
    shot: [5, 11],
    draw(t) { wet(); maze({ t }); pip(cx(0), cy(3), 1, t); dim(.8, 0, 420);
      card(['S   states: 18 cells, 2 of them terminal', 'A   actions: up, right, down, left', 'P   transition probabilities P(s′ | s, a)', 'R   rewards R(s, a, s′): +1 cheese, −1 cat, else 0', 'γ   discount 0.9, chosen by the designer'], t - .3, { y: 22, gap: .9, lh: 30, fs: 17 });
@@ -207,7 +207,7 @@ const STEPS = [
      pip(cx(0), cy(2), 1, t); if (t > 5.2) fan(0, 2, RIGHT, SLIP, t - 5.2, { gap: .5 });
      if (t > 7) card(['two different pasts, same cell', { s: 'same chances next: 0.8 · 0.1 · 0.1', c: C.goldInk }, { s: 'the past adds nothing once you know the cell', c: C.soft }], t - 7, { gap: 1 }); } },
 
- { h: 'Checking it in data', p: ['Pip wanders at random for 2000 walks. Every time it tries right in this cell, we note where it came from and where it lands. Bumps in place are left out.', 'From below: 0.799, 0.093, 0.108. From the right or above: nearly the same. In a world whose rules you cannot read, this is the test: rows further apart than luck allows would mean the cell is not enough. Our maze was built Markov, so here it passes.'],
+ { h: 'Checking it in data', p: ['Over 2000 random walks, whenever Pip tries right here, we log where it came from and where it lands, skipping bumps in place.', 'From below: 0.799, 0.093, 0.108. From the right or above: nearly the same. This is the test when the rules are hidden: rows further apart than luck allows mean the cell is not enough. Built Markov, our maze passes.'],
    shot: [3, 10],
    draw(t) { wet(); maze({ t, hi: [[0, 2, C.gold, .25]] }); pip(cx(0), cy(2), 1, t);
      alpha(clamp(t - .5), () => arrow(cx(0) - 22, cy(3) + 2, cx(0) - 22, cy(2) + 20, 870, { c: '#3f7f7c', w: 2 })); ghost(0, 3, 'from below', clamp(t - .5), { dy: 22, s: 13, c: '#3f7f7c' });
@@ -218,7 +218,7 @@ const STEPS = [
      [['below', '#3f7f7c', 330], ['right', '#6d645b', 356], ['above', C.goldInk, 382]].forEach(([g, col, y], j) => { const b = clamp(t - 3.6 - j * 1.2); if (b <= 0) return; const d = MK[g];
        txt(`from ${g} (${fmtN(d.n)}×)`, 42, y, { s: 15, al: 'left', c: col, a: b }); d.f.forEach((f, i) => txt(f.toFixed(3), cols[i], y, { s: 17, a: b })); }); } },
 
- { h: 'When the cell is not enough', p: ['Imagine a new rule: the cat wakes after Pip’s 10th step, and an awake cat pounces if Pip is next to it. Beside the cat, step 4 is safe and step 12 is not. The cell alone no longer says what comes next: **not Markov**.', 'Adding “is the cat awake?” is not enough: a sleeping cat might wake on the next step. The state must hold the clock: the cell plus the steps taken so far.'],
+ { h: 'When the cell is not enough', p: ['New rule: the cat wakes after Pip’s 10th step, and pounces if Pip is beside it. Next to the cat, step 4 is safe, step 12 is not. The cell alone no longer predicts what comes next: **not Markov**.', 'Adding “is the cat awake?” fails: a sleeping cat might wake next step. The state must hold the clock: the cell plus steps taken so far.'],
    shot: [4, 10],
    draw(t) { const A = clamp(t * 2);
      alpha(A, () => { MA.maze({ t, pop: { cat: 0 } }); MB.maze({ t, pop: { cat: 0 } }); });
@@ -229,14 +229,14 @@ const STEPS = [
      txt('same cell', 200, 240, { s: 15, c: C.soft, a: clamp(t - 3.2) });
      if (t > 4.6) card(['same cell, different futures: not Markov', { s: '“awake?” alone is not enough: when will it wake?', c: C.soft }, { s: 'fix: state = (cell, steps taken so far)', c: C.goldInk }], t - 4.6, { gap: 1.1 }); } },
 
- { h: 'Cells, not paths', p: ['Why does Markov matter so much? Because of it, anything Pip works out about what to do or what to expect can be stored **per cell**, and only 16 cells need it.', 'If the past mattered, Pip would need an entry for every **path** instead. Counting paths from the start, with a bump counting as a step: 3 after one step, 37 after three, and 202,435 after ten.'],
+ { h: 'Cells, not paths', p: ['Why does Markov matter so much? Because of it, anything Pip works out about what to do or what to expect can be stored **per cell**, for just 16 cells.', 'If the past mattered, Pip would need an entry for every **path** instead. Counting paths from the start, a bump counting as a step: 3 after one step, 37 after three, 202,435 after ten.'],
    shot: [4, 11],
    draw(t) { wet(.6); maze({ t }); pip(cx(0), cy(3), 1, t); dim(.35);
      const lines = PATHS.map(([k, n]) => ({ s: `paths of ${k} step${k > 1 ? 's' : ''} from the start:  ${fmtN(n)}`, c: k === 10 ? '#b54b4b' : C.ink }));
      card([{ s: 'cells where Pip chooses a move:  16', c: C.goldInk }, ...lines], t - .8, { y: 276, lh: 22, gap: 1.3, fs: 17 });
    } },
 
- { h: 'Every visit counts', p: ['In those 2000 random walks, Pip stood on this cell 16,047 times. **13,887** of those arrivals came by a path it had never walked before.', 'Filed by path, almost every page of Pip’s notebook would hold one lonely visit. Filed by cell, all 16,047 land on one page. That pooling is allowed only because of Markov: what happens next does not depend on how Pip got here.'],
+ { h: 'Every visit counts', p: ['In those 2000 random walks, Pip stood on this cell 16,047 times. **13,887** of those arrivals came by a path it had never walked before.', 'Filed by path, almost every page of Pip’s notebook would hold one lonely visit. Filed by cell, all 16,047 share one page. Markov alone allows that pooling: what happens next does not depend on how Pip got here.'],
    shot: [4, 10],
    draw(t) { wet(); maze({ t, hi: [[0, 2, C.gold, .3]] }); pip(cx(0), cy(2), 1, t);
      const u = ease(clamp((t - .5) / 4)), v = Math.round(POOL.visits * u), f = Math.round(POOL.fresh * u);
@@ -244,7 +244,7 @@ const STEPS = [
      card([`visits to this cell:  ${fmtN(v)}`, { s: `arrived by a brand-new path:  ${fmtN(f)}`, c: '#b54b4b' }, { s: 'Markov: every visit tells the same story', c: C.soft }], t - .2, { gap: 1.2 }); } },
 
  { h: 'Your turn', ctl: { label: 'slip', values: SLIPS, def: 2, fmt: v => String(v), onChange: st => { st.run = null; } }, tap: tapRun,
-   p: ['Pip memorises one shortest route as a fixed list: up three times, then right four times. The **slip chance** is the total chance of sliding sideways; so far it was 0.2. Drag it, and Pip runs the list 1000 times. Bars count runs ending on the cheese, the cat, or nowhere.', 'At 0.2, only 229 reach the cheese: a list cannot react to a slip. A rule for every cell can. That is a **policy**, coming next.'],
+   p: ['Pip memorises a shortest route as a fixed list: up three, then right four. The **slip chance**, the total chance of sliding sideways, was 0.2 so far. Drag it: Pip runs the list 1000 times. Bars count endings: cheese, cat, or nowhere.', 'At 0.2 only 229 reach the cheese: a list cannot react to slips. A rule for every cell can: a **policy**, coming next.'],
    shot: [3, 8],
    draw(t, st) { const p = SLIPS[st.ci ?? 2], R1 = planRuns(p), R0 = st.prevCi != null ? planRuns(SLIPS[st.prevCi]) : R1, u = ease((t - (st.changed ?? -9)) / .8);
      if (p > 0) wet(p / .2 > 1 ? 1 : p / .2); maze({ t });
@@ -262,7 +262,7 @@ const STEPS = [
      txt('1000 runs of the list end on …', 40, 299, { s: 14, al: 'left', c: C.soft }); rline(50, base, 350, base, 906, { c: C.line, w: 1 });
      xs.forEach((x, i) => { const h = cnt[i] / 1000 * hm; box(x - 26, base - h, 52, h, col[i]); txt(lab[i], x, base + 11, { s: 14, c: C.soft }); txt(fmtN(Math.round(cnt[i])), x, base - h - 9, { s: 15 }); }); } },
 
- { h: 'Where MDPs are used', p: ['The name honours Andrey Markov, who studied chains of random events in the early 1900s. Richard Bellman studied Markov decision processes in the 1950s, for planning under uncertainty.', 'Robot navigation, stock and inventory planning, and board games are often written as MDPs. When one snapshot is not Markov, people widen the state: DeepMind’s Atari player fed in the last **four screen images**, so a ball’s motion was visible.'],
+ { h: 'Where MDPs are used', p: ['The name honours Andrey Markov, who studied chains of random events in the early 1900s. In the 1950s Richard Bellman used MDPs for planning under uncertainty.', 'Robot navigation, stock and inventory planning and board games are often MDPs. When one snapshot is not Markov, people widen the state: DeepMind’s Atari player fed in the last **four screen images**, so a ball’s motion showed.'],
    shot: [3, 10],
    draw(t) { const a1 = clamp(t - .5), a2 = clamp(t - 2), a3 = clamp(t - 3.5);
      alpha(a1, () => { L.robot(80, 120, 2, t); txt('robots', 80, 190, { s: 16 }); });

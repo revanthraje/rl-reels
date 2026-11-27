@@ -210,7 +210,7 @@ const STEPS = [
      if (u < 1) bigPanel(1, 0, t, { a: 1 - u }); bigPanel(1, 1, t, { a: u });
      if (t > 4) card(['new height  =  old height  ×  chance of what happened', { s: 'crumb: × chance      nothing: × (1 − chance)', c: C.soft }], t - 4, { y: 300, gap: 1.2 }); } },
 
- { h: 'More pulls, narrower hill', p: () => [`Keep pulling B. After 10 pulls with ${EX.w10} crumbs, the hill narrows around 0.5. After 100 pulls with ${EX.w100} crumbs, it is a thin spike near ${(EX.w100 / 100).toFixed(2)}, close to B’s true 0.55.`, 'This family of curves has a name: the **Beta distribution**. With w crumbs and l nothings, Pip’s belief is Beta(1 + w, 1 + l). Its peak sits at the estimate, crumbs ÷ pulls; its width shows how unsure Pip is.'],
+ { h: 'More pulls, narrower hill', p: () => [`Keep pulling B. After 10 pulls with ${EX.w10} crumbs, the hill narrows around 0.5. After 100 with ${EX.w100} crumbs, a thin spike near ${(EX.w100 / 100).toFixed(2)}, near B’s true 0.55.`, 'These curves are the **Beta distribution**. With w crumbs and l nothings, Pip’s belief is Beta(1 + w, 1 + l). Its peak is the estimate, crumbs ÷ pulls; its width, how unsure Pip is.'],
    shot: [4, 10],
    draw(t) { const st = t < 3.5 ? 0 : t < 7 ? 1 : 2, wl = [[1, 1], [EX.w10, 10 - EX.w10], [EX.w100, 100 - EX.w100]][st], lab = ['1 crumb from 2 pulls', `${EX.w10} crumbs from 10 pulls`, `${EX.w100} crumbs from 100 pulls`][st];
      txt('machine B: ' + lab, 200, 70, { s: 17, c: INK[1] }); bigPanel(wl[0], wl[1], t);
@@ -223,7 +223,7 @@ const STEPS = [
      txt('each machine’s belief: chance 0 to 1', 200, 286, { s: 14, c: C.soft, a: clamp(t - .5) });
      if (t > 6) caption(`highest draw: ${NAMES[GV.arms[0]]} (${GV.draws[0][GV.arms[0]].toFixed(2)})`, clamp(t - 6)); } },
 
- { h: 'The first pulls', p: () => [`We follow one visit. Pull 1: A’s draw, ${GV.draws[0][0].toFixed(2)}, is highest. A drops nothing, so its curve tilts toward low chances. Pull 2: A’s draw is now just ${GV.draws[1][0].toFixed(2)}, and C wins with ${GV.draws[1][2].toFixed(2)}. Nothing again.`, 'Watch the draws on each pull: one dot per machine, and the highest one decides. B’s draws happen not to win at first, so it stays untried for a while.'],
+ { h: 'The first pulls', p: () => [`We follow one visit. Pull 1: A’s draw, ${GV.draws[0][0].toFixed(2)}, is highest. A drops nothing, so its curve tilts toward low chances. Pull 2: A’s draw is just ${GV.draws[1][0].toFixed(2)}, and C wins with ${GV.draws[1][2].toFixed(2)}. Nothing again.`, 'Each pull shows the draws, one dot per machine; the highest decides. B’s draws happen not to win at first, so it stays untried for a while.'],
    shot: [5, 13],
    draw(t) { const dur = 2.6, i = clamp(Math.floor(t / dur), 0, 5), u = (t - i * dur) / dur;
      if (u > .45) pullAnim(i, (u - .45) / .55); else B.arcade({}); pip(X[GV.arms[i]], t); tallies(i + (u > .8 ? 1 : 0));
@@ -241,7 +241,7 @@ const STEPS = [
    draw(t) { if (t < 5) { const u = t / 5; if (u > .5) pullAnim(21, (u - .5) * 2); else B.arcade({}); pip(X[2], t); tallies(21 + (u > .8 ? 1 : 0)); panels(WL(21), { draws: GV.draws[21], du: t / .8, hi: t > 1.5 ? 2 : -1 }); caption('pull 22'); }
      else { const tt = clamp(22 + Math.floor((t - 5) / .17), 22, 60); B.arcade({}); pip(X[2], t); tallies(tt); panels(WL(tt)); caption(tt >= 60 ? 'after 60 pulls' : `pull ${tt}`); } } },
 
- { h: 'Picked as often as it might be best', p: () => [`Back at pull 40: how often would each machine win the draw? In 4000 draws from these curves, B wins ${pc(SH40[1])}, C ${pc(SH40[2])}, D ${pc(SH40[3])}, A ${pc(SH40[0])}.`, `That is Thompson sampling’s secret: it pulls each machine **as often as Pip believes it could be the best one**. A machine loses its share only as Pip grows sure it is worse: D, at 1 crumb of 3, is still unsure, so it still wins ${pc(SH40[3])}.`],
+ { h: 'Picked as often as it might be best', p: () => [`At pull 40, how often does each machine win? Over 4000 draws, B wins ${pc(SH40[1])}, C ${pc(SH40[2])}, D ${pc(SH40[3])}, A ${pc(SH40[0])}.`, `The secret: Thompson sampling pulls each machine **as often as Pip believes it could be the best**. A machine’s share shrinks only as Pip grows sure it is worse; D, 1 crumb in 3, is still uncertain: ${pc(SH40[3])}.`],
    draw(t) { B.arcade({}); pip(X[1], t); tallies(40); panels(WL(40), { a: 1 }); caption('back at pull 40');
      const by = 304; txt('share of 4000 draws won', 200, by - 16, { s: 14, c: C.soft, a: clamp(t - 1) });
      for (let k = 0; k < K; k++) { const u = clamp((t - 1.5 - k * .4) * 2); txt(pc(SH40[k]).replace(' percent', '%'), X[k], by + 6, { s: 17, c: INK[k], a: u }); } } },
@@ -250,7 +250,7 @@ const STEPS = [
    shot: [3, 12],
    draw(t) { const tt = Math.min(1000, Math.round(60 * Math.pow(1000 / 60, clamp(t / 8)))); B.arcade({}); pip(X[2], t); tallies(tt); panels(WL(tt)); caption(tt >= 1000 ? 'after 1000 pulls' : `pull ${tt}`); } },
 
- { h: 'Keeping score', p: () => [`Compare with the others by **regret**: each pull gives up 0.70 minus the chance of the machine pulled. The chart shows total regret over 1000 pulls, averaged over ${GAMES} visits; lower is better.`, `ε-greedy with ε = 0.1 ends at ${r0(EPS1().reg[999])}, UCB1 at ${r0(UCB1().reg[999])}, Thompson sampling, in purple, at ${r0(TS().reg[999])}. It also beats shrinking ε from the ε-greedy reel (${r0(EPSD().reg[999])}). Only UCB with a bonus tuned for this arcade, c = 0.25, does slightly better: ${r0(UCB25().reg[999])}.`],
+ { h: 'Keeping score', p: () => [`Compare by **regret**: each pull gives up 0.70 minus the chance of the machine pulled. Chart: total regret over 1000 pulls, averaged over ${GAMES} visits, lower better.`, `ε-greedy with ε = 0.1 ends at ${r0(EPS1().reg[999])}, UCB1 at ${r0(UCB1().reg[999])}, Thompson sampling, purple, at ${r0(TS().reg[999])}. It also beats shrinking ε, ${r0(EPSD().reg[999])}. Only UCB with a bonus tuned to this arcade, c = 0.25, edges it: ${r0(UCB25().reg[999])}.`],
    draw(t) { regChart([{ v: EPS1().reg, col: TEAL, label: 'ε-greedy', ly: 12, n: (t - 1) / 2 }, { v: UCB1().reg, col: GOLD, label: 'UCB1', n: (t - 3.5) / 2 }, { v: TS().reg, col: PLUM, label: 'Thompson', ly: -12, n: (t - 6) / 2 }]);
      if (t > 8.5) card([`average pulls of D:  Thompson ${r0(TS().pulls[3])}, ε-greedy ${r0(EPS1().pulls[3])}`, `average pulls of C:  Thompson ${r0(TS().pulls[2])} of 1000`], t - 8.5, { y: 300, gap: 1 }); } },
 
@@ -263,14 +263,14 @@ const STEPS = [
      panels(s.wl, { draws: s.draws, du: s.draws ? (t - s.dt) / .6 : 0, hi: s.draws ? s.pick : -1 });
      txt(s.n ? `your pulls: ${s.n}   crumbs: ${s.c}` : 'tap a machine, or the button', 200, 290, { s: 15, c: C.soft }); } },
 
- { h: 'The fine print', p: ['Thompson sampling needs a starting belief. Here it was flat: every chance equally plausible. A strong wrong start can slow it down.', 'The neat Beta curves fit crumb-or-nothing rewards. Other rewards need other belief shapes, often only approximate. And it is random. That helps when many choices are made before results come back: a rule without dice, like UCB, would send every waiting visitor to the same machine, while Thompson’s draws spread them out.'],
+ { h: 'The fine print', p: ['It needs a starting belief; here it was flat, every chance equally plausible. A strong wrong start can slow it.', 'Beta curves fit crumb-or-nothing rewards; other rewards need other belief shapes, often only approximate. Its randomness helps when many choices come before results return: a diceless rule like UCB would send every waiting visitor to the same machine; Thompson’s draws spread them out.'],
    draw(t) { const S = (p, x0, x1) => x0 + p * (x1 - x0);
      [['flat start', 0, 0, 1], ['strong wrong start', 2, 18, 2.5]].forEach(([lab, w, l, a0], j) => { const a = clamp(t - a0), x0 = 40 + j * 180, x1 = x0 + 140; if (a <= 0) return;
        alpha(a, () => { axis01(x0, x1, 200); txt(lab, (x0 + x1) / 2, 100, { s: 16, c: C.ink }); }); belief(w, l, x0, x1, 200, 80, { col: INK[2], fill: COL[2], a });
        if (j) alpha(a, () => { rline(S(.7, x0, x1), 202, S(.7, x0, x1), 116, 590, { c: C.ink, w: 1, once: true }); txt('C’s true 0.7', S(.7, x0, x1), 228, { s: 13, c: C.soft }); }); });
      if (t > 5) card(['needs: a starting belief', 'easiest for crumb-or-nothing rewards', { s: 'random: same history, different pulls', c: C.soft }], t - 5, { y: 290, gap: 1 }); } },
 
- { h: 'Where it is used', p: ['William Thompson proposed the idea in **1933**, to choose between two medical treatments. It was then largely forgotten.', 'Around 2010 it came back: engineers at Microsoft used a version for ad placement in Bing, and Chapelle and Li at Yahoo found in 2011 that it worked very well for ads and news recommendations. Proofs followed in 2012 that its regret, like UCB1’s, grows only like the logarithm of the pulls. Today it is a common choice for website tests.'],
+ { h: 'Where it is used', p: ['William Thompson proposed it in **1933**, to choose between two medical treatments, then it was largely forgotten.', 'Around 2010 it returned: Microsoft engineers used a version for Bing ad placement, and in 2011 Chapelle and Li at Yahoo found it excellent for ads and news recommendations. Proofs in 2012 showed its regret, like UCB1’s, grows only logarithmically. Today it is common in website tests.'],
    draw(t) { const items = [[1933, 'Thompson: which treatment?'], [2010, 'Bing ads (Graepel et al.)'], [2011, 'Chapelle & Li: ads, news'], [2012, 'regret proofs (Agrawal & Goyal)']];
      rline(60, 70, 60, 250, 900, { c: C.line, w: 1.5 }); items.forEach(([y, s], i) => { const a = clamp(t - .8 - i * 1.4), yy = 85 + i * 52; dot(60, yy, 5, i ? C.teal : C.gold, a); txt(String(y), 74, yy, { s: 17, al: 'left', a, c: C.ink }); txt(s, 124, yy, { s: 16, al: 'left', a, c: C.soft }); }); } },
 

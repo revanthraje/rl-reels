@@ -95,7 +95,7 @@ const STEPS = [
      caption(P.done ? 'list used up: Pip never reached the cheese' : P.s ? `move ${P.k + 1} of 7: the list says ${NAMES[P.s.m]}` : 'faint arrows: the memorised list');
      if (t > 8.5) card([{ s: 'a list only works if nothing goes wrong', c: C.ink }, { s: 'Pip needs a move for wherever it lands', c: C.goldInk }], t - 8.5, { gap: 1 }); } },
 
- { h: 'A rule for every cell', p: ['So Pip writes a rule card instead: for **every cell**, one move. This is a **policy**, written **π (pi)**. π of s is the action the policy picks in state s.', 'Why is the cell enough? The maze is Markov: the cell tells Pip everything about what can happen next. So what Pip must find, per cell, is a move. This card follows shortest routes; at the start, where up and right tie, it picks up. Call it policy A.'],
+ { h: 'A rule for every cell', p: ['Instead Pip writes a rule card: one move for **every cell**, a **policy**, written **π (pi)**. π of s is the move it picks in state s.', 'Why is the cell enough? The maze is Markov: the cell tells all about what can happen next. This card, policy A, follows shortest routes; at the start, where up and right tie, it picks up.'],
    shot: [3, 9],
    draw(t) { wet(); maze({ t }); policyArrows(G, PA, t - .5, { gap: .18 }); pip(cx(0), cy(3), 1, t);
      if (t > 4.5) card(['π(s) = the move to make in state s', { s: '16 cells, 16 arrows: one move each', c: C.goldInk }, { s: 'rocks need none; cheese and cat end the walk', c: C.soft }], t - 4.5, { gap: 1 }); } },
@@ -109,19 +109,19 @@ const STEPS = [
      if (P.done) { bubble('+1', cx(4), cy(0) - 20, t - .8 - tr.length * d); caption(`cheese after ${tr.length} steps`); }
      else caption(P.s ? `step ${P.k + 1}: the arrow here says ${NAMES[P.s.m]}${P.s.mm !== P.s.m ? ', but Pip slides ' + NAMES[P.s.mm] : ''}` : 'shaded: the cell Pip is reading its arrow from'); } },
 
- { h: 'How many rule cards?', p: ['How many different policies are there? Each of the 16 cells can hold any of 4 arrows, so 4 × 4 × … sixteen times: about **4.3 billion**.', 'Most of them are silly: arrows into walls, or arrows that send Pip in circles. Scoring one card fairly takes thousands of walks, so trying them all is hopeless. Finding a good one without trying everything is what the rest of reinforcement learning is about.'],
+ { h: 'How many rule cards?', p: ['How many policies are there? Each of the 16 cells can hold any of 4 arrows: 4 multiplied by itself sixteen times, about **4.3 billion**.', 'Most are silly: arrows into walls or round in circles. Scoring one card fairly takes thousands of walks, so trying them all is hopeless. Finding a good one without trying everything is what the rest of RL is about.'],
    shot: [3, 9],
    draw(t) { wet(); maze({ t }); const k = Math.floor(t / .8), pi = t < 7 ? randomPolicy(77 + k) : PA; policyArrows(G, pi, 9, { col: t < 7 ? C.soft : C.goldInk, seed: (t < 7 ? k : 0) * 3 });
      pip(cx(0), cy(3), 1, t); caption(t < 7 ? `random rule card number ${k + 1}` : 'back to policy A', 1);
      card([`4 choices in each of 16 cells`, { s: `4 × 4 × … sixteen times = ${fmtN(NPOL)}`, c: C.goldInk }], t - .8, { gap: 1.2 }); } },
 
- { h: 'Two candidates', p: ['Here is a second card, **policy B**. It is a copy of A with a single arrow changed: in cell 8, just left of the cat, B points down, into a rock.', 'Pip only lands in cell 8 after slipping down from the top row, so B looks just as good most of the time. Is it really worse? Pip does not know the maze’s rules, so it has to find out by walking.'],
+ { h: 'Two candidates', p: ['A second card, **policy B**, copies A with one arrow changed: in cell 8, just left of the cat, B points down, into a rock.', 'Pip only lands in cell 8 by slipping down from the top row, so most of the time B looks just as good. Is it really worse? Not knowing the maze’s rules, Pip must find out by walking.'],
    shot: [3, 8],
    draw(t) { twoMazes(t); const a = clamp(t - 1.5) * (.6 + .4 * Math.sin(t * 4)); alpha(a, () => rrect(MB.ox + 2 * 34 + 1, MB.oy + 34 + 1, 32, 32, 990, { c: C.rose, w: 2 }));
      MA.pip(MA.cx(0), MA.cy(3), 1, t); MB.pip(MB.cx(0), MB.cy(3), 1, t);
      if (t > 3) card(['A and B differ only in cell 8, left of the cat', { s: 'A: up, back to the top row', c: C.goldInk }, { s: 'B: down, into the rock', c: C.roseInk }], t - 3, { gap: 1 }); } },
 
- { h: 'Scoring a walk', p: ['To compare policies, score each walk by its **return**: the rewards added up, each discounted by **γ (gamma)** = 0.9 per step of delay.', 'Here the only reward comes at the end, so the return is 0.9 to the power of steps minus one, plus for the cheese, minus for the cat. Seven steps: 0.9 to the sixth, 0.53. A walk still going after 100 steps is stopped and scores 0, as no reward has come; with A and B it never happens.'],
+ { h: 'Scoring a walk', p: ['Score each walk by its **return**: the rewards, each discounted by **γ (gamma)** = 0.9 per step of delay.', 'The only reward is the last: 0.9 to the power of steps minus one, plus for cheese, minus for cat. Seven steps: 0.9 to the sixth, 0.53. Walks still going at 100 steps stop and score 0, having earned nothing; A and B never get there.'],
    shot: [3, 10],
    draw(t) { wet(); maze({ t }); policyArrows(G, PA, 9, { a: .4 }); let c = 0, r = 3; const P = [[0, 3]];
      for (let i = 0; i < 7; i++) { [c, r] = G.step(c, r, PA[r * 5 + c]); P.push([c, r]); }
@@ -129,14 +129,14 @@ const STEPS = [
      pip(cx(0), cy(3), 1, t);
      if (t > 4.2) card(['return = ± 0.9 × 0.9 × … (steps − 1 times)', { s: '7 steps: 0.9 × 0.9 × 0.9 × 0.9 × 0.9 × 0.9 = 0.53', c: C.goldInk }, { s: 'still walking after 100 steps: 0', c: C.soft }], t - 4.2, { gap: 1.1 }); } },
 
- { h: 'Walk 1: a tie', p: ['Pip walks once with each card. To be fair, both walks use **the same dice**: the same slips at the same moments. Then any difference comes from the arrows, not from luck.', 'Walk 1: twice Pip slides into the outer wall and stays put, but both walks follow the same arrows to the cheese in 9 steps. Return 0.43 each. This walk tells Pip nothing about the difference.'],
+ { h: 'Walk 1: a tie', p: ['Pip walks once with each card. To be fair, both walks use **the same dice**: the same slips at the same moments, so any difference comes from the arrows, not luck.', 'Walk 1: twice Pip slides into the outer wall and stays put, but both walks follow the same arrows to the cheese in 9 steps. Return 0.43 each. It tells nothing about the difference.'],
    shot: [4, 11],
    draw(t) { twoMazes(t, { arrowA: .45 }); const d = .75;
      [[MA, W1.a], [MB, W1.b]].forEach(([M, w]) => { const P = walkAt(M, w.tr, t - .8, d); trailOf(M, w.tr, P.k, .7); M.pip(P.x, P.y, P.s && P.s.nc !== P.s.c ? Math.sign(P.s.nc - P.s.c) : 0, t);
        if (P.done) txt(`return ${F2(w.ret)}`, M.ox + 85, 222, { s: 17, c: w.ret > 0 ? C.goldInk : C.roseInk, a: clamp(t - .8 - w.tr.length * d) }); });
      if (t > 8.5) card([`walk 1:  A ${F2(W1.a.ret)},  B ${F2(W1.b.ret)}`, { s: 'same dice, same route: no difference shows', c: C.soft }], t - 8.5, { gap: 1 }); } },
 
- { h: 'Walk 2: the trap', p: ['Walk 2. On the top row, Pip slips down into the changed cell. With A, the arrow points up: Pip climbs back and reaches the cheese in 10 steps, return 0.39.', 'With B, the arrow points into the rock. Pip bumps, then a slip throws it right into the cat: −0.48. Not just bad luck: from cell 8, B can only bump, slip into the other rock, or slip into the cat. Once there, B always ends on the cat.'],
+ { h: 'Walk 2: the trap', p: ['On the top row, Pip slips down into the changed cell. A points up: Pip climbs back to the cheese in 10 steps: 0.39.', 'B points into the rock. Pip bumps, then slips into the cat: −0.48. Not just bad luck: from cell 8, B can only bump or slip into a rock or the cat, so once there it always ends on the cat.'],
    shot: [5, 12],
    draw(t) { twoMazes(t, { arrowA: .45 }); const d = .75;
      [[MA, W2.a], [MB, W2.b]].forEach(([M, w], j) => { const P = walkAt(M, w.tr, t - .8, d); trailOf(M, w.tr, P.k, .7); M.pip(P.x, P.y, P.s && P.s.nc !== P.s.c ? Math.sign(P.s.nc - P.s.c) : 0, t);
@@ -144,7 +144,7 @@ const STEPS = [
        if (P.done) txt(`return ${F2(w.ret)}`, M.ox + 85, 222, { s: 17, c: w.ret > 0 ? C.goldInk : C.roseInk, a: clamp(t - .8 - w.tr.length * d) }); });
      if (t > 9.5) card([{ s: `walk 2:  A ${F2(W2.a.ret)},  B ${F2(W2.b.ret)}`, c: C.ink }, { s: 'B’s bad arrow finally mattered', c: C.roseInk }], t - 9.5, { gap: 1 }); } },
 
- { h: 'Five thousand walks', p: [`Up the side: the **average return** of all walks so far. Along the bottom: the number of walks. Early on the lines jump; then they flatten. After 5000: A **${F3(JA.avg)}**, B ${F3(JB.avg)}, each give or take about ${(Math.ceil(Math.max(JA.se, JB.se) * 1000) / 1000).toFixed(3)} of leftover luck, so the gap is real.`, `B ends on the cat ${fmtN(JB.cnt[1])} times, A ${fmtN(JA.cnt[1])}. Judge a policy by its average return. Measured from every cell, that average is its **value**: next reel.`],
+ { h: 'Five thousand walks', p: [`Up: the **average return** of all walks so far. Across: number of walks. The lines jump early, then flatten. After 5000: A **${F3(JA.avg)}**, B ${F3(JB.avg)}, each give or take about ${(Math.ceil(Math.max(JA.se, JB.se) * 1000) / 1000).toFixed(3)} of luck, so the gap is real.`, `B ends on the cat ${fmtN(JB.cnt[1])} times, A ${fmtN(JA.cnt[1])}. Judge a policy by its average return. Measured from every cell, that average is its **value**: next reel.`],
    shot: [3, 11],
    draw(t) { wet(); maze({ t }); policyArrows(G, PA, 9, { a: .5, skip: (c, r) => c === 2 && r === 1 });
      arrow(cx(2) - 12, cy(1) + 12, cx(2) - 12, cy(1) - 14, 991, { c: C.goldInk, w: 2 }); arrow(cx(2) + 12, cy(1) - 14, cx(2) + 12, cy(1) + 12, 992, { c: C.roseInk, w: 2 });
@@ -160,7 +160,7 @@ const STEPS = [
        if (n > 1) txt(`${j ? 'B' : 'A'} ${F3(J.run[n - 1])}`, X(n - 1) + 4, Y(J.run[n - 1]) + (j ? 10 : -10), { s: 14, al: n > NW * .8 ? 'right' : 'left', c: j ? C.roseInk : C.goldInk }); });
      caption(`after ${fmtN(n)} walks each`); } },
 
- { h: 'Rolling dice on purpose', p: ['So far each cell held one fixed move: a **deterministic** policy. A policy can also hold chances: a **stochastic** policy. We write π(a | s), read “pi of a given s”: the probability of picking action a in state s.', 'The random Pip from the first reel was one too: a quarter for each move. Careful, there are now two kinds of chance. The wet floor is the world’s randomness. These dice are Pip’s own choice.'],
+ { h: 'Rolling dice on purpose', p: ['So far each cell held one fixed move: a **deterministic** policy. A **stochastic** policy holds chances instead, written π(a | s), read “pi of a given s”: the chance of action a in state s.', 'The first reel’s random Pip was one: a quarter per move. Careful: two kinds of chance now. The wet floor is the world’s chance; these dice are Pip’s choice.'],
    shot: [3, 9],
    draw(t) { wet(); maze({ t }); const c0 = 1, r0 = 2, pr = [.05, .05, .05, .85];
      pip(cx(c0), cy(r0), -1, t);
@@ -170,7 +170,7 @@ const STEPS = [
        const x = cx(c0) + LP[m][0], y = cy(r0) + LP[m][1]; box(x - 30, y - 9, 60, 18, C.bg, .85 * a); txt(`${s} ${pr[m]}`, x, y, { s: 14, c: main ? C.goldInk : '#6d645b', a }); });
      if (t > 4) card(['π(a | s): chance of each move in state s', { s: 'here: left 0.85, each other move 0.05', c: C.goldInk }, { s: 'floor slips = the world · these dice = Pip’s choice', c: C.soft }], t - 4, { gap: 1.1 }); } },
 
- { h: 'Why roll dice?', p: ['Two good reasons. A learner must **explore**: slips carry Pip into new cells, but if it always picks its arrow, it never finds out what the other moves would do. And against an opponent, being predictable gets punished: in rock, paper, scissors, play each one third of the time.', 'A fixed maze has no opponent. In each cell, some move is at least as good as the others, so putting all the chance on it cannot hurt: the best policy needs no dice.'],
+ { h: 'Why roll dice?', p: ['Two reasons. A learner must **explore**: slips reach new cells, but always following its arrow, Pip never tries other moves. Against an opponent, predictability is punished: in rock, paper, scissors, play each a third of the time.', 'A fixed maze has no opponent. Each cell has a best move, so putting all the chance on it cannot hurt: the best policy needs no dice.'],
    shot: [3, 9],
    draw(t) { const a1 = clamp(t - .5), a2 = clamp(t - 2.5);
      alpha(a1, () => { MA.maze({ t }); const R = rng(9); for (let i = 0; i < 6; i++) { const [c, r] = OPEN[Math.floor(R() * OPEN.length)]; txt('?', MA.cx(c), MA.cy(r) + 2, { s: 18, c: '#3f7f7c' }); } MA.pip(MA.cx(0), MA.cy(3), 1, t); txt('explore: try other moves', MA.ox + 85, 222, { s: 15, c: '#3f7f7c' }); });
@@ -179,7 +179,7 @@ const STEPS = [
      if (t > 5) card(['explore while learning', 'stay unpredictable against an opponent', { s: 'fixed maze: the best policy needs no dice', c: C.soft }], t - 5, { gap: 1.1 }); } },
 
  { h: 'Dial in randomness', ctl: { label: 'ε', values: EPS, def: 2, fmt: v => String(v), onChange: () => {} },
-   p: ['Drag **ε (epsilon)**: on each move, with chance ε, Pip ignores its arrow and picks one of the four moves at random. Otherwise it follows policy A.', `At 0, plain policy A: ${F3(JA.avg)}. At 0.2, the 0.85 and 0.05 card from two steps back: ${F3(judge(PA, .2).avg)}. At 1, Pip ignores its card: ${F3(judge(PA, 1).avg)}. That is close to 0, not clearly negative, because discounting shrinks the late endings of long random walks.`],
+   p: ['Drag **ε (epsilon)**: on each move, with chance ε, Pip ignores its arrow and picks a random move. Otherwise it follows policy A.', `At 0, plain policy A: ${F3(JA.avg)}. At 0.2, the 0.85 and 0.05 card from two steps back: ${F3(judge(PA, .2).avg)}. At 1, Pip ignores its card: ${F3(judge(PA, 1).avg)}, close to 0 rather than clearly negative, because discounting shrinks the late endings of long random walks.`],
    shot: [3, 8],
    draw(t, st) { const e = EPS[st.ci ?? 2], J = judge(PA, e), J0 = st.prevCi != null ? judge(PA, EPS[st.prevCi]) : J, u = ease((t - (st.changed ?? -9)) / .8);
      wet(); maze({ t }); policyArrows(G, PA, 9, { a: lerp(.75, .15, e) });
@@ -192,7 +192,7 @@ const STEPS = [
      xs.forEach((x, i) => { const h = cnt[i] / NW * hm; box(x - 26, base - h, 52, h, col[i]); txt(lab[i], x, base + 11, { s: 14, c: C.soft }); txt(fmtN(Math.round(cnt[i])), x, base - h - 9, { s: 14 }); });
      caption('bars: how the 5000 walks ended  ·  orange “dice!” = a random move'); } },
 
- { h: 'Your turn: write a card', tap: tapTurn, p: ['Tap any cell to turn its arrow a quarter turn clockwise. After each change, Pip walks your card 5000 times from the start, with the same dice as before.', `Policy A scores ${F3(JA.avg)}. Can you beat it? Barely. Worked out exactly from the rulebook, the best card is worth ${EXACT.best.toFixed(4)} from the start, and A ${EXACT.A.toFixed(4)}. The best card differs from A in one cell; on these walks it scores ${F3(JOPT.avg)}. Or break A, and see which cells matter.`],
+ { h: 'Your turn: write a card', tap: tapTurn, p: ['Tap a cell to turn its arrow a quarter clockwise. After each change Pip walks your card 5000 times from the start, same dice.', `A scores ${F3(JA.avg)}. Can you beat it? Barely. Exactly, from the rulebook, the best card is worth ${EXACT.best.toFixed(4)}, A ${EXACT.A.toFixed(4)}; it differs from A in one cell and scores ${F3(JOPT.avg)} on these walks. Or break A: which cells matter?`],
    shot: [3, 8],
    draw(t, st) { const pi = st.pi || PA, J = judge(pi); wet(); maze({ t });
      policyArrows(G, pi, 9, { hi: (c, r) => pi[r * 5 + c] !== PA[r * 5 + c] }); pip(cx(0), cy(3), 1, t);

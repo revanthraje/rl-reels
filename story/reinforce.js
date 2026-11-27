@@ -133,7 +133,7 @@ const STEPS = [
    shot: [4, 11],
    draw(t) { room(t, { th: TH1, glow: 2 });
      card(['chosen door:  + α × return × (1 − its chance)', 'other doors:   − α × return × their chance', { s: `C:  ${ADOOR} × 1 × 0.67 = ${sg(TH1[2])}`, c: DINK[2] }, { s: `A, B:  ${ADOOR} × 1 × 0.33 = ${f2(-TH1[0])} down`, c: C.roseInk }], t - .8, { gap: 1.4, fs: 16 }); } },
- { h: 'How surprising was the choice?', p: ['That factor is the gradient of the **log-probability**, the log of the chosen door’s chance. The nudge is scaled by the return and by how surprising the choice was. A door picked with chance 0.9 gets a factor of only 0.1; one picked with chance 0.1 gets 0.9.', 'Why? Likely doors get picked, and nudged, often; rare doors seldom, so each nudge counts more. The card shows the division by the chance exactly cancels how often a door is picked.'],
+ { h: 'How surprising was the choice?', p: ['That factor is the gradient of the **log-probability**, the log of the chosen door’s chance. The nudge scales with the return and how surprising the choice was: chance 0.9 gives a factor of 0.1, chance 0.1 gives 0.9.', 'Why? Likely doors get picked, and nudged, often; rare doors seldom, so each nudge counts more. Dividing by the chance exactly cancels how often it is picked.'],
    shot: [4, 11],
    draw(t) { const xs = [110, 290];
      [[.9, 'likely pick'], [.1, 'surprising pick']].forEach(([p, s], j) => { const a = clamp(t - .5 - j * 2); if (a <= 0) return;
@@ -152,11 +152,11 @@ const STEPS = [
        ctx.save(); ctx.strokeStyle = DINK[k]; ctx.lineWidth = 1.8; ctx.beginPath(); for (let i = 0; i < n; i++) { const x = X(i), y = Y(clamp(AVG[i][k], -.4, .4)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.restore();
        if (n > 0) txt(DNAME[k], x1 + 10, Y(EXACT[k]), { s: 14, c: DINK[k] }); });
      caption(n ? `after ${n.toLocaleString('en-US')} tries` : ''); } },
- { h: 'A whole walk', p: ['Now the maze: dry floor, +1 onto the cheese, −1 onto the cat, both end the walk, γ (gamma) 0.9. All preferences start at 0.', 'REINFORCE waits for the walk to finish, like Monte Carlo, and credits every move with the **return that followed it**, since a move cannot change earlier rewards. Textbook REINFORCE also shrinks late moves’ nudges by 0.9 per step since the start; like most implementations, we leave that out.'],
+ { h: 'A whole walk', p: ['The maze: dry floor, +1 onto the cheese, −1 onto the cat, both end the walk, γ (gamma) 0.9. Preferences start at 0.', 'REINFORCE waits for the walk to end, like Monte Carlo, then gives each move the **return that followed it**: a move cannot change earlier rewards. Textbook REINFORCE also shrinks later moves’ nudges by 0.9 per step; like most code, we skip that.'],
    shot: [3, 9],
    draw(t) { G.maze({ t, labels: clamp(t - .5) }); fans(G, new Float64Array(80), { skip: (c, r) => c === 0 && r === 3 }); G.pip(cx(0), cy(3), 1, t);
      if (t > 4) card(['return of a move = final reward × 0.9 per later move', { s: 'cheese 3 moves later: 0.9 × 0.9 × 1 = 0.81', c: C.goldInk }, { s: 'a walk stopped after 100 moves scores 0', c: C.soft }], t - 4, { gap: 1.3, fs: 16 }); } },
- { h: 'Walk 1', p: [`Walk 1 takes ${W1N} moves. Pip wanders, bumps into walls ${W1S.filter(q => q.nc === q.c && q.nr === q.r).length} times, and finally steps up from the cell below the cat onto the cat: reward −1.`, `The walk is over, so every move now gets its return: −1 for the last one, ${f2(W1G[W1N - 2])} for the one before, and so on back to ${f2(W1G[0])} for Pip’s first move. The labels show the return of the last move made in each cell.`],
+ { h: 'Walk 1', p: [`Walk 1 takes ${W1N} moves. Pip wanders, bumps into walls ${W1S.filter(q => q.nc === q.c && q.nr === q.r).length} times, and finally steps up onto the cat: reward −1.`, `Now every move gets its return: −1 for the last, ${f2(W1G[W1N - 2])} for the one before, and so on back to ${f2(W1G[0])} for Pip’s first move. The labels show the return of the last move made in each cell.`],
    shot: [4, 12],
    draw(t) { const dur = .45, P = walkAt(W1S, t - .5, dur); G.maze({ t }); fans(G, new Float64Array(80), { a: .5 });
      for (let i = 0; i < Math.min(P.k, W1N); i++) dot(cx(W1S[i].nc) + ((i * 7) % 11) - 5, cy(W1S[i].nr) + ((i * 5) % 11) - 5, 2.4, C.teal, .6);
@@ -164,7 +164,7 @@ const STEPS = [
      if (t > tEnd + 1) LAB1.forEach((q, i) => gLabel(q, clamp((t - tEnd - 1 - i * .25) * 3)));
      if (t > tEnd + 3) card([`last move −1, the one before ${f2(W1G[W1N - 2])}, then ${f2(W1G[W1N - 3])} …`, { s: `first move: 0.9 to the ${W1N - 1}th × (−1) = ${f2(W1G[0])}`, c: C.roseInk }], t - tEnd - 3, { gap: 1.3, fs: 16 });
      if (!P.done) caption(`walk 1, move ${Math.min(W1N, P.k + 1)}`); } },
- { h: 'Every move pushed down', p: ['Now the nudges. Each move’s preference changes by α × its return × its factor, with α = 0.2. All returns were negative, so **every move** Pip made became less likely.', 'Fair for the last move, up into the cat: in that cell its chance drops from 0.25 to ' + f2(softmax(Array.from(E[0].th.slice(key(3, 2) * 4, key(3, 2) * 4 + 4)))[0]) + '. But Pip’s first move, up from the start, was a fine move. Its chance drops too, to ' + f2(softmax(Array.from(E[0].th.slice(key(0, 3) * 4, key(0, 3) * 4 + 4)))[0]) + ', punished only because this walk happened to end badly.'],
+ { h: 'Every move pushed down', p: ['Each move’s preference changes by α × its return × its factor, with α = 0.2. All returns were negative, so **every move** became less likely.', 'Fair for the last move, up into the cat: there its chance drops from 0.25 to ' + f2(softmax(Array.from(E[0].th.slice(key(3, 2) * 4, key(3, 2) * 4 + 4)))[0]) + '. But Pip’s first move, up from the start, was fine. Its chance drops too, to ' + f2(softmax(Array.from(E[0].th.slice(key(0, 3) * 4, key(0, 3) * 4 + 4)))[0]) + ', only because this walk ended badly.'],
    shot: [3, 10],
    draw(t) { const u = ease((t - 1) / 2), th = E[0].th.map(v => v * u); G.maze({ t, hi: t > 3 ? [[3, 2, C.rose, .25], [0, 3, C.teal, .2]] : null }); fans(G, th);
      const pc = (c, r) => softmax(Array.from(E[0].th.slice(key(c, r) * 4, key(c, r) * 4 + 4)))[0];
@@ -175,7 +175,7 @@ const STEPS = [
      G.maze({ t }); fans(G, T); for (let i = 0; i < WC.tr.length; i++) dot(cx(WC.tr[i].nc) + ((i * 7) % 11) - 5, cy(WC.tr[i].nr) + ((i * 5) % 11) - 5, 2.2, C.teal, .35);
      if (t > 3) gLabel(WC.tr[WC.tr.length - 1], clamp(t - 3)); gLabel(WC.tr[0], clamp(t - 5)); bubble('+1', cx(4), cy(0) - 18, t - .5); G.pip(cx(4), cy(0) + 6, 1, t);
      caption(`walk ${CH1 + 1}: cheese after ${WC.tr.length} moves`); } },
- { h: `${NEP} walks`, p: ['A new chart. Along the bottom: walk number. Up the side: that walk’s return from the start. Dots: gold for cheese, rose for cat. Long walks score near 0, so bottom ticks also mark cat walks, rose, and stopped walks, grey. The line averages the last 25 walks.', `Early walks are long and score near 0. Then the returns climb: the average of the last 25 walks reaches ${f2(SM[NEP - 1])}, near the best possible ${f2(BEST)}.`],
+ { h: `${NEP} walks`, p: ['Across: walk number. Each dot is that walk’s return from the start: gold for cheese, rose for cat. Long walks score near 0, so ticks along the bottom also mark cat walks, rose, and stopped walks, grey. The line averages the last 25 walks.', `Early walks are long and score near 0. Then returns climb: the last-25 average reaches ${f2(SM[NEP - 1])}, near the best possible ${f2(BEST)}.`],
    shot: [4, 13],
    draw(t) { const n = clamp(Math.floor((t - 1.5) * 30), 0, NEP); G.maze({ t }); fans(G, n ? E[n - 1].th : new Float64Array(80), { a: .9 });
      box(0, 284, W, 120, C.bg); chart({ n, series: [{ v: S.rets, dots: true }, { v: SM, col: C.goldInk, w: 2 }], best: true, title: 'return of each walk', ticks: true }); caption(n ? `after walk ${n}` : ''); } },
@@ -188,7 +188,7 @@ const STEPS = [
    draw(t) { const n = clamp(Math.floor((t - .8) * 60), 0, NEP); const cols = ['#c99a3a', '#4f7fb0', '#3f9a96', '#c4581f', '#a06cb0'];
      chart({ y0: 300, y1: 60, n, series: FIRST.map((rr, k) => ({ v: smooth(rr, 25), col: cols[k], w: 1.2, a: .8 })).concat(t > 6 ? [{ v: M2.sm, col: C.ink, w: 3 }] : []), best: true, lo: -.2, title: 'average return of the last 25 walks' });
      if (t > 6) card([`thin: runs 1 to 5, around walk 100 from ${f2(Math.min(...at100))} to ${f2(Math.max(...at100))}`, { s: `thick: average of ${NRUN} runs`, c: C.ink }], t - 6, { gap: 1.2, y: 322 }); } },
- { h: 'Why so noisy?', p: ['Each walk’s luck colours **every move** in it. One random detour into the cat punishes all the good moves before it, as walk 1 showed; one lucky walk rewards the bumps along the way.', `The bars count Pip’s ${NEP} walks by their return from the start, from ${f2(RMIN)} to ${f2(RMAX)}. Every nudge is scaled by returns like these, so the nudges swing as widely. This is **high variance**: right on average, but each single estimate jumps around. The next reel calms it.`],
+ { h: 'Why so noisy?', p: ['Each walk’s luck colours **every move**. One random detour into the cat punishes the good moves before it, like walk 1; one lucky walk rewards its bumps.', `The bars count Pip’s ${NEP} walks by return, from ${f2(RMIN)} to ${f2(RMAX)}. Nudges scale with these returns, so they swing as widely. This is **high variance**: right on average, but each estimate jumps. The next reel calms it.`],
    shot: [3, 9],
    draw(t) { const x0 = 50, x1 = 360, base = 250, bw = .05, lo = -.6, nb = 24, cnt = new Array(nb).fill(0); S.rets.forEach(v => cnt[Math.min(nb - 1, Math.floor((v - lo) / bw))]++);
      const mx = Math.max(...cnt), X = v => x0 + (v - lo) / (nb * bw) * (x1 - x0), u = ease((t - .5) / 2);
@@ -203,7 +203,7 @@ const STEPS = [
    draw(t, st) { const a = ALPHAS[st.ci ?? 2], M = many(a), n = clamp(Math.floor((t - (st.changed ?? 0) - .3) * 80), 0, NEP);
      chart({ y0: 270, y1: 60, lo: -.2, n, series: M.runs.slice(0, 5).map(rr => ({ v: smooth(rr, 25), col: C.grey, w: 1, a: .9 })).concat([{ v: M.sm, col: C.goldInk, w: 3 }]), best: true, title: `α = ${a}: average return (thick), runs 1–5 (thin)` });
      card([`average over the last 25 walks: ${f2(M.end)}`, { s: `stuck runs (last 25 walks all stopped): ${M.stuck} of ${NRUN}`, c: M.stuck > 5 ? C.roseInk : C.soft }], 9, { gap: 0, y: 304 }); } },
- { h: 'Too big a step', p: [`With α = 1, ${M1.stuck} of ${NRUN} runs get stuck. In run ${STUCKRUN + 1}, the early walks hit the cat ${STK_ENDCAT.cats} times and never the cheese. The big pushes left most big arrows pointing left or down, away from the cheese.`, `From walk ${STK_ENDCAT.firstStop + 1} on, all ${NEP - STK_ENDCAT.firstStop} walks hit the 100-move stop: return 0, no nudge. No chance is exactly 0, so an ending could still come, but here it practically never does. Big steps on noisy estimates can wreck a policy.`],
+ { h: 'Too big a step', p: [`With α = 1, ${M1.stuck} of ${NRUN} runs get stuck. Run ${STUCKRUN + 1}’s early walks hit the cat ${STK_ENDCAT.cats} times, never the cheese; big pushes turned most arrows left or down, away from it.`, `From walk ${STK_ENDCAT.firstStop + 1}, all ${NEP - STK_ENDCAT.firstStop} walks hit the 100-move stop: return 0, no nudge. No chance is exactly 0, so an ending is possible, just unlikely. Big steps on noisy estimates can wreck a policy.`],
    shot: [3, 10],
    draw(t) { const e = STUCK.eps[NEP - 1]; G.maze({ t }); fans(G, e.th); const tr = e.tr.slice(0, 40), P = walkAt(tr, (t % 18) - .5, .35); G.pip(P.x, P.y, P.face, t);
      if (t > 4) card([`early walks: cat ${STK_ENDCAT.cats} times, cheese ${STK_ENDCAT.ches} times`, 'big pushes away from the right side', { s: 'walks hit the 100-move stop → return 0 → no nudge', c: C.roseInk }], t - 4, { gap: 1.3 });

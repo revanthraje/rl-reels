@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 13;
+const VERSION = 14;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const RLA = window.RLAnim || { A: {}, CAP: {}, SPEED: {}, TOUCH: new Set() }, { A } = RLA;
 const STORY = window.RLStory, SL = STORY.lib;
@@ -169,9 +169,9 @@ function fitStory(sec) { // story step: biggest font + drawing that fit together
     const top = padT + kids.filter(k => k.compareDocumentPosition(cw) & 4).reduce((a, k) => a + k.offsetHeight + gap, 0);
     if (top + w * 420 / 400 > sideTop + 6) { w = Math.min(w, inner - 44); left = true; }   // keep the button column free: shift left
     const minFrac = f >= 19 ? .99 : f >= 17 ? .88 : f >= 15 ? .76 : .68;
-    if (w >= (inner - 44) * minFrac) { pick = { f, w, left }; break; }
+    if (w >= Math.max((inner - 44) * minFrac, Math.min(inner - 44, 230))) { pick = { f, w, left }; break; }   // never shrink the drawing below ~230 px: labels stay readable
   }
-  if (!pick) { pick = { f: 14, w: (inner - 44) * .68, left: true }; tx.style.fontSize = '14px'; tx.classList.add('scroll'); }
+  if (!pick) { pick = { f: 14, w: Math.max((inner - 44) * .68, Math.min(inner - 44, 230)), left: true }; tx.style.fontSize = '14px'; tx.classList.add('scroll'); }
   cw.style.width = Math.floor(pick.w) + 'px'; cw.style.alignSelf = pick.left ? 'flex-start' : 'center';
 }
 function fitSlide(sec) { // shrink text/canvas step by step until a long slide fits the screen
@@ -192,6 +192,7 @@ function setSlide(reel, i, instant) {
   if (instant) { tr.style.transition = 'none'; requestAnimationFrame(() => tr.style.transition = ''); }
   tr.style.transform = `translateX(${-i * 100}%)`;
   reel.el.querySelectorAll('.slide').forEach((s, k) => s.classList.toggle('active', k === i));
+  reel.el.classList.toggle('mid', i > 0 && i < reel.n - 1);   // story steps hide the 'builds on' bar to give the text room
   if (reel.t._prep) for (const k of [i, i + 1]) { const sl = reel.t.slides[k - 1], box = sl && reel.el.querySelectorAll('.slide')[k]?.querySelector('.stext'); if (box && !box.childElementCount) box.innerHTML = storyText(sl); }
   fitSlide(reel.el.querySelectorAll('.slide')[i]);
   reel.el.querySelectorAll('.bars u').forEach((b, k) => b.style.width = k < i ? '100%' : '0%');
@@ -534,6 +535,7 @@ $('#btnReset').onclick = () => { if (confirm('Forget everything you have watched
 // ---------- start ----------
 function nextReelInitial() { hist.push({ id: pickNext(), idx: 0 }); show(0); }
 updateCount(); nextReelInitial();
+window.__rlOpen = id => openTopic(id);   // test hook (tools/app_shot.py)
 window.__rlDebug = () => ({ id: cur && cur.t.id, locked: cur && !unlocked(cur.t), seq: M.seq, idx: cur && cur.idx, nar: cur && cur.nar && { state: cur.nar.state, clip: !!cur.nar.clip }, src: player.src.split('/').pop(), clips: CLIPS ? Object.keys(CLIPS).length : 0, unlocked: audioUnlocked });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const had = !!navigator.serviceWorker.controller; let reloaded = false;
