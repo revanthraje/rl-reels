@@ -184,7 +184,7 @@ window.RLTopics = [
   ],
   recap: ['Needs the rules of the world', 'Sweep all states: best reward plus next value', 'Stop when values settle, then act greedily'] },
 
-{ id: 'policyiter', title: 'Policy Iteration', emoji: '🔄', track: 'Planning', pre: ['bellman'],
+{ id: 'policyiter', title: 'Policy Iteration', emoji: '🔄', track: 'Planning', pre: ['bellman', 'valueiter'],
   hook: 'Judge your plan, fix it, repeat, until nothing changes.',
   slides: [
     { h: 'Words you’ll need', g: [['Policy', 'the agent’s rulebook: in this situation, do that'], ['Value', 'how much total reward you can expect from a state onward'], ['Greedy', 'always picking whatever looks best right now']] },
@@ -210,7 +210,7 @@ window.RLTopics = [
   ],
   recap: ['Learn from complete episodes', 'Value = average of the returns seen', 'Honest, but noisy', 'Must wait for the episode to end'] },
 
-{ id: 'td', title: 'Temporal-Difference Learning', emoji: '⚡', track: 'Model-free', pre: ['values', 'bellman'],
+{ id: 'td', title: 'Temporal-Difference Learning', emoji: '⚡', track: 'Model-free', pre: ['values', 'bellman', 'mc'],
   hook: 'Learn a guess from a slightly better guess, every single step.',
   slides: [
     { h: 'Words you’ll need', g: [['Value', 'how much total reward you expect from a state onward'], ['Estimate', 'your current best guess, which gets corrected over time'], ['Bootstrapping', 'improving a guess using another guess, instead of waiting for the truth']] },

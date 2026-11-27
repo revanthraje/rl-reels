@@ -1,9 +1,10 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 10;
+const VERSION = 11;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
-const { A } = window.RLAnim;
+const RLA = window.RLAnim || { A: {}, CAP: {}, SPEED: {}, TOUCH: new Set() }, { A } = RLA;
+const STORY = window.RLStory, SL = STORY.lib;
 const KEY = 'rlreels.v1', DAY = 864e5;
 const MIN_SEC_PER_SLIDE = 1.5;         // reaching the end faster than this per content slide counts as "skimmed"
 const REVIEW_DAYS = [3, 8, 21, 60];    // spaced re-showing of watched reels
@@ -11,10 +12,25 @@ const $ = s => document.querySelector(s);
 
 // sanity check on content
 for (const t of TOPICS) {
-  if (t.slides.length + 2 > 10) console.warn('reel too long', t.id);
+  t.story = true;   // every topic is a hand-drawn story reel (story/<id>.js), loaded when first shown
   for (const p of t.pre) if (!BY[p]) console.warn('unknown prereq', t.id, p);
-  for (const s of t.slides) if (s.a && !A[s.a]) console.warn('unknown anim', t.id, s.a);
 }
+// ---------- story reels: load on demand, turn steps into slides ----------
+const storyLoading = {};
+function loadStory(id) {
+  if (STORY.reels[id]) return Promise.resolve();
+  return storyLoading[id] ||= new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'story/' + id + '.js?v=' + VERSION;
+    s.onload = () => STORY.reels[id] ? res() : rej(); s.onerror = () => { delete storyLoading[id]; rej(); };
+    document.body.appendChild(s);
+  });
+}
+function prepStory(t) {
+  const R = STORY.reels[t.id]; if (!R || t._prep) return; t._prep = true;
+  t.slides = R.steps.map((s, k) => ({ get h() { return s.h; }, get t() { return (s.p || []).join(' '); }, a: '__story', p: { k }, step: s }));
+}
+const storyText = s => (s.step.p || []).map(p => `<p>${md(p)}</p>`).join('');
+const ctlFmt = (c, i) => { const v = c.values[i]; return c.fmt ? c.fmt(v) : String(v); };
 
 // ---------- memory ----------
 let M = load();
@@ -97,26 +113,28 @@ const SLIDE_EMOJI = ['💡', '⚙️', '🎯', '🧩', '🚀', '🔍', '🌟', '
 function slideDur(t, i) { // seconds a slide auto-plays for
   if (i === 0) return 4.5;
   const s = t.slides[i - 1]; if (!s) return 0;
+  if (s.step) return s._dur ??= Math.min(40, Math.max(8, 4 + s.t.length * .07));
   const chars = (s.h || '').length + (s.t || '').length + (s.ex || '').length + (s.g || []).reduce((a, [w, d]) => a + w.length + d.length, 0);
   return Math.min(24, Math.max(6, 3 + chars * .068 + (s.a ? 3.5 : 0)));
 }
 function buildReel(t, startIdx = 0) {
   const r = M.t[t.id], n = t.slides.length + 2, hue = HUE[t.track] ?? 265;
-  const el = document.createElement('div'); el.className = 'reel'; el.style.setProperty('--h', hue);
+  const el = document.createElement('div'); el.className = 'reel' + (t._prep ? ' story' : ''); el.style.setProperty('--h', hue);
   let note = '';
   if (r && (r.status === 'partial')) note = `<div class="note">👀 You left at slide ${(r.maxSlide || 0) + 1}/${n} last time</div>`;
   else if (r && r.status === 'skimmed') note = `<div class="note">💨 You speed-ran this one — calmer look?</div>`;
   else if (r && r.status === 'done') note = `<div class="note">🧠 Refresher · watched ${r.views}×</div>`;
   if (!unlocked(t)) note += `<div class="note">Normally after: ${t.pre.filter(p => !isDone(p)).map(p => BY[p].title).join(', ')}</div>`;
-  const mins = Math.max(1, Math.round(Array.from({ length: n }, (_, i) => slideDur(t, i)).reduce((a, b) => a + b) / 60));
+  const mins = t._prep ? Math.max(1, Math.round((n - 2) * 22 / 60)) : Math.max(1, Math.round(Array.from({ length: n }, (_, i) => slideDur(t, i)).reduce((a, b) => a + b) / 60));
   const slides = [
     `<section class="slide cover"><div class="halo"><div class="big">${t.emoji}</div></div>${badgeFor(t)}<h1>${esc(t.title)}</h1>
       <div class="hook">${md(t.hook)}</div><div class="meta">${esc(t.track)} · ${n} slides · ~${mins} min</div>${note}
       ${t.pre.length ? `<div class="chips">${t.pre.map(p => chip(p)).join('')}</div>` : ''}
       <div class="hint">${M.autoplay ? 'tap to start · hold to pause' : 'tap to start'}</div></section>`,
-    ...t.slides.map((s, i) => `<section class="slide"><div class="num"><span>${SLIDE_EMOJI[i % SLIDE_EMOJI.length]}</span>${i + 1}<small>/${t.slides.length}</small></div>${s.h ? `<h2>${md(s.h)}</h2>` : ''}
-      ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"${RLAnim.TOUCH.has(s.a) ? ' class="touch"' : ''}></canvas></div>` : ''}${s.ctl ? `<div class="ctl">${s.ctl.map(c => `<label><span>${esc(c.l)}</span><input type="range" data-k="${c.k}" min="${c.min}" max="${c.max}" step="${c.step || (c.max - c.min) / 100}" value="${c.v}"><output>${c.v}</output></label>`).join('')}</div>` : ''}${s.a && RLSpeech.capFor(s) ? `<div class="see"><b>👀</b><div>${md(RLSpeech.capFor(s))}${s.try ? `<em>👆 ${md(s.try)}</em>` : ''}</div></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.g ? `<div class="gloss">${s.g.map(([w, d], k) => `<div style="--k:${k}"><b>${md(w)}</b><span>${md(d)}</span></div>`).join('')}</div>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
-    `<section class="slide recap"><div class="trophy">${t.emoji}</div><h2>In a nutshell</h2><ul>${t.recap.map((x, k) => `<li style="--k:${k}">${md(x)}</li>`).join('')}</ul>
+    ...t.slides.map((s, i) => s.step ? `<section class="slide sstep"><div class="num"><span>${SLIDE_EMOJI[i % SLIDE_EMOJI.length]}</span>${i + 1}<small>/${t.slides.length}</small></div><h2>${md(s.h)}</h2>
+      <div class="cvwrap"><canvas data-i="${i + 1}" data-h="420" class="story${s.step.tap ? ' touch' : ''}"></canvas></div>${s.step.ctl ? `<div class="ctl"><label><span>${esc(s.step.ctl.label)}</span><input type="range" data-sk="1" min="0" max="${s.step.ctl.values.length - 1}" step="1" value="${s.step.ctl.def ?? 0}"><output>${esc(ctlFmt(s.step.ctl, s.step.ctl.def ?? 0))}</output></label></div>` : ''}<div class="stext"></div></section>` : `<section class="slide"><div class="num"><span>${SLIDE_EMOJI[i % SLIDE_EMOJI.length]}</span>${i + 1}<small>/${t.slides.length}</small></div>${s.h ? `<h2>${md(s.h)}</h2>` : ''}
+      ${s.a ? `<div class="cvwrap"><canvas data-i="${i + 1}"${RLA.TOUCH.has(s.a) ? ' class="touch"' : ''}></canvas></div>` : ''}${s.ctl ? `<div class="ctl">${s.ctl.map(c => `<label><span>${esc(c.l)}</span><input type="range" data-k="${c.k}" min="${c.min}" max="${c.max}" step="${c.step || (c.max - c.min) / 100}" value="${c.v}"><output>${c.v}</output></label>`).join('')}</div>` : ''}${s.a && RLSpeech.capFor(s) ? `<div class="see"><b>👀</b><div>${md(RLSpeech.capFor(s))}${s.try ? `<em>👆 ${md(s.try)}</em>` : ''}</div></div>` : ''}${s.t ? `<p>${md(s.t)}</p>` : ''}${s.g ? `<div class="gloss">${s.g.map(([w, d], k) => `<div style="--k:${k}"><b>${md(w)}</b><span>${md(d)}</span></div>`).join('')}</div>` : ''}${s.ex ? `<div class="ex"><span>💬</span><div>${md(s.ex)}</div></div>` : ''}</section>`),
+    `<section class="slide recap"><div class="trophy">${t.emoji}</div><h2>${t._prep ? 'Reel complete' : 'In a nutshell'}</h2>${t._prep ? '' : `<ul>${t.recap.map((x, k) => `<li style="--k:${k}">${md(x)}</li>`).join('')}</ul>`}
       <div class="end-status"></div><div class="swipe-up"><span>⌃</span>swipe up for the next reel</div></section>`
   ];
   el.innerHTML = `<div class="aurora"><i></i><i></i><i></i></div>
@@ -147,6 +165,7 @@ function setSlide(reel, i, instant) {
   if (instant) { tr.style.transition = 'none'; requestAnimationFrame(() => tr.style.transition = ''); }
   tr.style.transform = `translateX(${-i * 100}%)`;
   reel.el.querySelectorAll('.slide').forEach((s, k) => s.classList.toggle('active', k === i));
+  if (reel.t._prep) for (const k of [i, i + 1]) { const sl = reel.t.slides[k - 1], box = sl && reel.el.querySelectorAll('.slide')[k]?.querySelector('.stext'); if (box && !box.childElementCount) box.innerHTML = storyText(sl); }
   fitSlide(reel.el.querySelectorAll('.slide')[i]);
   reel.el.querySelectorAll('.bars u').forEach((b, k) => b.style.width = k < i ? '100%' : '0%');
   if (i === reel.n - 1) onRecap(reel);
@@ -328,6 +347,9 @@ const stage = $('#stage');
 let hist = [], pos = -1, cur = null, busy = false;
 function show(entryIdx, dir) {
   if (busy) return;
+  const want = BY[hist[entryIdx].id];
+  if (!STORY.reels[want.id]) { busy = true; toast('Loading ' + want.title + '…'); loadStory(want.id).then(() => { busy = false; show(entryIdx, dir); }, () => { busy = false; toast('Could not load this reel'); }); return; }
+  prepStory(want);
   const old = cur;
   if (old) { finalize(old); hist[pos].idx = old.doneNow ? 0 : old.idx; }
   pos = entryIdx;
@@ -350,7 +372,7 @@ function prevSlide() { if (!cur) return; if (cur.idx > 0) setSlide(cur, cur.idx 
 
 // gestures
 let g = null;
-function canvasPt(cv, e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * 400 / r.width, y: (e.clientY - r.top) * 260 / r.height }; }
+function canvasPt(cv, e) { const r = cv.getBoundingClientRect(), h = +(cv.dataset.h || 260); return { x: (e.clientX - r.left) * 400 / r.width, y: (e.clientY - r.top) * h / r.height }; }
 let drag = null;
 stage.addEventListener('pointerdown', e => {
   if (e.target.closest('.ctl')) { g = null; return; }
@@ -359,7 +381,11 @@ stage.addEventListener('pointerdown', e => {
 }, true);
 stage.addEventListener('pointermove', e => { if (drag && cur) { cur.S.ptr = { ...canvasPt(drag, e), down: true }; } }, true);
 addEventListener('pointerup', () => { if (drag && cur && cur.S.ptr) cur.S.ptr.down = false; drag = null; }, true);
-stage.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.k; if (!k || !cur) return; (cur.S.ctl ||= {})[k] = +e.target.value; e.target.nextElementSibling.textContent = e.target.value; });
+stage.addEventListener('input', e => {
+  if (e.target.dataset && e.target.dataset.sk && cur) { const sl = cur.t.slides[cur.idx - 1], c = sl && sl.step.ctl; if (!c) return;
+    const S = cur.S; S.prevCi = S.ci; S.ci = +e.target.value; S.changed = Math.max(0, performance.now() - cur.t0 - cur.pausedFor) / 1000; c.onChange?.(S);
+    e.target.nextElementSibling.textContent = ctlFmt(c, S.ci); return; }
+  const k = e.target.dataset && e.target.dataset.k; if (!k || !cur) return; (cur.S.ctl ||= {})[k] = +e.target.value; e.target.nextElementSibling.textContent = e.target.value; });
 stage.addEventListener('pointerdown', e => { if (e.target.closest('button') || e.target.closest('.ctl') || e.target.closest('canvas.touch')) return; g = { x: e.clientX, y: e.clientY, t: performance.now(), held: false }; const gg = g; setTimeout(() => { if (g === gg && !gg.moved) { gg.held = true; setPaused(cur, true); } }, 220); });
 stage.addEventListener('pointermove', e => {
   if (!g || !cur || busy) return; const dy = e.clientY - g.y, dx = e.clientX - g.x;
@@ -409,13 +435,23 @@ function frame() {
   if (M.autoplay && dur && el >= dur && cur.idx < cur.n - 1 && !busy && !g) setSlide(cur, cur.idx + 1);
   const cv = cur.canvases[cur.idx]; if (!cv) return;
   const w = cv.clientWidth; if (!w) return;
-  const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * dpr), H = Math.round(w * 260 / 400 * dpr);
+  const s = cur.t.slides[cur.idx - 1], LH = s.step ? 420 : 260;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * dpr), H = Math.round(w * LH / 400 * dpr);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-  const c = cv.getContext('2d'), s = cur.t.slides[cur.idx - 1];
+  const c = cv.getContext('2d');
+  if (s.step) {
+    const S = cur.S, tt = Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000, R = STORY.reels[cur.t.id];
+    if (s.step.ctl && S.ci == null) { const inp = cur.el.querySelectorAll('.slide')[cur.idx].querySelector('input[data-sk]'); S.ci = inp ? +inp.value : (s.step.ctl.def ?? 0); }
+    S.taps ||= [];
+    c.setTransform(W / 400, 0, 0, H / 420, 0, 0); c.fillStyle = SL.C.bg; c.fillRect(0, 0, 400, 420);
+    try { SL.setCtx(c); R.onCtx?.(c); while (S.taps.length) { const q = S.taps.shift(); s.step.tap?.(q.x, q.y, S, tt); } s.step.draw(tt, S); }
+    catch (err) { if (!cv.dataset.err) { console.error(cur.t.id, s.p.k, err); cv.dataset.err = 1; } }
+    return;
+  }
   c.setTransform(W / 400, 0, 0, H / 260, 0, 0); c.fillStyle = '#0b0e1d'; c.fillRect(0, 0, 400, 260);
   if (!cur.S.ctl) { cur.S.ctl = {}; cur.el.querySelectorAll('.slide')[cur.idx].querySelectorAll('.ctl input').forEach(x => cur.S.ctl[x.dataset.k] = +x.value); }
   cur.S.taps ||= [];
-  try { A[s.a](c, Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000 * (RLAnim.SPEED[s.a] ?? 1), cur.S, s.p || {}); } catch (err) { if (!cv.dataset.err) { console.error(s.a, err); cv.dataset.err = 1; } }
+  try { A[s.a](c, Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000 * (RLA.SPEED[s.a] ?? 1), cur.S, s.p || {}); } catch (err) { if (!cv.dataset.err) { console.error(s.a, err); cv.dataset.err = 1; } }
 }
 requestAnimationFrame(frame);
 

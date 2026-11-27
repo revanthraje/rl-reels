@@ -199,3 +199,33 @@ canvas.touch { cursor: pointer; touch-action: none; outline: 2px dashed hsl(var(
   padding: 9px 12px; border-radius: 14px; background: rgba(0,0,0,.25); border: 1px dashed rgba(255,255,255,.18); }
 .see em { display: block; font-style: normal; font-weight: 700; color: hsl(var(--h) 100% 82%); margin-top: 4px; }
 .slide.dense .see { font-size: 13px; padding: 7px 10px; }
+
+/* ---------- story reels (v11): cream paper, ink, hand font ---------- */
+.reel.story { --ink: #2b2a33; --paper: #f7f1e3; background: var(--paper); color: var(--ink); }
+.reel.story .aurora { display: none; }
+.reel.story .bars i { background: rgba(43,42,51,.15); } .reel.story .bars u { background: var(--ink); box-shadow: none; }
+.reel.story .top .who small, .reel.story .num small { color: #6d6a78; }
+.reel.story .hud span { background: rgba(255,255,255,.6); border-color: rgba(43,42,51,.15); color: var(--ink); }
+.reel.story .slide h2 { font-family: 'Patrick Hand', 'Didact Gothic', cursive; font-weight: 400; font-size: 30px; color: var(--ink); }
+.reel.story .slide p { color: #3a3944; font-family: 'Didact Gothic', var(--font); }
+.reel.story .slide p b, .reel.story .slide li b { color: var(--ink); background: #ffe28a; }
+.reel.story .slide.sstep { justify-content: flex-start; padding-top: 4px; padding-bottom: 150px; gap: 10px; }
+.reel.story .sstep .cvwrap { width: min(100%, calc(46dvh * 400 / 420)); background: none; box-shadow: none; padding: 0; flex: none; }
+.reel.story .sstep .cvwrap canvas { aspect-ratio: 400/420; background: var(--paper); border-radius: 10px; }
+.reel.story .stext { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-right: 46px;
+  overscroll-behavior: contain; scrollbar-width: none; -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); padding-bottom: 14px; }
+.reel.story .stext p { font-size: 16.5px; line-height: 1.42; }
+.reel.story .ctl label { color: var(--ink); } .reel.story .ctl output { color: var(--ink); }
+.reel.story .ctl input { accent-color: #d9534f; }
+.reel.story canvas.touch { outline-color: rgba(217,83,79,.55); }
+.reel.story .foot { background: linear-gradient(180deg, transparent, rgba(247,241,227,.95) 40%); color: var(--ink); }
+.reel.story .cover, .reel.story .recap { color: var(--ink); }
+.reel.story .cover p, .reel.story .recap p { color: #3a3944; }
+@media (max-height: 680px) { .reel.story .slide h2 { font-size: 24px; } .reel.story .stext p { font-size: 15px; } .reel.story .sstep .cvwrap { width: min(100%, calc(42dvh * 400 / 420)); } }
+.reel.story .stext::-webkit-scrollbar { display: none; }
+.reel.story .cover h1 { background: none; -webkit-text-fill-color: var(--ink); color: var(--ink); font-family: 'Patrick Hand', 'Didact Gothic', cursive; font-weight: 400; font-size: 44px; }
+.reel.story .cover .hook { color: #3a3944; font-family: 'Didact Gothic', var(--font); }
+.reel.story .cover .meta { color: #6d6a78; } .reel.story .cover .hint { color: rgba(43,42,51,.55); }
+.reel.story .recap li { background: rgba(255,255,255,.65); border-color: rgba(43,42,51,.15); color: var(--ink); }
+.reel.story .recap .done-msg { color: #2f8f4e; } .reel.story .recap .skim-msg { color: #a86b00; }
+.reel.story .num { color: #6d6a78; }
