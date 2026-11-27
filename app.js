@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 12;
+const VERSION = 13;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const RLA = window.RLAnim || { A: {}, CAP: {}, SPEED: {}, TOUCH: new Set() }, { A } = RLA;
 const STORY = window.RLStory, SL = STORY.lib;
@@ -149,12 +149,39 @@ function buildReel(t, startIdx = 0) {
   updateLike(reel);
   return reel;
 }
+function fitStory(sec) { // story step: biggest font + drawing that fit together above the bottom bar; text never hidden
+  const cw = sec.querySelector('.cvwrap'), tx = sec.querySelector('.stext'); if (!cw || !tx) return;
+  const reel = sec.closest('.reel'), foot = reel && reel.querySelector('.foot'), side = document.getElementById('side');
+  const cs = getComputedStyle(sec), gap = parseFloat(cs.rowGap) || 0, padT = parseFloat(cs.paddingTop) || 0;
+  const bottomBar = foot ? foot.offsetHeight : 0;
+  sec.style.paddingBottom = (bottomBar + 10) + 'px';
+  const inner = sec.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const avail = sec.clientHeight - padT - bottomBar - 10;
+  const kids = [...sec.children].filter(k => k !== cw && k !== tx);
+  const fixed = kids.reduce((a, k) => a + k.offsetHeight, 0) + gap * (sec.children.length - 1);
+  // the side buttons sit at the bottom right: a drawing that reaches down to them must leave that column free
+  const sideTop = side ? side.getBoundingClientRect().top - sec.getBoundingClientRect().top : 1e9;
+  tx.classList.remove('scroll'); let pick = null;
+  for (const f of [19, 18, 17, 16, 15, 14]) {
+    tx.style.fontSize = f + 'px';
+    const th = tx.scrollHeight, ch = avail - fixed - th;
+    let w = Math.min(inner, ch * 400 / 420), left = false;
+    const top = padT + kids.filter(k => k.compareDocumentPosition(cw) & 4).reduce((a, k) => a + k.offsetHeight + gap, 0);
+    if (top + w * 420 / 400 > sideTop + 6) { w = Math.min(w, inner - 44); left = true; }   // keep the button column free: shift left
+    const minFrac = f >= 19 ? .99 : f >= 17 ? .88 : f >= 15 ? .76 : .68;
+    if (w >= (inner - 44) * minFrac) { pick = { f, w, left }; break; }
+  }
+  if (!pick) { pick = { f: 14, w: (inner - 44) * .68, left: true }; tx.style.fontSize = '14px'; tx.classList.add('scroll'); }
+  cw.style.width = Math.floor(pick.w) + 'px'; cw.style.alignSelf = pick.left ? 'flex-start' : 'center';
+}
 function fitSlide(sec) { // shrink text/canvas step by step until a long slide fits the screen
   if (!sec || !sec.clientHeight) return;
+  if (sec.classList.contains('sstep')) return fitStory(sec);
   sec.classList.remove('dense', 'dense2');
   for (const c of ['dense', 'dense2']) { if (sec.scrollHeight <= sec.clientHeight + 24) break; sec.classList.add(c); }
 }
 addEventListener('resize', () => { if (cur) fitSlide(cur.el.querySelectorAll('.slide')[cur.idx]); });
+document.fonts && document.fonts.ready.then(() => { if (cur) fitSlide(cur.el.querySelectorAll('.slide')[cur.idx]); });
 function setSlide(reel, i, instant) {
   i = Math.max(0, Math.min(reel.n - 1, i));
   if (!instant && reel.idx >= 0 && i !== reel.idx) sfx(i > reel.idx ? 'tick' : 'back');

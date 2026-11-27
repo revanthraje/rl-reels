@@ -209,19 +209,21 @@ canvas.touch { cursor: pointer; touch-action: none; outline: 2px dashed hsl(var(
 .reel.story .slide h2 { font-family: 'Patrick Hand', 'Didact Gothic', cursive; font-weight: 400; font-size: 30px; color: var(--ink); }
 .reel.story .slide p { color: #3a3944; font-family: 'Didact Gothic', var(--font); }
 .reel.story .slide p b, .reel.story .slide li b { color: var(--ink); background: #ffe28a; }
-.reel.story .slide.sstep { justify-content: flex-start; padding-top: 4px; padding-bottom: 150px; gap: 10px; }
-.reel.story .sstep .cvwrap { width: min(100%, calc(46dvh * 400 / 420)); background: none; box-shadow: none; padding: 0; flex: none; }
+.reel.story .slide.sstep { justify-content: safe center; padding-top: 2px; padding-bottom: 20px; gap: 8px; }
+.reel.story .sstep .num { font-size: 15px; margin: 0; } .reel.story .sstep .num span { font-size: 14px; }
+.reel.story .sstep h2 { font-size: 27px; line-height: 1.1; }
+.reel.story .sstep .cvwrap { width: min(100%, calc(46dvh * 400 / 420)); background: none; box-shadow: none; padding: 0; flex: none; align-self: center; }
 .reel.story .sstep .cvwrap canvas { aspect-ratio: 400/420; background: var(--paper); border-radius: 10px; }
-.reel.story .stext { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-right: 46px;
-  overscroll-behavior: contain; scrollbar-width: none; -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); padding-bottom: 14px; }
-.reel.story .stext p { font-size: 16.5px; line-height: 1.42; }
+.reel.story .stext { flex: none; display: flex; flex-direction: column; gap: 6px; margin-right: 46px; font-size: 16px; }
+.reel.story .stext.scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.reel.story .stext p { font-size: inherit; line-height: 1.38; }
 .reel.story .ctl label { color: var(--ink); } .reel.story .ctl output { color: var(--ink); }
 .reel.story .ctl input { accent-color: #d9534f; }
 .reel.story canvas.touch { outline-color: rgba(217,83,79,.55); }
 .reel.story .foot { background: linear-gradient(180deg, transparent, rgba(247,241,227,.95) 40%); color: var(--ink); }
 .reel.story .cover, .reel.story .recap { color: var(--ink); }
 .reel.story .cover p, .reel.story .recap p { color: #3a3944; }
-@media (max-height: 680px) { .reel.story .slide h2 { font-size: 24px; } .reel.story .stext p { font-size: 15px; } .reel.story .sstep .cvwrap { width: min(100%, calc(42dvh * 400 / 420)); } }
+@media (max-height: 680px) { .reel.story .slide h2 { font-size: 23px; } }
 .reel.story .stext::-webkit-scrollbar { display: none; }
 .reel.story .cover h1 { background: none; -webkit-text-fill-color: var(--ink); color: var(--ink); font-family: 'Patrick Hand', 'Didact Gothic', cursive; font-weight: 400; font-size: 44px; }
 .reel.story .cover .hook { color: #3a3944; font-family: 'Didact Gothic', var(--font); }
@@ -229,3 +231,8 @@ canvas.touch { cursor: pointer; touch-action: none; outline: 2px dashed hsl(var(
 .reel.story .recap li { background: rgba(255,255,255,.65); border-color: rgba(43,42,51,.15); color: var(--ink); }
 .reel.story .recap .done-msg { color: #2f8f4e; } .reel.story .recap .skim-msg { color: #a86b00; }
 .reel.story .num { color: #6d6a78; }
+.reel.story .chip { background: rgba(255,255,255,.7); border-color: rgba(43,42,51,.2); color: var(--ink); }
+.reel.story .chip.done { border-color: #2f8f4e; } .reel.story .chip.todo { border-color: #c08a00; }
+.reel.story .foot .lab { color: #6d6a78; }
+.reel.story .foot { padding-top: 10px; padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
+.reel > .paused { position: absolute; }   /* was pushed into the flow by ".reel > *" and stole 84px under every slide */
