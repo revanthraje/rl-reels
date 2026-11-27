@@ -16,13 +16,14 @@ const DIST = (() => { const d = new Array(NCELL).fill(-1); d[CHK] = 0; const q =
 const LESSON = [[4, 0], [3, 2], [3, 5]];                              // lesson starts: 3, 6 and 9 steps from the cheese, then the real start
 // plan: list of [start key, number of walks]; after the list, the real start
 const plan = (n, starts = LESSON) => starts.map(([c, r]) => [key(c, r), n]);
-function startOf(P, e) { let acc = 0; for (const [k, n] of P) { acc += n; if (e < acc) return k; } return STK; }
+const FREE = []; for (let k = 0; k < NCELL; k++) if (k !== CHK && !G.isRock(k % 8, Math.floor(k / 8))) FREE.push(k);
+function startOf(P, e, RS) { if (P === 'rand') return FREE[Math.floor(RS() * FREE.length)]; let acc = 0; for (const [k, n] of P) { acc += n; if (e < acc) return k; } return STK; }
 // Q-learning: eps-greedy, ties at random; update on landing with the biggest number where Pip landed (0 at the cheese).
 // After every walk: test from the real start, following the biggest numbers, no random moves (fails if all equal or > 30 steps).
 function run(seed, P, total = NW, rec = false) {
-  const R = rng(seed), Q = new Float64Array(NCELL * 4), out = [];
+  const R = rng(seed), RS = rng(seed + 7000), Q = new Float64Array(NCELL * 4), out = [];   // RS: start cells for the random-start baseline only
   for (let e = 0; e < total; e++) {
-    let s = startOf(P, e), ok = 0, k; const tr = rec ? [] : null;
+    let s = startOf(P, e, RS), ok = 0, k; const s0 = s; const tr = rec ? [] : null;
     for (k = 0; k < MAXS; k++) {
       let m; if (R() < EPS) m = Math.floor(R() * 4); else { let b = -1e9, ms = []; for (let j = 0; j < 4; j++) { const q = Q[s * 4 + j]; if (q > b + 1e-12) { b = q; ms = [j]; } else if (q > b - 1e-12) ms.push(j); } m = ms[Math.floor(R() * ms.length)]; }
       const n = NEXT[s * 4 + m], rew = n === CHK ? 1 : 0, best = rew ? 0 : Math.max(Q[n * 4], Q[n * 4 + 1], Q[n * 4 + 2], Q[n * 4 + 3]);
@@ -30,7 +31,7 @@ function run(seed, P, total = NW, rec = false) {
       if (rec) tr.push({ c: s % 8, r: Math.floor(s / 8), nc: n % 8, nr: Math.floor(n / 8) }); s = n; if (rew) { ok = 1; k++; break; }
     }
     let g = STK, pass = 0; for (let i = 0; i < 30; i++) { let b = -1e9, bm = 0; for (let j = 0; j < 4; j++) if (Q[g * 4 + j] > b + 1e-12) { b = Q[g * 4 + j]; bm = j; } if (b <= 0) break; g = NEXT[g * 4 + bm]; if (g === CHK) { pass = 1; break; } }
-    const w = { ok, pass, start: startOf(P, e), len: k }; if (rec) { w.tr = tr; w.V = Array.from({ length: NCELL }, (_, i) => Math.max(Q[i * 4], Q[i * 4 + 1], Q[i * 4 + 2], Q[i * 4 + 3])); w.Q = Array.from(Q); } out.push(w);
+    const w = { ok, pass, start: s0, len: k }; if (rec) { w.tr = tr; w.V = Array.from({ length: NCELL }, (_, i) => Math.max(Q[i * 4], Q[i * 4 + 1], Q[i * 4 + 2], Q[i * 4 + 3])); w.Q = Array.from(Q); } out.push(w);
   }
   return out;
 }
@@ -38,6 +39,7 @@ function run(seed, P, total = NW, rec = false) {
 const CURVES = {}; function curve(id, P) { if (CURVES[id]) return CURVES[id]; const cv = new Float64Array(NW), solved = [];
   for (let s = 1; s <= NS; s++) { const o = run(s, P); o.forEach((w, i) => { cv[i] += w.pass / NS; }); } return (CURVES[id] = cv); }
 const P_NONE = [], P_CUR = plan(20), P_JUMP = [[key(4, 0), 60]], P_SLOW = [[key(4, 0), 120], [key(3, 2), 20], [key(3, 5), 20]];
+const cRand = () => curve('rand', 'rand'), allBy = cv => { for (let i = 0; i < NW; i++) if (Array.prototype.every.call(cv.slice(i), v => v > .999)) return i + 1; return null; };   // first walk from which all 50 runs pass
 const cNone = () => curve('none', P_NONE), cCur = () => curve('cur', P_CUR), cJump = () => curve('jump', P_JUMP), cSlow = () => curve('slow', P_SLOW);
 const pct = v => Math.round(v * NS);                                // runs out of 50
 // story runs (seed STORY): without and with the curriculum
@@ -74,18 +76,18 @@ function curveChart(lines, n, o = {}) {
 const LT = [[4, 0, '3 away'], [3, 2, '6 away'], [3, 5, '9 away']];
 
 const STEPS = [
- { h: 'A long way to the cheese', p: ['A bigger maze: 8 cells wide, 6 high, with two walls of rocks. The cheese is top right, Pip starts bottom left, and the shortest route takes **12 steps**. No cat this time.', 'The rules: +1 for the step onto the cheese, which ends the walk; γ (gamma) is 0.9. If Pip has not found the cheese after 30 steps, the walk is stopped and pays nothing.'],
+ { h: 'A long way to the cheese', p: ['A bigger maze: 8 cells wide, 6 high, with two walls of rocks. The cheese is top right, Pip starts bottom left, and the shortest route takes **12 steps**. No cat this time.', 'The rules: +1 for the step onto the cheese, which ends the walk; γ (gamma) is 0.9. If Pip has not found the cheese after 30 steps, the walk is stopped and pays nothing. Being stopped is not a real ending: the last update still uses the number where Pip landed.'],
    draw(t) { maze({ t, draw: clamp(t / 1.5) }); if (t > 1) pip(cx(0), cy(5), 1, t); txt('+1', cx(7) - 10, cy(0) - 12, { s: 14, c: '#b07d12', a: clamp(t - 1.5) }); txt('start', cx(0), cy(5) + 16, { s: 12, c: C.soft, a: clamp(t - 1.5) });
      if (t > 3) for (let k = 0; k < NCELL; k++) { const c = k % 8, r = Math.floor(k / 8); if (DIST[k] > 0 && !G.isRock(c, r)) txt(String(DIST[k]), G.ox + c * 44 + 39, G.oy + r * 44 + 10, { s: 12, al: 'right', c: C.soft, a: clamp(t - 3) }); }
      card(['+1 on arrival at the cheese: walk over', 'no cheese after 30 steps: stopped, 0', { s: 'small numbers: steps to cheese, unknown to Pip', c: C.soft }], t - 4.5, { y: 290, gap: 1.2 }); } },
  { h: 'How Pip learns', p: ['Pip learns with **Q-learning**, as in its own reel: a number for every move in every cell, nudged after each step toward the reward plus 0.9 times the best number where Pip landed. It mostly takes the move with the biggest number; one move in five is random.', 'All numbers start at 0. So until Pip first reaches the cheese, every nudge is 0 toward 0: it learns **nothing** and just wanders.'],
    draw(t) { maze({ t, V: ZV }); pip(cx(0), cy(5), 1, t);
      card(['target = reward + 0.9 × best number where Pip lands', 'number moves 0.2 of the way to the target', { s: 'no reward yet → all numbers stay 0', c: C.roseInk }], t - 1, { y: 290, gap: 1.3 }); } },
- { h: 'Wandering in the dark', p: [`Walk 1, from the real start. With every number 0, each move is a coin toss among four. After 30 steps Pip has not found the cheese: stopped, reward 0, and nothing learned.`, `It goes on like that. ${SN50 === 0 ? 'In its first 50 walks, Pip never reached the cheese' : `In its first 50 walks, Pip reached the cheese ${SN50 === 1 ? 'once' : SN50 + ' times'}`}; the first time was walk ${SN1 + 1}.`],
+ { h: 'Wandering in the dark', p: [`Walk 1, from the real start. With every number 0, each move is a random pick among four. After 30 steps Pip has not found the cheese: stopped, reward 0, and nothing learned.`, `It goes on like that. ${SN50 === 0 ? 'In its first 50 walks, Pip never reached the cheese' : `In its first 50 walks, Pip reached the cheese ${SN50 === 1 ? 'once' : SN50 + ' times'}`}; the first time was walk ${SN1 + 1}.`],
    shot: [5, 13],
    draw(t) { const tr = SN[0].tr, dur = .32, m = G.walkPos(tr, 0, tr.length, t, dur); maze({ t, V: ZV }); trail(tr.slice(0, Math.min(tr.length, m.k + 1)).map(s => [s.c, s.r]), .55); pip(m.x, m.y, m.face, t);
      caption(m.done ? 'walk 1: 30 steps, no cheese, stopped' : `walk 1, step ${m.k + 1} of 30`); } },
- { h: 'Rare rewards, slow learning', p: ['This strip shows Pip’s first 300 walks, one bar each: teal when the walk reached the cheese, pale when it was stopped.', `Each success teaches only the last few moves, so the next success is still mostly luck. Over all 300 walks Pip reached the cheese ${SNOK} times. Only from walk ${SNPASS + 1} on could it follow its best numbers from the start to the cheese.`],
+ { h: 'Rare rewards, slow learning', p: ['This strip shows Pip’s first 300 walks, one bar each: teal when the walk reached the cheese, pale when it was stopped. In the maze, gold shading shows each cell’s best number.', `Each success pushes the good news only about one move further back, so the next success is still mostly luck. Over all 300 walks Pip reached the cheese ${SNOK} times. Only from walk ${SNPASS + 1} on could it follow its best numbers from the start to the cheese.`],
    draw(t) { const n = clamp(Math.floor(t / 8 * NW), 1, NW), w = SN[n - 1]; maze({ t, V: w.V }); bestArrows(w.Q, .9); pip(cx(0), cy(5), 1, t);
      strip(SN, n, 'no curriculum: each walk, did Pip reach the cheese?'); caption(`after walk ${n}`, 0); } },
  { h: 'Start easy', p: ['A **curriculum** is a list of lessons, from easy to hard. Lesson 1: Pip starts only 3 steps from the cheese, for 20 walks. Lesson 2: 6 steps away, 20 walks. Lesson 3: 9 away, 20 walks. Then the real start, 12 away.', 'Only the starting cell changes. The maze, the rules and the way Pip learns stay exactly the same.'],
@@ -104,18 +106,18 @@ const STEPS = [
  { h: 'The same strip, with lessons', p: ['The same kind of strip, for the curriculum run. The black ticks mark the ends of lessons 1, 2 and 3; after that, every walk starts at the real start.', `Teal from the very beginning: the reward is no longer rare. Without the curriculum, the same seed gave ${SNOK} cheese walks in 300; with it, ${SC.filter(w => w.ok).length}.`],
    draw(t) { const n = clamp(Math.floor(t / 8 * NW), 1, NW), w = SC[n - 1]; maze({ t, V: w.V }); bestArrows(w.Q, .9); pip(cx(0), cy(5), 1, t);
      strip(SC, n, 'curriculum: each walk, did Pip reach the cheese?', { lessons: 1 }); } },
- { h: 'Fifty runs, same seeds', get p() { const a = cNone(), b = cCur(); return [`One seed could be luck, so we repeat with seeds 1 to 50, each with and without the curriculum. After every walk we test: from the real start, following its biggest numbers with no random moves, does Pip reach the cheese? The lines count the runs that pass. Lesson walks count too.`,
-   `After 100 walks: ${pct(a[99])} of 50 without, ${pct(b[99])} with the curriculum. After 200: ${pct(a[199])} against ${pct(b[199])}.`]; },
+ { h: 'Fifty runs, same seeds', get p() { const a = cNone(), b = cCur(), c = cRand(); return [`One seed could be luck, so we repeat with seeds 1 to 50. After every walk we test: from the real start, following its biggest numbers with no random moves, does Pip reach the cheese? The lines count the runs that pass; lesson walks count too.`,
+   `After 100 walks: ${pct(a[99])} of 50 without, ${pct(b[99])} with the curriculum; after 200, ${pct(a[199])} against ${pct(b[199])}. Grey, another easy fix, starts each walk in a random cell: ${pct(c[99])} after 100 walks, ${pct(c[199])} after 200.`]; },
    shot: [5, 12],
    draw(t) { const n = clamp(Math.floor((t - 1) / 7 * NW), 1, NW); maze({ t, V: SC[NW - 1].V }); bestArrows(SC[NW - 1].Q, .5);
-     curveChart([[cNone(), C.rose, 'no curriculum'], [cCur(), C.teal, 'curriculum']], n); } },
+     curveChart([[cNone(), C.rose, 'no curriculum'], [cRand(), '#8a8174', 'random start', 334], [cCur(), C.teal, 'curriculum']], n); } },
  { h: 'Why it works', p: ['Learning needs rewards. On the hard task, rewards were so rare that most walks taught nothing. Easy lessons pay off almost every time, and what Pip learns there is exactly what it needs later: the end of the route.', 'Compare reward shaping: shaping changes the **rewards** to give hints. A curriculum keeps the rewards and changes the **tasks**.'],
    draw(t) { maze({ t, V: SC[60].V }); bestArrows(SC[60].Q, .8); startFlag(0, 5, 'real start', 1, C.goldInk); pip(cx(0), cy(5), 1, t);
      card(['hard task: rewards rare, little to learn from', 'easy lessons: rewards often, a trail home', { s: 'curriculum: change the tasks, not the rewards', c: C.soft }], t - 1, { y: 290, gap: 1.2 }); } },
- { h: 'Order matters', get p() { const a = cNone(), b = cCur(), j = cJump(), s = cSlow(); return [`A badly ordered curriculum helps less. **Too big a jump**: 60 walks 3 steps away, then straight to the real start. After 100 walks, ${pct(j[99])} runs pass, against ${pct(b[99])} with the gradual lessons.`,
-   `**Too slow**: 120 walks on lesson 1 before moving on. Those walks are spent on a skill Pip already has: after 120 walks, no run passes yet; the gradual curriculum had ${pct(b[119])}.`]; },
+ { h: 'Order matters', get p() { const a = cNone(), b = cCur(), j = cJump(), s = cSlow(); return [`A badly paced curriculum is slower. **Too big a jump**: 60 walks 3 steps away, then straight to the real start. After 100 walks, ${pct(j[99])} runs pass, against ${pct(b[99])}; all 50 pass from walk ${allBy(j)}, against ${allBy(b)} with the gradual lessons.`,
+   `**Too slow**: 120 walks on lesson 1 before moving on. No run can pass before it meets the real start, so the fair measure is when all 50 pass: from walk ${allBy(s)}. Those extra walks went on a skill Pip already had.`]; },
    draw(t) { const n = clamp(Math.floor((t - .5) / 6 * NW), 1, NW); maze({ t, V: ZV, draw: 1 }); dimTop();
-     curveChart([[cNone(), C.rose, 'none', 336], [cCur(), C.teal, 'gradual', 318], [cJump(), C.orange, 'jump', 348], [cSlow(), C.blue, 'too slow', 362]], n, { title: 'runs (of 50) that can do the real task' });
+     curveChart([[cNone(), C.rose], [cCur(), C.teal], [cJump(), C.orange], [cSlow(), C.blue]], n, { title: 'runs (of 50) that can do the real task' });
      card([{ s: 'gradual: 3, 6, 9 away, 20 walks each', c: '#3f7f7c' }, { s: 'jump: 60 walks 3 away, then the real start', c: C.orange }, { s: 'too slow: 120 walks 3 away, then 6, 9', c: '#4f74a0' }, { s: 'none: always the real start', c: C.roseInk }], t - .3, { y: 40, x: 40, w: 320, gap: 0, fs: 16, lh: 24 }); } },
  { h: 'Your turn', ctl: { label: 'walks per lesson', values: [0, 5, 10, 20, 40, 80], def: 3, fmt: v => String(v), onChange: () => {} },
    p: ['Drag the number of **walks per lesson**: the three lessons, 3, 6 and 9 steps away, each get that many walks before the real start. 0 means no curriculum. All 50 runs are redone; the rose line is always no curriculum.', 'Too few walks per lesson and the trail is not ready; too many and walks are wasted.'],
@@ -124,10 +126,10 @@ const STEPS = [
      const at = i => pct(cv[i]);
      card([v ? `curriculum: ${v} walks in each of 3 lessons` : 'no curriculum: always the real start', `runs passing after 100 walks: ${at(99)} of 50`, `after 200 walks: ${at(199)} of 50`, { s: `no curriculum: ${pct(a[99])} and ${pct(a[199])}`, c: C.roseInk }], 10, { y: 70, gap: 0 });
      curveChart([[a, C.rose], [cv, C.teal]], NW, { mark: v ? 3 * v : null }); } },
- { h: 'Automatic curricula', p: ['Writing lessons by hand takes knowledge and trial and error. Instead, a **teacher** program can pick the next lesson itself, for example start cells where Pip currently succeeds about half the time: not hopeless, not boring.', 'Self-play, from the multi-agent reel, is a curriculum too: the opponent gets harder exactly as fast as the learner improves.'],
+ { h: 'Automatic curricula', p: ['Writing lessons by hand takes knowledge and trial and error. Instead, a **teacher** program can pick the next lesson itself, for example start cells where Pip currently succeeds about half the time: not hopeless, not boring. It can judge that from Pip’s recent walks from each start, without extra tests.', 'Self-play, from the multi-agent reel, is a curriculum too: the opponent gets harder exactly as fast as the learner improves.'],
    draw(t) { maze({ t, V: SC[50].V }); bestArrows(SC[50].Q, .6); L.robot(352, 250, 1.2, t);
      card(['teacher: pick tasks with about 50% success', 'harder as the learner improves', { s: 'self-play does this by itself', c: C.soft }], t - 2, { y: 290, gap: 1.2 }); } },
- { h: 'Where it is used', p: ['In 2009, Yoshua Bengio and colleagues named it **curriculum learning** for machine learning, inspired by how people are taught. In 2017, Carlos Florensa and colleagues trained simulated robots by starting them near the goal and moving the start farther away, as in this reel.', 'OpenAI’s Rubik’s cube hand, in 2019, widened its randomised simulation as it got better: an automatic curriculum.'],
+ { h: 'Where it is used', p: ['In 2009, Yoshua Bengio and colleagues named it **curriculum learning** for machine learning, inspired by how people are taught. In 2017, Carlos Florensa and colleagues trained simulated robots by starting them near the goal and moving the start farther away, as in this reel.', 'OpenAI’s Rubik’s cube hand, in 2019, widened its randomised simulation as it got better, which OpenAI called automatic domain randomisation: an automatic curriculum.'],
    draw(t) { maze({ t, V: SC[NW - 1].V }); bestArrows(SC[NW - 1].Q, .5);
      card(['2009  Bengio et al.: “curriculum learning”', '2017  Florensa et al.: start near the goal', '2019  OpenAI: harder simulation as skill grows'], t - .5, { y: 292, gap: 1.2 }); } },
  { h: 'Recap', p: ['When rewards are rare, an agent learns almost nothing: it must stumble on success before any learning starts. A **curriculum** starts with easy versions of the task and makes them harder step by step.', 'Easy lessons pay often and build skills the hard task needs. Order and pace matter: too big a jump or too slow both waste practice. A teacher can choose the lessons automatically.'],

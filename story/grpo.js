@@ -81,7 +81,7 @@ function answerCard(gr, t, o = {}) { const x0 = o.x ?? 22, y0 = o.y ?? 150;
 
 const STEPS = [
  { h: 'Bot’s homework', p: ['Bot, the answer machine from the RLHF reel, now helps Pip with sums, like 4 + 7 × 3. These answers can be **checked by a program**: compute the true value, compare the final number. Right scores 1, wrong scores 0.',
-   'No people comparing answers and no reward model to fool: just a cheap, exact check. This is a **verifiable reward**.'],
+   'No people comparing answers and no learned reward model to fool: just a cheap, exact check. This is a **verifiable reward**. A checker can still have loopholes; more on that later.'],
    shot: [4, 11],
    draw(t) { const q = { s: '4 + 7 × 3', ans: 25 }; scene(t, q); if (t > 2) say('25', 250, 142, 70, { tx: 316, ty: 116, a: clamp(t - 2), seed: 520 });
      card(['true value: 4 + 21 = 25', { s: 'Bot said 25  →  right, score 1', c: GREEN }, { s: 'any other number  →  wrong, score 0', c: C.roseInk }], t - 4, { y: 200, gap: 1.2 }); } },
@@ -92,7 +92,7 @@ const STEPS = [
      const q = EXQ; if (t > 5) { txt(`on ${q.s} (true value ${q.ans}):`, 22, 238, { s: 14, al: 'left', a: clamp(t - 5) });
        card(SN.map((n, s) => ({ s: `${n}: ${s === 0 ? 'some number near it' : s === 1 ? `(${q.a} + ${q.b}) × ${q.c} = ${(q.a + q.b) * q.c}` : s === 2 ? `${q.a} + ${q.b * q.c} = ${q.ans}, but may slip` : `${q.ans}, slips mostly caught`}`, c: SINK[s] })), t - 5.5, { y: 252, gap: .8, fs: 14, lh: 21 }); } } },
  { h: 'How good is each way?', p: [`Only the simulation knows this. On 400 test sums, half like 3 + 5 and half like 3 + 5 × 2: guessing gets ${f2(ACC[0])} right, left to right ${f2(ACC[1])}, times first ${f2(ACC[2])}, times first and check ${f2(ACC[3])}.`,
-   `With its starting chances, Bot gets ${f2(accOf(REF))} of the test sums right. Bot never sees this table; it only sees the checker’s 1s and 0s.`],
+   `Bot starts by guessing ${f2(REF[0])} of the time, left to right ${f2(REF[1])}, times first ${f2(REF[2])}, times first and check ${f2(REF[3])}. With these chances it gets ${f2(accOf(REF))} of the test sums right. Bot never sees this table; it only sees the checker’s 1s and 0s.`],
    shot: [4, 11],
    draw(t) { L.robot(200, 60, 1.8, t); txt('share of test sums right', 22, 116, { s: 13, c: C.soft, al: 'left' });
      ACC.forEach((a, s) => { const y = 140 + s * 22, u = clamp((t - .8 - s * .7) * 3); if (u <= 0) return; txt(SN[s], 22, y, { s: 14, al: 'left', c: SINK[s], a: u }); box(200, y - 6, a * 140 * ease(u), 12, SCOL[s], .85); txt(f2(a), 378, y, { s: 14, al: 'right', a: u }); });
@@ -103,7 +103,7 @@ const STEPS = [
    draw(t) { scene(t, EXQ); answerCard(EX, t, { t0: 1, gap: .45, y: 150 });
      card([`${EXK} right, ${8 - EXK} wrong`, { s: `true value ${EXQ.ans}`, c: C.soft }], t - 5.5, { y: 300, gap: 1 }); } },
  { h: 'Grade on the curve', p: [`The group’s average score is ${f2(EX.mu)}. That is the **yardstick**, as in the baselines reel. Each answer’s advantage is its score minus the average: right answers get ${sg(1 - EX.mu)}, wrong ones ${sg(-EX.mu)}.`,
-   `GRPO, **Group Relative Policy Optimization**, also divides by the group’s spread, here ${f2(EX.sd)}: so ${sg((1 - EX.mu) / EX.sd)} and ${sg(-EX.mu / EX.sd)}. Above-average answers get pushed up, the rest down.`],
+   `GRPO, **Group Relative Policy Optimization**, also divides by the group’s spread, the **standard deviation** of the 8 scores, here ${f2(EX.sd)}: so ${sg((1 - EX.mu) / EX.sd)} and ${sg(-EX.mu / EX.sd)}. That puts every question on one scale, though a lone right answer in 8 would get ${sg((7 / 8) / Math.sqrt(7 / 64))}. If all 8 scores are equal, the spread is 0 and every advantage is set to 0.`],
    shot: [4, 11],
    draw(t) { scene(t, EXQ); answerCard(EX, 9, { y: 150, adv: true, norm: t > 6, advT: 1.5 });
      card([`average ${f2(EX.mu)},  spread ${f2(EX.sd)}`, t > 6 ? { s: `advantage = (score − ${f2(EX.mu)}) ÷ ${f2(EX.sd)}`, c: C.goldInk } : { s: `advantage = score − ${f2(EX.mu)}`, c: C.goldInk }], t - 2.5, { y: 300, gap: 1 }); } },
@@ -114,18 +114,18 @@ const STEPS = [
      alpha(1 - u * .6, () => { L.robot(100, 90, 2, t); L.robot(170, 90, 2, t, '#e3c7a0'); txt('model', 100, 140, { s: 14, c: C.soft }); txt('critic', 170, 140, { s: 14, c: C.soft }); txt('PPO', 135, 30, { s: 18 }); });
      if (t > 3) alpha(u, () => { L.robot(290, 90, 2, t); txt('model', 290, 140, { s: 14, c: C.soft }); txt('GRPO', 290, 30, { s: 18 }); for (let i = 0; i < 8; i++) dot(250 + i * 11, 165, 4, i < EXK ? GREEN : C.rose); txt('group average = yardstick', 290, 186, { s: 13, c: C.goldInk }); });
      card(['PPO: yardstick from a learned critic', { s: 'GRPO: yardstick from the group average', c: C.goldInk }, { s: 'cost: several answers per question', c: C.soft }], t - 5, { y: 240, gap: 1.1 }); } },
- { h: 'One update', p: [`Now nudge the chances: the more an answer beat its group, the more its way of answering gains. From this one group, times first rises from ${f2(REF[2])} to ${f2(EXP1[2])}, left to right falls from ${f2(REF[1])} to ${f2(EXP1[1])}.`,
-   `As in the RLHF reel, a **KL leash** with β (beta) = ${BETA} pulls toward the original Bot. Real GRPO also clips the ratio like PPO; we take one pass per batch, so the clip never acts.`],
+ { h: 'One update', p: [`Now nudge the chances. As in the policy gradient reel, a chance is e to a preference, rescaled to add up to 1. Each answer adds advantage × (1 − chance) to its own way’s preference and takes advantage × chance from the others, averaged over the group. Times first rises from ${f2(REF[2])} to ${f2(EXP1[2])}, left to right falls from ${f2(REF[1])} to ${f2(EXP1[1])}.`,
+   `A **KL leash**, β (beta) = ${BETA}, pulls toward the original Bot, as in the RLHF reel. Real GRPO also clips like PPO; with one pass per batch the clip never acts.`],
    shot: [4, 11],
    draw(t) { const u = ease((t - 2) / 2), P = REF.map((p, i) => lerp(p, EXP1[i], u)); txt('Bot’s chances (black tick: before)', 22, 40, { s: 13, c: C.soft, al: 'left' }); chances(P, 66, { ref: REF });
-     card(['one step: chances × advantages, step size 1', `KL leash β = ${BETA} toward the original`, { s: 'one pass per batch: the clip never acts', c: C.soft }], t - 4, { y: 180, gap: 1 }); } },
+     card(['chosen way: + advantage × (1 − chance)', 'other ways: − advantage × chance', `KL leash β = ${BETA} toward the original`, { s: 'one pass per batch: the clip never acts', c: C.soft }], t - 4, { y: 180, gap: 1 }); } },
  { h: 'A training run', p: [`Each update: 8 questions, half easy on average, 8 answers each, so 64 answers. The chart shows test accuracy after each update; the bars, Bot’s chances.`,
    `After ${NU} updates, accuracy rises from ${f2(RUN[0].acc)} to ${f2(FIN.acc)}. Guessing and left to right fade to ${f2(FIN.P[0])} and ${f2(FIN.P[1])}; times first and check grows to ${f2(FIN.P[3])}. Even times first drops to ${f2(FIN.P[2])}: its slips lose out to the checked answers in the same groups.`],
    shot: [4, 12],
    draw(t) { const n = Math.round(clamp((t - 1) / 7) * NU); chartAcc(RUN, n); txt(`Bot’s chances after update ${n}`, 22, 196, { s: 13, c: C.soft, al: 'left' }); chances(RUN[n].P, 220, { ref: REF });
      caption('black tick: the starting chance', clamp(t - 2)); } },
  { h: 'Silent groups', p: [`If all 8 answers are right, or all wrong, every advantage is 0: the group teaches nothing. Over updates 1 to 10, ${Math.round(SIL0.e * 100)} percent of groups on easy sums were silent, and ${Math.round(SIL0.h * 100)} percent on hard ones.`,
-   `Over updates 31 to 40, as Bot improves, that rises to ${Math.round(SIL1.e * 100)} and ${Math.round(SIL1.h * 100)} percent. Useful questions are ones Bot sometimes gets right and sometimes wrong.`],
+   `Over updates 31 to 40, as Bot improves, that rises to ${Math.round(SIL1.e * 100)} and ${Math.round(SIL1.h * 100)} percent. Easy and hard are now equally silent: left to right, the one way that fails only on hard sums, has nearly vanished. Useful questions are ones Bot sometimes gets right and sometimes wrong.`],
    shot: [4, 11],
    draw(t) { const x0 = 60, x1 = 340, y0 = 200, y1 = 60, X = i => x0 + (i - 1) / (NU - 1) * (x1 - x0), Y = v => y0 - v * (y0 - y1);
      rline(x0 - 4, y0, x1 + 4, y0, 3300, { c: C.line, w: 1, once: true }); [0, .5, 1].forEach(v => txt(String(v), x0 - 9, Y(v), { s: 12, c: C.soft, al: 'right' }));
@@ -134,7 +134,7 @@ const STEPS = [
      card([`updates 1–10: easy ${Math.round(SIL0.e * 100)}%, hard ${Math.round(SIL0.h * 100)}% silent`, `updates 31–40: easy ${Math.round(SIL1.e * 100)}%, hard ${Math.round(SIL1.h * 100)}% silent`, { s: 'all right or all wrong: advantage 0', c: C.soft }], t - 6, { y: 250, gap: 1.1 }); } },
  { h: 'Your turn', ctl: { label: 'group', values: GS, def: 2, fmt: v => String(v) },
    p: ['Drag the **group size**. Every update still uses 64 answers, so bigger groups mean fewer questions. The curve shows the chance that a group is not silent, for a question Bot gets right with chance p.',
-   'The card gives the average of 20 training runs after 40 updates. Tiny groups are often silent; bigger ones give a steadier yardstick.'],
+   `The card gives the average of 20 training runs after 40 updates, so group 8 shows ${f2(gStats(8).acc)}, not the single run’s ${f2(FIN.acc)}. Tiny groups are often silent. Here group 16 does best, ${f2(gStats(16).acc)}: a steadier yardstick outweighs having fewer questions.`],
    shot: [4, 10],
    draw(t, st) { const G = GS[st.ci ?? 2], S = gStats(G), x0 = 60, x1 = 340, y0 = 200, y1 = 60, X = p => x0 + p * (x1 - x0), Y = v => y0 - v * (y0 - y1);
      rline(x0, y0, x1, y0, 3400, { c: C.line, w: 1, once: true }); rline(x0, y0, x0, y1, 3401, { c: C.line, w: 1, once: true });
@@ -142,14 +142,14 @@ const STEPS = [
      txt('p: chance Bot gets this question right', x1, y0 + 28, { s: 13, c: C.soft, al: 'right' }); txt('chance the group is not silent', x0 - 8, y1 - 16, { s: 13, c: C.soft, al: 'left' });
      ctx.save(); ctx.strokeStyle = BLUE; ctx.lineWidth = 2.2; ctx.beginPath(); for (let k = 0; k <= 100; k++) { const p = k / 100, v = 1 - p ** G - (1 - p) ** G; k ? ctx.lineTo(X(p), Y(v)) : ctx.moveTo(X(p), Y(v)); } ctx.stroke(); ctx.restore();
      card([`group of ${G}, ${64 / G} questions per update`, { s: `test accuracy after ${NU} updates: ${f2(S.acc)}`, c: BLUE }, { s: `silent groups: ${Math.round(S.sil * 100)}% on average`, c: C.soft }], 1, { y: 252, gap: 0 }); } },
- { h: 'It sharpens, it does not invent', p: [`Suppose Bot never checks its work: that chance starts at 0. Then no group ever contains a check, and nothing can reward it. The same training reaches ${f2(FINN.acc)}, against ${f2(FIN.acc)} with checking available.`,
+ { h: 'It sharpens, it does not invent', p: [`Suppose Bot never checks its work: that chance starts at 0, and its share is spread over the other three ways. Then no group ever contains a check, and nothing can reward it. The same training reaches ${f2(FINN.acc)}, against ${f2(FIN.acc)} with checking available.`,
    'GRPO raises the ways Bot already sometimes uses. And a checker is only as honest as its rules: one that accepted any answer containing the right number could be gamed.'],
    shot: [4, 11],
    draw(t) { const n = Math.round(clamp((t - 1) / 5) * NU); chartAcc(RUN, n, { col: '#b9cde3' }); chartAcc(RUNN, n, { col: C.orange, title: ' ', dy: 8 });
      txt(`Bot’s chances, never checking, after update ${n}`, 22, 196, { s: 13, c: C.soft, al: 'left' }); chances(RUNN[n].P, 220);
      caption('pale blue: the run with checking, from before', clamp(t - 2)); } },
  { h: 'Where it is used', p: ['GRPO was introduced in **DeepSeekMath** (Shao and colleagues, 2024) to train a model on maths problems. **DeepSeek-R1** (2025) used it with rule-based rewards: is the final answer right, is the format followed.',
-   'During R1’s training its answers grew longer and more often contained checking and rethinking. Many labs now train reasoning models in a similar way.'],
+   'During R1’s training its answers grew longer and more often contained checking and rethinking, habits the starting model already showed now and then. Many labs now train reasoning models in a similar way.'],
    shot: [3, 10],
    draw(t) { alpha(clamp(t - .5), () => { rrect(40, 40, 140, 90, 3501, { fill: C.card }); txt('∫ x² dx = ?', 110, 70, { s: 16 }); txt('answer: x³/3 ✓', 110, 100, { s: 14, c: GREEN }); txt('2024: DeepSeekMath', 110, 150, { s: 14 }); });
      alpha(clamp(t - 3), () => { rrect(220, 40, 140, 90, 3502, { fill: C.card }); txt('think … wait,', 290, 64, { s: 14, c: C.soft }); txt('let me check …', 290, 84, { s: 14, c: C.soft }); txt('answer ✓', 290, 106, { s: 14, c: GREEN }); txt('2025: DeepSeek-R1', 290, 150, { s: 14 }); });
