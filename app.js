@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 15;
+const VERSION = 16;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const RLA = window.RLAnim || { A: {}, CAP: {}, SPEED: {}, TOUCH: new Set() }, { A } = RLA;
 const STORY = window.RLStory, SL = STORY.lib;
@@ -254,7 +254,7 @@ function sfx(name) {
 }
 
 // --- narration --- (text helpers live in speech.js: RLSpeech.clean / RLSpeech.narrationText)
-const { clean, narrationText } = window.RLSpeech;
+const { clean, narrationText, sayUnits } = window.RLSpeech;
 let narToken = 0;
 // Pre-recorded neural-voice clips (tts/gen.py → audio/index.json); the browser's own voice is only a fallback.
 let CLIPS = null;
@@ -285,7 +285,7 @@ function playClip(reel, c, resume) {
 }
 function speakTTS(reel) {
   if (!TTS) return;
-  const text = clean(narrationText(reel.t, reel.idx)); if (!text) return;
+  const text = clean(narrationText(reel.t, reel.idx)).replace(/\uE000/g, ' '); if (!text) return;
   const tok = narToken, u = new SpeechSynthesisUtterance(text), est = 1.2 + text.length / 14;
   if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 0.95; u.pitch = 1;
   const nar = reel.nar = { state: 'speaking', est, idx: reel.idx, endEl: 0 };
@@ -447,6 +447,29 @@ document.addEventListener('visibilitychange', () => { if (!cur) return; if (docu
 window.addEventListener('pagehide', () => finalize(cur));
 
 // ---------- animation loop ----------
+// ---------- narration focus: outline the part of the drawing the voice is talking about ----------
+function focusUnit(step, tt) { // index of the spoken unit playing now (from the clip's unit times, else estimated), -1 when silent
+  const U = step._units ||= sayUnits(step); if (!U.some(u => u.focus)) return { U, k: -1 };
+  const c = clipFor(cur.t, cur.idx), nar = cur.nar;
+  if (c && c.u && nar && nar.clip && nar.idx === cur.idx) {
+    if (nar.state === 'done') return { U, k: -1 };
+    const pt = player.currentTime; let k = -1; c.u.forEach((s0, j) => { if (pt >= s0 - .05) k = j; }); return { U, k };
+  }
+  if (!step._est) { let t0 = .35; step._est = U.map((u, j) => { const s0 = t0 + (j ? (u.para !== U[j - 1].para ? .75 : .45) : 0); t0 = s0 + u.text.length / 13.5; return [s0, t0]; }); }
+  let k = -1; step._est.forEach(([a, b], j) => { if (tt >= a && tt < b + .6) k = j; }); return { U, k };
+}
+function drawFocus(c, step, S, tt) {
+  if (!step.say) return;
+  const { U, k } = focusUnit(step, tt), f = k >= 0 ? U[k].focus : null;
+  if (S._fk !== k) { S._fk = k; S._fkT = tt; }
+  if (!f) return;
+  const a = Math.min(1, (tt - S._fkT) / .35), pad = 6 + 1.2 * Math.sin(tt * 3.2);
+  c.save(); c.setTransform(c.canvas.width / 400, 0, 0, c.canvas.height / 420, 0, 0);
+  const shape = () => { if (f.length === 3) c.arc(f[0], f[1], f[2] + pad, 0, Math.PI * 2, true); else { const [x, y, w, h] = f, r = 10; c.roundRect ? c.roundRect(x - pad, y - pad, w + 2 * pad, h + 2 * pad, r) : c.rect(x - pad, y - pad, w + 2 * pad, h + 2 * pad); } };
+  c.beginPath(); c.rect(0, 0, 400, 420); shape(); c.fillStyle = `rgba(247,241,227,${.5 * a})`; c.fill('evenodd');
+  c.beginPath(); shape(); c.lineWidth = 3; c.strokeStyle = `rgba(226,108,52,${.95 * a})`; c.setLineDash([]); c.stroke();
+  c.restore();
+}
 function frame() {
   requestAnimationFrame(frame); const now = performance.now();
   if (!cur || document.hidden) return;
@@ -472,7 +495,7 @@ function frame() {
     if (s.step.ctl && S.ci == null) { const inp = cur.el.querySelectorAll('.slide')[cur.idx].querySelector('input[data-sk]'); S.ci = inp ? +inp.value : (s.step.ctl.def ?? 0); }
     S.taps ||= [];
     c.setTransform(W / 400, 0, 0, H / 420, 0, 0); c.fillStyle = SL.C.bg; c.fillRect(0, 0, 400, 420);
-    try { SL.setCtx(c); R.onCtx?.(c); while (S.taps.length) { const q = S.taps.shift(); s.step.tap?.(q.x, q.y, S, tt); } s.step.draw(tt, S); }
+    try { SL.setCtx(c); R.onCtx?.(c); while (S.taps.length) { const q = S.taps.shift(); s.step.tap?.(q.x, q.y, S, tt); } s.step.draw(tt, S); drawFocus(c, s.step, S, tt, W / 400); }
     catch (err) { if (!cv.dataset.err) { console.error(cur.t.id, s.p.k, err); cv.dataset.err = 1; } }
     return;
   }
