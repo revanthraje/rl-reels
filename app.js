@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 16;
+const VERSION = 17;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const RLA = window.RLAnim || { A: {}, CAP: {}, SPEED: {}, TOUCH: new Set() }, { A } = RLA;
 const STORY = window.RLStory, SL = STORY.lib;
@@ -458,17 +458,27 @@ function focusUnit(step, tt) { // index of the spoken unit playing now (from the
   if (!step._est) { let t0 = .35; step._est = U.map((u, j) => { const s0 = t0 + (j ? (u.para !== U[j - 1].para ? .75 : .45) : 0); t0 = s0 + u.text.length / 13.5; return [s0, t0]; }); }
   let k = -1; step._est.forEach(([a, b], j) => { if (tt >= a && tt < b + .6) k = j; }); return { U, k };
 }
-function drawFocus(c, step, S, tt) {
+let focusBuf = null;
+function drawFocus(c, step, S, tt) { // blur and fade everything outside the part the voice is talking about
   if (!step.say) return;
   const { U, k } = focusUnit(step, tt), f = k >= 0 ? U[k].focus : null;
-  if (S._fk !== k) { S._fk = k; S._fkT = tt; }
+  const key = f ? f.join(',') : '';
+  if (S._fk !== key) { S._fk = key; S._fkT = tt; }   // fade only when the region changes, not on every sentence
   if (!f) return;
-  const a = Math.min(1, (tt - S._fkT) / .35), pad = 6 + 1.2 * Math.sin(tt * 3.2);
-  c.save(); c.setTransform(c.canvas.width / 400, 0, 0, c.canvas.height / 420, 0, 0);
-  const shape = () => { if (f.length === 3) c.arc(f[0], f[1], f[2] + pad, 0, Math.PI * 2, true); else { const [x, y, w, h] = f, r = 10; c.roundRect ? c.roundRect(x - pad, y - pad, w + 2 * pad, h + 2 * pad, r) : c.rect(x - pad, y - pad, w + 2 * pad, h + 2 * pad); } };
-  c.beginPath(); c.rect(0, 0, 400, 420); shape(); c.fillStyle = `rgba(247,241,227,${.5 * a})`; c.fill('evenodd');
-  c.beginPath(); shape(); c.lineWidth = 3; c.strokeStyle = `rgba(226,108,52,${.95 * a})`; c.setLineDash([]); c.stroke();
-  c.restore();
+  const a = Math.min(1, (tt - S._fkT) / .4), cv = c.canvas, pad = 8;
+  const outside = () => { c.beginPath(); c.rect(0, 0, 400, 420);
+    if (f.length === 3) c.arc(f[0], f[1], f[2] + pad, 0, Math.PI * 2, true);
+    else { const [x, y, w, h] = f; c.roundRect ? c.roundRect(x - pad, y - pad, w + 2 * pad, h + 2 * pad, 12) : c.rect(x - pad, y - pad, w + 2 * pad, h + 2 * pad); } };
+  const canBlur = 'filter' in c;
+  if (canBlur) { // copy the frame, then paint a blurred copy outside the focus
+    focusBuf ||= document.createElement('canvas');
+    if (focusBuf.width !== cv.width || focusBuf.height !== cv.height) { focusBuf.width = cv.width; focusBuf.height = cv.height; }
+    const b = focusBuf.getContext('2d'); b.setTransform(1, 0, 0, 1, 0, 0); b.clearRect(0, 0, cv.width, cv.height); b.drawImage(cv, 0, 0);
+    c.save(); c.setTransform(cv.width / 400, 0, 0, cv.height / 420, 0, 0); outside(); c.clip('evenodd');
+    c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = a; c.filter = `blur(${2.5 * cv.width / 400}px)`; c.drawImage(focusBuf, 0, 0); c.restore();
+  }
+  c.save(); c.setTransform(cv.width / 400, 0, 0, cv.height / 420, 0, 0); outside();
+  c.fillStyle = `rgba(247,241,227,${(canBlur ? .45 : .62) * a})`; c.fill('evenodd'); c.restore();
 }
 function frame() {
   requestAnimationFrame(frame); const now = performance.now();
