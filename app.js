@@ -1,7 +1,7 @@
 // RL Reels — swipeable micro-lessons with a memory of what you've watched.
 'use strict';
 (() => {
-const VERSION = 17;
+const VERSION = 18;
 const TOPICS = window.RLTopics, BY = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 const RLA = window.RLAnim || { A: {}, CAP: {}, SPEED: {}, TOUCH: new Set() }, { A } = RLA;
 const STORY = window.RLStory, SL = STORY.lib;
@@ -97,7 +97,7 @@ function scheduleAgain(id, soon) {
 }
 
 // ---------- rendering ----------
-const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
 const HUE = { 'Foundations': 265, 'Bandits': 28, 'Planning': 195, 'Model-free': 150, 'Deep RL': 315, 'Policy Gradients': 350,
   'Model-based': 175, 'Rewards': 45, 'Learning from people': 285, 'Bigger worlds': 215 };
@@ -278,6 +278,7 @@ function playClip(reel, c, resume) {
   const src = 'audio/' + c.f;
   if (!player.src.endsWith(src)) { player.src = src; }
   else if (!resume) player.currentTime = 0;
+  player.playbackRate = player.defaultPlaybackRate = spd();
   player.onended = () => finish(true); player.onerror = fallback;
   setTimeout(() => finish(true), (c.d * 1.6 + 5) * 1000);
   const p = player.play(); if (p && p.catch) p.catch(e => { if (e && e.name === 'NotAllowedError') { if (tok === narToken) reel.nar = null; } else fallback(); });
@@ -287,7 +288,7 @@ function speakTTS(reel) {
   if (!TTS) return;
   const text = clean(narrationText(reel.t, reel.idx)).replace(/\uE000/g, ' '); if (!text) return;
   const tok = narToken, u = new SpeechSynthesisUtterance(text), est = 1.2 + text.length / 14;
-  if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 0.95; u.pitch = 1;
+  if (voice) u.voice = voice; u.lang = voice?.lang || 'en-US'; u.rate = 0.95 * spd(); u.pitch = 1;
   const nar = reel.nar = { state: 'speaking', est, idx: reel.idx, endEl: 0 };
   const finish = ok => { if (tok !== narToken || nar.state !== 'speaking') return; nar.state = ok ? 'done' : 'failed'; nar.endEl = slideElapsed(reel); };
   u.onend = () => finish(true); u.onerror = e => finish(e.error === 'interrupted' || e.error === 'canceled');
@@ -297,7 +298,16 @@ function speakTTS(reel) {
   try { TTS.resume(); TTS.speak(u); } catch (e) { finish(false); }
   setTimeout(() => { if (tok === narToken && !started && nar.state === 'speaking') { try { TTS.cancel(); TTS.resume(); TTS.speak(u); } catch (e) { } } }, 700);
 }
-const slideElapsed = reel => ((reel.pausedAt || performance.now()) - reel.enteredAt - reel.pausedFor) / 1000;
+const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+const spd = () => M.speed || 1;
+const slideElapsed = reel => ((reel.pausedAt || performance.now()) - reel.enteredAt - reel.pausedFor) / 1000 * spd();
+function setSpeed(v) { // keep the picture and the slide timer continuous when the speed changes
+  const old = spd(), now = performance.now();
+  if (cur) { const pin = (t0) => now - cur.pausedFor - (((cur.pausedAt || now) - t0 - cur.pausedFor) * old) / v - ((cur.pausedAt || now) - now); cur.t0 = pin(cur.t0); cur.enteredAt = pin(cur.enteredAt); }
+  M.speed = v; save(); player.playbackRate = player.defaultPlaybackRate = v; updateSpeedBtn();
+  if (cur && cur.nar && !cur.nar.clip) narrate(cur, false);   // the browser voice cannot change rate mid-sentence: restart it
+}
+function updateSpeedBtn() { const e = document.getElementById('spdIco'); if (e) e.textContent = (spd() === 1 ? '1' : String(spd())) + '×'; }
 
 function setPaused(reel, on) {
   if (!reel) return; const now = performance.now();
@@ -411,7 +421,7 @@ stage.addEventListener('pointermove', e => { if (drag && cur) { cur.S.ptr = { ..
 addEventListener('pointerup', () => { if (drag && cur && cur.S.ptr) cur.S.ptr.down = false; drag = null; }, true);
 stage.addEventListener('input', e => {
   if (e.target.dataset && e.target.dataset.sk && cur) { const sl = cur.t.slides[cur.idx - 1], c = sl && sl.step.ctl; if (!c) return;
-    const S = cur.S; S.prevCi = S.ci; S.ci = +e.target.value; S.changed = Math.max(0, performance.now() - cur.t0 - cur.pausedFor) / 1000; c.onChange?.(S);
+    const S = cur.S; S.prevCi = S.ci; S.ci = +e.target.value; S.changed = Math.max(0, performance.now() - cur.t0 - cur.pausedFor) / 1000 * spd(); c.onChange?.(S);
     e.target.nextElementSibling.textContent = ctlFmt(c, S.ci); return; }
   const k = e.target.dataset && e.target.dataset.k; if (!k || !cur) return; (cur.S.ctl ||= {})[k] = +e.target.value; e.target.nextElementSibling.textContent = e.target.value; });
 stage.addEventListener('pointerdown', e => { if (e.target.closest('button') || e.target.closest('.ctl') || e.target.closest('canvas.touch')) return; g = { x: e.clientX, y: e.clientY, t: performance.now(), held: false }; const gg = g; setTimeout(() => { if (g === gg && !gg.moved) { gg.held = true; setPaused(cur, true); } }, 220); });
@@ -485,7 +495,7 @@ function frame() {
   if (!cur || document.hidden) return;
   const libOpen = !$('#lib').classList.contains('hidden');
   if (libOpen && !cur.pausedAt) setPaused(cur, true);
-  let dur = slideDur(cur.t, cur.idx); const el = ((cur.pausedAt || now) - cur.enteredAt - cur.pausedFor) / 1000, nar = cur.nar;
+  let dur = slideDur(cur.t, cur.idx); const el = ((cur.pausedAt || now) - cur.enteredAt - cur.pausedFor) / 1000 * spd(), nar = cur.nar;
   let pct = Math.min(100, 100 * el / dur);
   if (nar && nar.idx === cur.idx) {                          // narration sets the pace
     if (nar.state === 'speaking' || nar.state === 'resume') { dur = Infinity; pct = Math.min(96, 100 * el / nar.est); }
@@ -501,7 +511,7 @@ function frame() {
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const c = cv.getContext('2d');
   if (s.step) {
-    const S = cur.S, tt = Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000, R = STORY.reels[cur.t.id];
+    const S = cur.S, tt = Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000 * spd(), R = STORY.reels[cur.t.id];
     if (s.step.ctl && S.ci == null) { const inp = cur.el.querySelectorAll('.slide')[cur.idx].querySelector('input[data-sk]'); S.ci = inp ? +inp.value : (s.step.ctl.def ?? 0); }
     S.taps ||= [];
     c.setTransform(W / 400, 0, 0, H / 420, 0, 0); c.fillStyle = SL.C.bg; c.fillRect(0, 0, 400, 420);
@@ -512,7 +522,7 @@ function frame() {
   c.setTransform(W / 400, 0, 0, H / 260, 0, 0); c.fillStyle = '#0b0e1d'; c.fillRect(0, 0, 400, 260);
   if (!cur.S.ctl) { cur.S.ctl = {}; cur.el.querySelectorAll('.slide')[cur.idx].querySelectorAll('.ctl input').forEach(x => cur.S.ctl[x.dataset.k] = +x.value); }
   cur.S.taps ||= [];
-  try { A[s.a](c, Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000 * (RLA.SPEED[s.a] ?? 1), cur.S, s.p || {}); } catch (err) { if (!cv.dataset.err) { console.error(s.a, err); cv.dataset.err = 1; } }
+  try { A[s.a](c, Math.max(0, (cur.pausedAt || now) - cur.t0 - cur.pausedFor) / 1000 * spd() * (RLA.SPEED[s.a] ?? 1), cur.S, s.p || {}); } catch (err) { if (!cv.dataset.err) { console.error(s.a, err); cv.dataset.err = 1; } }
 }
 requestAnimationFrame(frame);
 
@@ -529,6 +539,8 @@ const AUDIO_UI = [['🔇', 'Muted'], ['🎵', 'FX only'], ['🔊', 'Voice']];
 function updateAudioBtn() { const [i, l] = AUDIO_UI[audioMode()]; $('#audIco').textContent = i; $('#audLab').textContent = l; }
 $('#btnAudio').onclick = () => { M.audio = (audioMode() + 2) % 3; save(); updateAudioBtn(); unlockAudio(); if (audioMode() === 2 && cur) narrate(cur); else stopNarration(); if (cur && audioMode() < 2) cur.nar = null; toast(AUDIO_UI[audioMode()][0] + ' ' + ['Sound off', 'Sound effects only', 'Narration + sound effects'][audioMode()]); };
 updateAudioBtn();
+$('#btnSpeed').onclick = () => { const i = SPEEDS.indexOf(spd()); setSpeed(SPEEDS[(i + 1) % SPEEDS.length]); toast('Speed ' + spd() + '×'); };
+updateSpeedBtn();
 function updateAutoBtn() { $('#autoIco').textContent = M.autoplay ? '⏸' : '▶'; $('#autoLab').textContent = M.autoplay ? 'Auto' : 'Manual'; }
 $('#btnAuto').onclick = () => { M.autoplay = !M.autoplay; save(); updateAutoBtn(); if (cur) { cur.enteredAt = performance.now(); cur.pausedFor = 0; if (cur.pausedAt) cur.pausedAt = cur.enteredAt; } toast(M.autoplay ? '▶ Autoplay on — hold the screen to pause' : '⏸ Autoplay off — tap to move on'); };
 updateAutoBtn();

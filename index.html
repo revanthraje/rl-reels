@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script>window.__errs=[];addEventListener("error",e=>__errs.push(e.message+" @"+(e.filename||"").split("/").pop()+":"+e.lineno));addEventListener("unhandledrejection",e=>__errs.push("rej "+e.reason));</script>
+<script>window.__errs=[];addEventListener("error",e=>__errs.push(e.message+" @"+(e.filename||"").split("/").pop()+":"+e.lineno));addEventListener("unhandledrejection",e=>__errs.push("rej "+e.reason+" "+((e.reason&&e.reason.stack)||"").split("\n").slice(0,4).join(" | ")));</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0e1122">
@@ -12,13 +12,14 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Patrick+Hand&family=Didact+Gothic&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 <div id="app">
   <div id="stage"></div>
   <div id="side">
     <button id="btnAuto" title="Autoplay on/off"><span id="autoIco">▶</span><small id="autoLab">Manual</small></button>
+    <button id="btnSpeed" title="Playback speed"><span id="spdIco" class="spd">1×</span><small>Speed</small></button>
     <button id="btnAudio" title="Sound: voice / effects / off"><span id="audIco">🔊</span><small id="audLab">Voice</small></button>
     <button id="btnLike" title="Like"><span id="likeIco">🤍</span><small>Like</small></button>
     <button id="btnLib" title="All topics (L)"><span>📚</span><small id="memCount">0</small></button>
@@ -43,9 +44,9 @@
   </div>
 </div>
 
-<script src="story/lib.js?v=17"></script>
-<script src="topics.js?v=17"></script>
-<script src="speech.js?v=17"></script>
-<script src="app.js?v=17"></script>
+<script src="story/lib.js?v=18"></script>
+<script src="topics.js?v=18"></script>
+<script src="speech.js?v=18"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
