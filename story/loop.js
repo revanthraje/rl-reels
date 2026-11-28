@@ -96,12 +96,14 @@ function drawPad(t, st) {
 const STEPS = [
  { h: 'Meet Pip', p: ['This is Pip, a mouse in a small maze. In the top corner sits a piece of **cheese**. Close by sleeps a **cat**. Two rocks block the middle.', 'Pip has never been here. Nobody gives it a map or tells it what to do. Whatever it learns, it must find out by trying things. That is **reinforcement learning**.'],
    shot: [3, 8],
+   say: [[["Meet Pip, a little mouse in a little maze.", [40, 16, 320, 256]], ["Watch the cheese appear in the top corner. And right next to it, a sleeping cat.", [40, 16, 320, 256]]], [["Pip has no map and no instructions.", [40, 16, 320, 256]], "Whatever it learns, it learns by trying things. That's reinforcement learning."]],
    draw(t) { maze({ draw: t / 1.6, pop: { cheese: ease((t - 1.8) * 3), cat: ease((t - 2.4) * 3) }, t }); if (t > 3) pip(cx(0), cy(3), 1, t);
      if (t > 3.6) bubble('?', cx(0) + 14, cy(3) - 22, (t - 3.6) % 2.4);
      card(['cheese: top right', 'cat: asleep just below and left of it', { s: 'Pip: bottom left, knows nothing', c: C.soft }], t - 4.2, { gap: 1 }); } },
 
  { h: 'Two sides: agent and environment', p: ['Every RL problem splits the world in two. The **agent** is the one that makes choices: here, Pip.', 'The **environment** is everything else: the walls, the rocks, the cheese, the cat, and the rules for what happens next. Pip controls only its own choices. It cannot move a rock or wake the cat.'],
    shot: [3, 8],
+   say: [[["First, the one making choices. Pip, circled in teal. That's the agent.", [40, 16, 320, 256]]], [["Then the gold box. Everything else is the environment.", [40, 16, 320, 256]], ["Walls, rocks, cheese, cat, and the rules.", [40, 16, 320, 256]]], [["Pip controls its own moves, nothing more. It can't push a rock or wake the cat.", [30, 292, 340, 87]]]],
    draw(t) { const a1 = clamp(t - .6), a2 = clamp(t - 2.6);
      maze({ t }); pip(cx(0), cy(3), 1, t);
      alpha(a1, () => { rcircle(cx(0), cy(3) + 2, 27, 801, { c: C.teal, w: 2.4 }); });
@@ -110,11 +112,13 @@ const STEPS = [
 
  { h: 'State: where things stand', p: ['The **state** describes the situation now. Since the cheese, cat and rocks never move, it is just Pip’s cell. Cells are numbered 1 to 20; Pip starts in 16.', 'What the agent senses is its **observation**. Pip always knows its cell, so here they match. A camera robot sees only part of a room; then they differ, and it must act on what it observes.'],
    shot: [3, 9],
+   say: [[["Watch the numbers fill the cells.", [40, 16, 320, 256]], ["Since nothing else ever moves, the situation is just where Pip stands.", [40, 16, 320, 256]], ["That's the state. Pip starts in cell sixteen.", [40, 16, 320, 256]]], ["Here, Pip always knows its cell. A robot with a camera might only see part of the room, and that's harder."]],
    draw(t) { maze({ t, hi: t > 3.5 ? [[0, 3, C.teal, .25]] : null }); nums(clamp((t - .6) * 1.5), t > 3.5); pip(cx(0), cy(3), 1, t);
      card(['state = which cell Pip is in', 'Pip starts in cell 16', { s: 'cells 7 and 13 are rocks: 18 cells Pip can be in', c: C.soft }], t - 3.6, { gap: 1.2 }); } },
 
  { h: 'Actions: four moves', p: ['In every state Pip picks an **action**: up, right, down or left. That is the whole menu.', 'The environment decides what an action does. A move goes one cell over, but if a wall or a rock is in the way, Pip **bumps** into it and stays where it is. From cell 16, down and left both bump.'],
    shot: [4, 10],
+   say: [[["Four arrows, four moves. Up, right, down, left. That's the whole menu.", [40, 16, 320, 256]]], [["Now watch Pip try down.", [40, 16, 320, 256]], ["Bump. A wall. It stays put.", [40, 16, 320, 256]], ["Left bumps too.", [30, 300, 340, 64]]], ["The environment decides what each move really does."]],
    draw(t) { maze({ t }); nums(.5);
      for (let m = 0; m < 4; m++) { const a = clamp((t - .5 - m * .7) * 2); if (a <= 0) continue; const [dx, dy] = G.MOVES[m]; alpha(a, () => arrow(cx(0) + dx * 22, cy(3) + dy * 22, cx(0) + dx * 40, cy(3) + dy * 40, 820 + m, { c: C.goldInk, w: 1.8 }));
        txt(NAMES[m], cx(0) + dx * 44 + (dy ? 22 : 0), cy(3) + dy * 50 + (dx ? -12 : 0), { s: 14, c: C.goldInk, a }); }
@@ -128,6 +132,7 @@ const STEPS = [
 
  { h: 'Reward: one number per step', p: ['After every action the environment hands Pip a **reward**, a single number. Stepping onto the cheese pays +1, onto the cat −1, and every other step 0, bumps included. Cheese or cat ends the walk.', 'The task’s designer chose these numbers. Pip cannot change them and does not know them in advance. Built into Pip is only this: more reward is better.'],
    shot: [4, 10],
+   say: [[["Look at the number in each cell.", [40, 16, 320, 256]], ["Mostly zeros. The cheese pays plus one, the cat minus one.", [40, 16, 320, 256]]], [["Either one ends the walk.", [30, 292, 340, 87]]], ["Pip doesn't know these numbers in advance. All it wants is more reward."]],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { if (G.isRock(c, r)) continue; const v = G.term(c, r), a = clamp((t - .8 - (v ? 1.5 : 0)) * 2);
        txt(v > 0 ? '+1' : v < 0 ? '−1' : '0', cx(c), cy(r) + (v ? -22 : 24), { s: v ? 20 : 15, c: v > 0 ? C.goldInk : v < 0 ? C.roseInk : C.soft, a }); }
@@ -135,6 +140,7 @@ const STEPS = [
 
  { h: 'One turn of the loop', p: ['Put it together. The agent looks at the state and picks an action. The environment applies its rules and answers with two things: the **next state** and a **reward**.', 'Then the same thing happens again from the new state. That cycle is the **RL loop**. Every method in this course runs on it.'],
    shot: [5, 11],
+   say: [[["Here's the whole cycle in one picture.", [20, 50, 360, 180]], ["The agent sends an action across.", [20, 50, 360, 180]], ["The environment sends back two things, the next state and a reward.", [20, 50, 360, 180]]], [["Then round it goes again. Watch the dot circle.", [20, 50, 360, 180]], ["That's the RL loop. Every method in this course runs on it.", [30, 292, 340, 106]]]],
    draw(t) { maze({ t }); dim(.82);
      const A = { x: 92, y: 140 }, E = { x: 296, y: 140 };
      rrect(A.x - 62, A.y - 48, 124, 96, 840, { fill: C.card, c: '#2f7f7b', w: 1.8 }); L.mouse(A.x, A.y + 4, 1, 1.2, t); txt('agent', A.x, A.y - 34, { s: 17, c: '#2f7f7b' });
@@ -149,6 +155,7 @@ const STEPS = [
 
  { h: 'Counting time', p: ['Time counts t = 0, 1, 2, and on. At time t, Pip is in state S t and picks action A t.', 'The answer comes one tick later, so R t+1 is the reward for A t. A walk reads S0, A0, R1, S1, A1, R2, and on. The third move, A2, pays R3; a 14-move walk ends at t = 14.'],
    shot: [6, 12],
+   say: [[["Time ticks along this axis, zero, one, two, three.", [14, 70, 376, 160]]], [["Watch the letters line up. A state, an action, then a reward.", [14, 70, 376, 160]], ["Notice the reward carries the next tick's number. The answer always comes one tick later.", [14, 70, 376, 160]]], [["Teal for states, gold for actions, rose for rewards.", [30, 292, 340, 87]]]],
    draw(t) {
      const items = [['S', '0', 0], ['A', '0', 0], ['R', '1', 1], ['S', '1', 1], ['A', '1', 1], ['R', '2', 2], ['S', '2', 2], ['A', '2', 2], ['R', '3', 3], ['S', '3', 3]];
      const X = i => 34 + i * 37, Y = 120, cols = { S: '#2f7f7b', A: C.goldInk, R: C.roseInk };
@@ -162,6 +169,7 @@ const STEPS = [
 
  { h: 'Pip’s first move', p: ['Pip knows nothing yet, so it picks each action at random, as if rolling a four-sided die. It has no memory either, so it may repeat a bump. Its first roll, at t = 0: right.', 'The environment moves Pip from cell 16 to cell 17 and pays 0. In symbols: S0 = 16, A0 = right, R1 = 0, S1 = 17.'],
    shot: [3, 9],
+   say: [[["Pip knows nothing yet, so it rolls a four sided die.", [40, 16, 320, 256]], ["The die says right.", [40, 16, 320, 256]]], [["Watch Pip slide from cell sixteen to seventeen.", [40, 16, 320, 256]], ["Reward zero.", [30, 292, 340, 87]], ["That's one full turn of the loop, written in symbols on the card.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t, hi: [[0, 3, C.teal, .22 * clamp(t - .5)], [1, 3, C.teal, .22 * clamp(t - 3.2)]] }); nums(.6);
      const m = walkAt(E1, 0, 1, clamp(t - 2.2, 0, .99), 1); pip(m.x, m.y, 1, t);
      if (t > .8 && t < 2.2) bubble('right!', cx(0) + 6, cy(3) - 26, t - .8, C.goldInk);
@@ -169,6 +177,7 @@ const STEPS = [
 
  { h: 'A bump', p: [`Pip’s third move, at t = 2: it is in cell 18 and rolls down. There is a wall below. The environment’s rule says Pip stays put, so S3 = 18 again, and R3 = 0.`, 'Pip’s wishes don’t matter here: the environment decides what an action does. A wasted move still uses up a time step.'],
    shot: [4, 9],
+   say: [[["Pip walks a couple of steps, then rolls down.", [40, 16, 320, 256]], ["Bump. There's a wall below.", [40, 16, 320, 256]]], [["Pip stays in cell eighteen, and the reward is zero.", [30, 292, 340, 64]]], ["A wasted move still uses up a time step. The teal dots are Pip's footprints."]],
    draw(t) { trail(E1.slice(0, BUMP1 + 1).map(q => [q.c, q.r]), 1); maze({ t, hi: [[2, 3, C.teal, .22]] }); nums(.6);
      let m = t < 1.4 ? walkAt(E1, 0, BUMP1, t, .7) : walkAt(E1, BUMP1, BUMP1 + 1, clamp(t - 2.2, 0, 1.19), 1.2);
      if (t >= 1.4 && t < 2.2) m = { x: cx(2), y: cy(3), face: 1 };
@@ -179,6 +188,7 @@ const STEPS = [
 
  { h: 'Round and round', p: ['The loop keeps turning: state, action, reward, next state. Pip bumps the wall again, steps back and forth, and walks into a rock.', 'Every one of these moves pays 0. After 13 moves, Pip has collected no reward at all. Each log line shows t, the cell, the action, where Pip lands and the reward.'],
    shot: [5, 12],
+   say: [[["Round and round it goes. Watch Pip wander.", [40, 16, 320, 256]], ["Bumping, stepping back and forth, walking into a rock.", [40, 16, 320, 256]]], [["Each line of the log is one turn of the loop.", [30, 292, 340, 96]], ["And every single reward is zero.", [30, 292, 340, 96]]], [["Thirteen moves, and nothing to show for it.", [60, 392, 280, 24]]]],
    draw(t) { const d = .95, m = walkAt(E1, BUMP1 + 1, N1 - 1, t, d), k = Math.min(BUMP1 + 1 + m.k, N1 - 1);
      trail(E1.slice(0, k + 1).map(q => [q.c, q.r]), .9); maze({ t }); nums(.45); pip(m.x, m.y, m.face, t);
      if (m.bumping) bumpMark(m.s.c, m.s.r, m.s.m, 1);
@@ -189,6 +199,7 @@ const STEPS = [
 
  { h: 'The walk ends', p: [`On its ${N1}th move, at t = ${N1 - 1}, Pip steps up onto the cheese: R${N1} = +1. Cheese and cat are **terminal** states: when Pip reaches one, the walk stops, here at t = ${N1}.`, 'One walk from the start to a terminal state is called an **episode**. Afterwards Pip is put back in cell 16, and a fresh episode begins.'],
    shot: [3, 10],
+   say: [[["Watch the last move. Pip steps up onto the cheese.", [40, 16, 320, 256]], ["Plus one!", [40, 16, 320, 256]]], [["Cheese and cat are terminal. Reaching one ends the walk.", [30, 292, 340, 87]], ["That whole walk is called an episode.", [30, 292, 340, 87]]], [["Then Pip is put back at the start, and a new episode begins.", [40, 16, 320, 256]]]],
    draw(t) { const back = clamp((t - 9) / .6); trail(E1.map(q => [q.c, q.r]), .35 * (1 - back)); maze({ t, hi: t > 1.6 && back < 1 ? [[4, 0, C.gold, .3]] : null }); nums(.45);
      const m = walkAt(E1, N1 - 1, N1, clamp(t - .4, 0, 1.2), 1.2); if (back <= 0) pip(m.x, m.y, 1, t); else alpha(back, () => pip(cx(0), cy(3), 1, t));
      bubble('+1', cx(4), cy(0) - 18, t - 1.4);
@@ -197,12 +208,14 @@ const STEPS = [
 
  { h: 'Episode after episode', p: ['Let random Pip walk episode after episode. On this chart each bar is **one episode**: further right means walked later. Its height is how many steps it took.', `Teal ended at the cheese, rose at the cat. The first ten: 14 steps to the cheese, 13 to the cat, 67 to the cat, and so on. Only ${ENDS.slice(0, 10).filter(v => v > 0).length} of these 10 reach the cheese.`],
    shot: [5, 12],
+   say: [[["Now let random Pip walk again and again.", [40, 16, 320, 256]], ["Each bar below is one episode. Taller means more steps.", [30, 290, 345, 110]]], [["Teal bars found the cheese. Rose bars found the cat.", [30, 290, 345, 110]], ["Out of these first ten, only three reach the cheese.", [30, 290, 345, 110]]]],
    draw(t) { const n = clamp(Math.floor((t - 1.2) / .9) + 1, 0, 10); maze({ t }); nums(.35);
      if (n > 0) { const e = n - 1, l = EPS[e][LENS[e] - 1]; trail(EPS[e].map(q => [q.c, q.r]).slice(-40), .45); pip(cx(l.nc), cy(l.nr) + (ENDS[e] > 0 ? 0 : 14), 1, t); caption(`episode ${n}: ${LENS[e]} steps, ${ENDS[e] > 0 ? 'cheese' : 'cat'} · dots: its last steps`); }
      epChart(n, { slots: 10, label: () => true }); } },
 
  { h: 'What blind wandering gets', p: [`After 100 episodes only ${NCHEESE} reached the cheese. One clear reason: the cat can be entered from four open cells, the cheese from only two, and the cat sits on the way to the cheese.`, `Episodes average ${Math.round(MEANLEN)} steps; about ${Math.round(BUMPS * 10)} moves in 10 are bumps. A small arrow marks bars too tall to draw; those episodes still ended at the cheese or cat.`],
    shot: [4, 11],
+   say: [[["A hundred episodes, and only twenty six reached the cheese.", [30, 290, 345, 110]]], [["Why so few? Watch the rose arrows.", [40, 16, 320, 256]], ["The cat can be entered from four cells.", [40, 16, 320, 256]], ["The cheese, from only two.", [40, 16, 320, 256]]], ["And blind wandering is slow, about sixty three steps per episode."]],
    draw(t) { maze({ t });
      const into = (from, to, col, a, sd) => { if (a <= 0) return; const dx = to[0] - from[0], dy = to[1] - from[1]; alpha(a, () => arrow(cx(from[0]) + dx * 8, cy(from[1]) + dy * 8, cx(to[0]) - dx * 22, cy(to[1]) - dy * 22, sd, { c: col, w: 2 })); };
      [[3, 0], [2, 1], [4, 1], [3, 2]].forEach((f, i) => into(f, [3, 1], C.rose, clamp((t - 4 - i * .3) * 2), 980 + i));
@@ -214,6 +227,7 @@ const STEPS = [
 
  { h: 'No answer key', p: [`Notice what Pip is never told. Nobody says “up was the right move in cell 10”. It only gets rewards, and in episode 1, ${N1 - 1} steps paid 0 before one paid +1.`, 'Which of those steps earned the cheese? Pip must work that out itself. This is the big difference from **supervised learning**, where every example comes with the correct answer.'],
    shot: [4, 11],
+   say: [[["Here's episode one again, move by move.", [20, 20, 360, 130]], ["Every reward is zero, until the very last.", [20, 20, 360, 130]]], [["So which moves earned the cheese? Nobody says.", [20, 20, 360, 130]]], [["That's the big difference from supervised learning.", [30, 194, 340, 84]], ["There, every example comes with the right answer. Here, only a score, and often a late one.", [30, 194, 340, 84]]]],
    draw(t) {
      txt('episode 1: action (arrow, grey = bump) and reward', 30, 34, { s: 15, al: 'left', c: C.soft });
      for (let i = 0; i < N1; i++) { const q = E1[i], x = 34 + i * 24.5, a = clamp((t - .4 - i * .2) * 3); if (a <= 0) continue; const [dx, dy] = G.MOVES[q.m];
@@ -231,12 +245,14 @@ const STEPS = [
 
  { h: 'The goal', p: ['What is Pip trying to do? Collect the most reward **in total** over an episode, not just on the next step. Every move but the last pays 0, so the next reward alone says almost nothing.', `A rule for choosing actions is a **policy**. Rolling the die is one, the random policy; it averages ${AVGR.toFixed(2).replace('-', '−')} per episode. Later reels find much better ones.`],
    shot: [4, 10],
+   say: [["So what does Pip want? The most reward in total, over a whole episode.", "The next reward alone says almost nothing."], [["Twenty six cheeses, seventy four cats.", [40, 16, 320, 256]], ["The random policy averages minus zero point four eight per episode.", [30, 292, 340, 87]]], ["A policy is just a rule for picking moves. Later reels find much better ones."]],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      const a = clamp(t - .8); txt(`× ${NCHEESE}`, cx(4) - 34, cy(0) + 2, { s: 18, c: C.goldInk, a, al: 'right' }); txt(`× ${NCAT}`, cx(3) - 30, cy(1) + 4, { s: 18, c: C.roseInk, a, al: 'right' });
      card([`${NCHEESE} cheeses × (+1)  +  ${NCAT} cats × (−1)  =  ${sign(NCHEESE - NCAT)}`, `average per episode:  ${sign(NCHEESE - NCAT)} ÷ 100  =  ${AVGR.toFixed(2).replace('-', '−')}`, { s: 'goal: a policy with a higher total', c: C.goldInk }], t - 1.8, { gap: 1.5 }); } },
 
  { h: 'Your turn: be the agent', ctl: null, tap: tapAct, p: ['Now you are the agent. Tap an arrow to pick an action. The environment answers with the next state and the reward, and the log records each turn.', 'Try bumping into a rock, then reach the cheese. When the episode ends, tap anywhere to start a new one.'],
    shot: [3],
+   say: [[["Now you're the agent.", [40, 16, 320, 256]], ["Tap an arrow on the pad.", [50, 296, 84, 84]]], [["Each tap is one turn, and the log records it.", [150, 292, 222, 96]]], ["Try bumping into a rock. Then go find the cheese."]],
    draw(t, st) {
      if (!st.pos) { st.pos = G.start.slice(); st.log = []; st.total = 0; st.ep = 1; }
      const lt = st.last ? t - st.last.t : 9; let x = cx(st.pos[0]), y = cy(st.pos[1]);
@@ -255,6 +271,7 @@ const STEPS = [
 
  { h: 'The same loop, everywhere', p: ['Bigger problems use the same loop. DeepMind’s Atari player DQN, in 2015, saw screen pixels, chose joystick moves, and was rewarded by score changes.', 'AlphaGo, in 2016, was rewarded only at a game’s end: win or lose. Chat assistants are tuned with RL from human feedback, RLHF: often the whole reply is one action, scored once by a model of which answers people prefer.'],
    shot: [4, 10],
+   say: [[["The same loop runs much bigger problems.", [10, 20, 380, 190]], ["DQN watched screen pixels and played Atari for points.", [10, 20, 380, 190]], ["AlphaGo was rewarded only at the end, win or lose.", [10, 20, 380, 190]]], [["Chat models too. A whole reply can be one action, scored once.", [10, 20, 380, 190]], ["Only the sizes change.", [30, 292, 340, 87]]]],
    draw(t) {
      const xs = [16, 108, 200, 288], head = ['agent', 'observes', 'acts', 'reward'];
      const rows = [['Pip', 'its cell', 'up, right, …', 'cheese +1, cat −1'], ['DQN, 2015', 'screen pixels', 'joystick move', 'score change'], ['AlphaGo, 2016', 'the board', 'places a stone', 'win +1, loss −1'], ['chat model', 'the prompt', 'writes a reply', 'preference score']];
@@ -264,6 +281,7 @@ const STEPS = [
 
  { h: 'Recap', p: ['The **agent** picks actions; the **environment** answers each one with a reward and the next state. That loop repeats until a terminal state ends the **episode**.', 'Nobody tells the agent the right move. Its goal is the most reward in total. Adding rewards up sounds simple, but the next reel finds a catch.'],
    shot: [6],
+   say: [[["So that's the loop.", [40, 16, 320, 256]], ["The agent acts, the environment answers with a reward and the next state, again and again until the episode ends.", [30, 292, 340, 110]]], ["Nobody tells Pip the right move. It just wants the most reward in total. And adding rewards up hides a catch, coming next."]],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      card(['agent sees the state, picks an action', 'environment answers: reward + next state', 'repeat until a terminal state: one episode', { s: 'goal: the most total reward per episode', c: C.goldInk }], t - .3, { gap: 1 }); } },
 ];

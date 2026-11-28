@@ -161,10 +161,12 @@ function sigChart(t, o = {}) {
 const STEPS = [
  { h: 'Pip’s chances, again', p: ['Same maze: stepping onto the cheese pays +1, onto the cat −1, and either ends the walk. γ (gamma) is 0.9. A walk stopped after 100 steps scores 0. Pip has no rulebook.', 'In every cell Pip keeps four **preference** numbers, one per move; softmax turns them into chances. All start at 0, so every arrow is a quarter. Arrow length shows the chance.'],
    shot: [3, 8],
+   say: [["Welcome back to Pip's maze."], [["Same cheese, same cat, same dry floor.", [40, 16, 320, 256]], ["The arrows are Pip's chances. Every one starts at a quarter.", [40, 16, 320, 256]]], ["And there's still no rulebook. Pip learns only from what happens."]],
    draw(t) { maze({ t, labels: clamp(t - .4) }); fans(G, ZT, { a: clamp(t - 1.2) }); pip(cx(0), cy(3), 1, t);
      if (t > 4) card(['+1 cheese, −1 cat: paid on arrival, walk over', 'γ = 0.9;  stopped after 100 steps: scores 0', { s: 'arrows: Pip’s chances, all 0.25 to begin', c: C.goldInk }], t - 4, { gap: 1.1 }); } },
  { h: 'The long wait', p: [`REINFORCE with a baseline learns only when the walk is over. Here is Pip’s first walk: ${N1} steps, then the cat. Until that last step, nothing was learned.`, 'Then every move is judged by the return that followed it, which includes the luck of every later move. The very first step up gets blamed for a cat met 14 moves later.'],
    shot: [4, 11],
+   get say() { return [["REINFORCE has to wait until the walk is over."], [["Watch Pip's first walk.", [40, 16, 320, 256]], `${N1} steps, then the cat. Until that last step, nothing is learned.`], [["Then every move takes the blame.", [40, 16, 320, 256]], ["Even the very first step up, fourteen moves before the cat.", [30, 292, 340, 87]]]]; },
    draw(t) { const D = .45, m = walkAt(w1, t - .4, D); maze({ t }); fans(G, ZT, { a: .35 }); trail(w1.slice(0, Math.min(N1, m.k + 1)).map(q => [q.c, q.r]), .6); pip(m.x, m.y, m.face, t);
      const te = .4 + N1 * D; if (m.done) bubble('−1', cx(3), cy(1) - 18, t - te);
      if (!m.done) caption(`step ${Math.min(N1, m.k + 1)} of ${N1}: learning nothing yet`);
@@ -172,32 +174,38 @@ const STEPS = [
        card([`walk over after ${N1} steps: now update`, { s: 'every move takes the blame for the cat,', c: C.roseInk }, { s: '   even the first, 14 moves earlier', c: C.roseInk }], t - te - 1.5, { gap: 1.1 }); } } },
  { h: 'An actor and a critic', p: ['Split Pip in two. The **actor** is the chances: it picks the moves. The **critic** is a value notebook: for each cell, a guess of the return to expect from there with the current chances.', 'Think of an athlete and a coach. The athlete tries a move; the coach says at once, better than I expected, or worse. Both keep learning.'],
    shot: [3, 9],
+   say: [["Here's the idea. Split Pip in two."], [["The actor is the arrows. It picks the moves.", [40, 16, 320, 256]], ["The critic is a notebook of numbers, one guess per cell, of the return to expect from there.", [40, 16, 320, 256]]], [["Think of an athlete and a coach.", [30, 292, 340, 96]], ["The athlete tries a move. The coach says at once, better than I expected, or worse.", [30, 292, 340, 96]]]],
    draw(t) { maze({ V: ZV, t }); fans(G, ZT, { a: clamp(t - .5) }); nums(ZV, clamp(t - 2.5)); pip(cx(0), cy(3), 1, t);
      alpha(clamp(t - 4), () => { box(30, 292, 340, 96, C.card); rrect(30, 292, 340, 96, 1310, { c: C.line, w: 1.1 }); L.mouse(72, 330, 1, 1, t); coach(72 + 210, 336, 1, t);
        txt('actor: the arrows', 72, 362, { s: 15, c: C.goldInk }); txt('critic: the numbers', 282, 362, { s: 15, c: '#3f7f7c' });
        txt('picks the moves', 72, 378, { s: 13, c: C.soft }); txt('grades them', 282, 378, { s: 13, c: C.soft }); arrow(240, 330, 120, 330, 1311, { c: C.soft }); txt('“better than I expected!”', 180, 314, { s: 13, c: C.soft, a: clamp(t - 6) }); }); } },
  { h: 'The critic learns by TD', p: ['Same rule as the TD reel. After each step, **target** = reward + 0.9 × guess where Pip landed; if the walk ended, just the reward. Target minus the guess where Pip was is the **TD error δ** (delta).', 'The guess moves a fifth of the way, + 0.2 × δ. It starts blank, all 0, and must keep up as Pip’s chances change.'],
    shot: [3, 9],
+   say: [["The critic learns just like in the TD reel."], [["Watch Pip take one step up.", [40, 16, 320, 256]]], [["The target is the reward, plus zero point nine times the guess where Pip landed.", [30, 292, 340, 110]], ["The gap between the target and the old guess is the TD error, delta.", [30, 292, 340, 110]], "The guess moves a fifth of that gap."]],
    draw(t) { maze({ V: ZV, t, hi: t > 1.5 ? [[0, 3, C.teal, .2], [0, 2, C.gold, .22]] : null }); nums(ZV); fans(G, ZT, { a: .3 }); coach(355, 245, .9, t);
      const m = walkAt([{ c: 0, r: 3, nc: 0, nr: 2, m: 0 }], clamp(t - .8, 0, 1), 1); pip(m.x, m.y, 1, t);
      card(['target  =  reward  +  0.9 × guess where Pip landed', 'TD error δ  =  target  −  guess where Pip was', 'critic:  guess  +=  0.2 × δ', { s: 'walk over: target = just the reward', c: C.soft }], t - 1.5, { gap: 1.2, fs: 16, lh: 22 }); } },
  { h: 'δ grades the move', p: ['The critic expected its guess for Pip’s cell. After the move, Pip has one real reward plus the landing cell’s guess. If more, δ is positive: **better than expected**, so make the move more likely. Negative: less likely.', 'The actor pushes as in REINFORCE, δ replacing return minus yardstick: the critic’s guess stands in for the rest of the walk. It happens at once.'],
    shot: [4, 10],
+   say: [["Here's the clever part. The critic's TD error also grades the move."], [["REINFORCE waited for the whole return.", [30, 60, 340, 120]], ["Actor-critic uses one real reward, plus the critic's guess for the rest.", [30, 60, 340, 120]]], ["Better than expected, the move becomes more likely. Worse, less likely. And it happens right away."]],
    draw(t) { maze({ t }); fans(G, ZT, { a: .25 }); pip(cx(0), cy(3), 1, t); coach(355, 245, .9, t); dim(.55 * clamp(t - .3));
      card([{ s: 'REINFORCE + baseline, after the walk:', c: C.roseInk }, '   push  =  return that followed  −  yardstick', { s: 'actor-critic, after every step:', c: '#3f7f7c' }, '   push  =  reward + 0.9 × guess there  −  guess here', { s: '   = δ, the critic’s TD error', c: C.goldInk }], t - .6, { gap: 1.3, fs: 16, lh: 21, y: 60 }); } },
  { h: 'One step, in numbers', p: [`Walk 1’s last step: up, onto the cat. Reward −1, guesses 0: δ = −1. Up’s preference changes by 1 × δ × (1 − 0.25), to −0.75; others rise 0.25. Chances: up ${f2(P1[0])}, others ${f2(P1[1])}.`, `That 1 is the actor’s **step size**, the REINFORCE reel’s α: it moves chances clearly, not all at once. Others come later. The critic’s guess there drops to ${f2(WS[0].V[LAST1.s])}.`],
    shot: [3, 11],
+   get say() { return [["Let's see it in numbers. Walk one's last step."], [["Watch Pip step up, onto the cat. Minus one.", [40, 16, 320, 256]], "Every guess was zero, so delta is minus one."], [["Up's preference drops. The other three rise a little.", [30, 292, 340, 110]], `Up's chance falls to ${f2(P1[0])}.`]]; },
    draw(t) { const u = ease((t - 5) / 1.2), th = new Float64Array(80); for (let b = 0; b < 4; b++) th[LAST1.s * 4 + b] = (WS[0].th[LAST1.s * 4 + b]) * u;
      const V = ZV.slice(); V[LAST1.s] = WS[0].V[LAST1.s] * u; maze({ V, t, hi: [[LAST1.c, LAST1.r, C.rose, .2]] }); nums(V); fans(G, th);
      const m = walkAt(w1, clamp(t - .5, 0, 1), 1, N1 - 1, N1); pip(m.done ? cx(LAST1.c) : m.x, m.done ? cy(LAST1.r) + 14 : m.y, 1, t); bubble('−1', cx(3), cy(1) - 18, t - 1.3);
      card([`δ  =  −1  +  0  −  0  =  −1`, `up:  0 + 1 × (−1) × (1 − 0.25)  =  −0.75`, `each other move:  0 − 1 × (−1) × 0.25  =  +0.25`, { s: `chances:  up ${f2(P1[0])},  others ${f2(P1[1])}`, c: C.goldInk }], t - 1.8, { gap: 1.1, fs: 16, lh: 22 }); } },
  { h: 'Quiet until the end', p: [`The first ${N1 - 1} steps of walk 1? Each had reward 0 and landed where the guess was 0, so δ = 0: no push.`, 'On walk 1 actor-critic is even quieter than REINFORCE, which pushed every move once the walk ended. A blank critic needs news from the cheese or cat, which spreads back slowly, one walk at a time. Hence a slower start.'],
    shot: [4, 10],
+   say: [["What about the steps before that?"], [["Watch Pip wander through walk one.", [40, 16, 320, 256]], ["Every reward is zero, and every guess is zero. So delta is zero. No push at all.", [30, 292, 340, 64]]], ["A blank critic needs news from the cheese or the cat. That news spreads back slowly, so actor-critic starts slow."]],
    draw(t) { const D = .4, m = walkAt(w1, t - .3, D, 0, N1 - 1); maze({ V: ZV, t }); nums(ZV, .6); fans(G, ZT, { a: .3 }); trail(w1.slice(0, Math.min(N1 - 1, m.k + 1)).map(q => [q.c, q.r]), .5); pip(m.x, m.y, m.face, t);
      card(['reward 0  +  0.9 × 0  −  0   =   δ 0', { s: 'no push for the actor, no change for the critic', c: C.soft }], t - 1, { gap: 1.2 }); caption(`walk 1, step ${Math.min(N1 - 1, m.k + 1)}`); } },
 
  { h: 'Learning mid-walk', p: [`Walk ${MIDW + 1}. The cell right of the cat has guess ${f2(MB.vn)}, from past meetings. Step ${MBI + 1} moves up into it: δ = 0.9 × (${f2(MB.vn)}) − (${f2(MB.v)}) = ${f2(MB.dl)}. A push away, mid-walk.`, `Dots mark δ beyond 0.01 either way, gold better, rose worse; ${MIDN} before the cheese. Leaving that cell again lifted its guess to ${f2(MCH.v)}; the cheese’s δ: 1 − (${f2(MCH.v)}) = ${f2(MCH.dl)}.`],
    shot: [8.6, 12],
+   get say() { return [[`Now walk ${MIDW + 1}. The critic has learned a little.`, ["Watch the cell right of the cat. Its guess is negative, from past meetings.", [40, 16, 320, 256]]], [["Pip steps up into it. Delta goes negative, a push away, right there, mid-walk.", [40, 16, 320, 256]]], [["The dots mark each grade. Gold is better than expected, rose is worse.", [40, 16, 320, 256]], "And finally, the cheese."]]; },
    draw(t) { const D = .4, ts = (MBI + 1) * D + .05, t0 = t - .3, tw = t0 < ts ? t0 : t0 < ts + 3 ? ts : t0 - 3, m = walkAt(MW, tw, D), k = Math.min(MW.length, m.k); const S = thAt(MIDW, t0 >= ts && t0 < ts + 1.6 ? k - 1 : k);   // hold: show the guesses before the update first
      maze({ V: S.V, t, hi: [[4, 1, C.rose, .14]] }); nums(S.V, .85); fans(G, S.th, { a: .5 }); pip(m.x, m.y, m.face, t);
      MW.slice(0, k).forEach((q, i) => { if (Math.abs(q.dl) < .01) return; dot(cx(q.c) + ((i * 7) % 15) - 7, cy(q.r) + 20 + ((i * 5) % 7) - 3, 4, q.dl > 0 ? C.gold : C.rose, .9); });
@@ -206,35 +214,42 @@ const STEPS = [
      card([`walk ${MIDW + 1}, step ${Math.max(1, k)}`, last ? { s: `δ = ${sgn2(last.dl)}${Math.abs(last.dl) >= .01 ? (last.dl > 0 ? '   better than expected' : '   worse than expected') : '   (too small to matter)'}`, c: Math.abs(last.dl) < .01 ? C.soft : last.dl > 0 ? C.goldInk : C.roseInk } : ''], .5, { gap: 0, y: 300 }); } },
  { h: `After ${NW} walks`, p: [`Let the pair learn for ${NW} walks. The arrows straighten along the short path, and the critic’s numbers fill in behind them.`, `After walk ${NW}, the critic’s guess for the start is ${f2(VFIN)}. The best possible return is 0.9 to the power 6, ${f2(BEST)}: seven steps to the cheese. ${LENFIN.filter(v => v === 7).length} of Pip’s last 10 walks took exactly 7 steps.`],
    shot: [5, 12],
+   get say() { return [[`Let the pair learn for ${NW} walks.`, ["Watch the arrows straighten along the short path.", [40, 16, 320, 256]], ["And the critic's numbers fill in behind them.", [40, 16, 320, 256]]], [`At the end, the critic's guess at the start is ${f2(VFIN)}.`, ["The best possible is very close. Most recent walks take just seven steps.", [30, 300, 340, 64]]]]; },
    draw(t) { const n = clamp(Math.floor((t - .8) * 30), 0, NW), S = n ? WS[n - 1] : { th: ZT, V: ZV };
      maze({ V: S.V, t }); nums(S.V, .9); fans(G, S.th); pip(cx(0), cy(3), 1, t);
      caption(n ? `after walk ${n}` : 'blank to begin');
      if (n >= NW) card([`critic, start: ${f2(VFIN)}    best possible: ${f2(BEST)}`, { s: `last 10 walks: ${LENFIN.join(', ')} steps`, c: C.soft }], t - .8 - NW / 30, { gap: 1, y: 300 }); } },
  { h: 'Two signals for one move', p: [`Freeze Pip after walk ${SNAP}: from the start it goes up with chance ${f2(SIG.p[0])}. Take 40 walks starting with up. Each dot is what REINFORCE with a baseline would use for that move: the walk’s return minus a yardstick, here the critic’s start guess, ${f2(SIG.vs)}.`, `The dots spread from ${f2(SIG.lo)} to ${f2(SIG.hi)}: each one carries the luck of the rest of its walk.`],
    shot: [4, 12],
+   say: [["Let's compare the two kinds of grade for a single move."], [["Freeze Pip, and send it up from the start, forty times.", [40, 16, 320, 256]]], [["Each dot is the grade REINFORCE with a baseline would give that move.", [20, 288, 360, 116]], ["They're spread wide. Each one carries the luck of the rest of its walk.", [20, 288, 360, 116]]]],
    draw(t) { const T = WS[SNAP - 1]; maze({ V: T.V, t, hi: [[0, 3, C.teal, .2]] }); nums(T.V, .7); fans(G, T.th, { a: .8 }); pip(cx(0), cy(3), 1, t);
      sigChart(t - 1, { line: clamp(t - 11) }); } },
  { h: 'Steady but biased', p: [`The critic’s δ for that move: 0.9 × ${f2(SIG.vu)} − ${f2(SIG.vs)} = ${f2(SIG.td)}. Moves on this dry floor never slip and the critic is frozen, so δ **never changes**: no noise.`, `The dots average ${f2(SIG.mean)}, not ${f2(SIG.td)}. That average estimates the true grade. δ leans on the cell above’s guess, which lags Pip’s progress: **bias**. Returns: unbiased but noisy. δ: steady but can be wrong.`],
    shot: [4, 10],
+   get say() { return [[`Now the critic's grade. It's ${f2(SIG.td)}, every single time.`, ["No slips, a frozen critic, so no noise.", [20, 288, 360, 116]]], [["But the dots average somewhere else.", [20, 288, 360, 116]], ["That average is the honest grade. The critic's guess above lags behind Pip's progress.", [40, 16, 320, 256]]], ["Returns are unbiased but noisy. The critic is steady, but can be wrong. That's bias."]]; },
    draw(t) { const T = WS[SNAP - 1]; maze({ V: T.V, t, hi: [[0, 3, C.teal, .2], [0, 2, C.gold, .2]] }); nums(T.V, (c, r) => c === 0 && r >= 2 ? 1 : .35); fans(G, T.th, { a: .4 }); pip(cx(0), cy(3), 1, t);
      sigChart(9, { line: clamp(t - .8), mean: clamp(t - 4) }); } },
  { h: 'A fair race', p: [`A race over ${NW} walks: actor-critic against REINFORCE with a baseline. Both use actor step 1, up from the baseline reel’s 0.2, so it fits. Yardstick step 0.1 and critic step 0.2, as in their own reels. ${NRUN} runs each; run k shares a seed.`, `Across: walks. Up: return from the start, averaged over runs and 10 neighbouring walks. Dashed: the best possible, ${f2(BEST)}.`],
    shot: [4, 11],
+   say: [["Time for a fair race. Actor-critic against REINFORCE with a baseline."], [["Same maze, same seeds, a hundred runs each.", [30, 296, 340, 87]]], [["The chart shows the return from the start. Dashed is the best possible.", [40, 50, 320, 230]], ["Watch the first few walks.", [40, 50, 320, 230]]]],
    draw(t) { const R = race(AT); raceChart(R, 0, { x0: 60, x1: 340, y0: 262, y1: 60, ax: clamp(t - .5), title: 'return from the start, average of 100 runs' }); legend(190, 190, clamp(t - 2));
      card(['same maze, same dice seeds, 100 runs each', 'actor step 1;  yardstick step 0.1,  critic 0.2', { s: 'drawn: the first 25 walks; the rest next', c: C.soft }], t - 3, { gap: 1.2, y: 296 }); if (t > 4) raceChart(R, Math.min(25, Math.floor((t - 4) * 8)), { x0: 60, x1: 340, y0: 262, y1: 60, ax: 0 }); } },
  { h: 'Slow start, strong finish', get p() { return [`REINFORCE with a baseline gets going sooner: after 50 walks it averages ${f2(race(AT).rb.cur[49])}, actor-critic ${f2(race(AT).ac.cur[49])}. The blank critic is the reason: its δ stays near 0 until news from the cheese has spread back to the start.`, `From walk ${crossAt()} on, actor-critic leads. After ${NW} walks: ${f2(race(AT).ac.cur[NW - 1])} against ${f2(race(AT).rb.cur[NW - 1])}.`]; },
    shot: [5, 12],
+   get say() { return [[["REINFORCE with a baseline gets going sooner.", [40, 50, 320, 230]], "The blank critic is why. Its grades stay near zero, until news from the cheese reaches the start."], [["But watch the lines cross.", [40, 50, 320, 230]], `From walk ${crossAt()} on, actor-critic leads, and it finishes ahead.`]]; },
    draw(t) { const R = race(AT), n = Math.floor(clamp((t - .8) / 6) * NW), g = raceChart(R, n, { x0: 60, x1: 340, y0: 262, y1: 60, title: 'return from the start, average of 100 runs' }); legend(190, 190);
      if (n >= 50) { const X = g.X(49); rline(X, 60, X, 262, 1920, { c: C.line, w: 1, once: true }); txt('walk 50', X + 3, 252, { s: 12, c: C.soft, al: 'left' }); }
      if (n >= NW) card([{ s: `walk 50:  REINFORCE + b. ${f2(R.rb.cur[49])},  actor-critic ${f2(R.ac.cur[49])}`, c: C.ink }, { s: `actor-critic ahead from walk ${crossAt()}`, c: '#3f7f7c' }, { s: `walk ${NW}:  ${f2(R.rb.cur[NW - 1])}  vs  ${f2(R.ac.cur[NW - 1])}`, c: C.ink }], t - 7, { gap: 1.1, y: 296 }); } },
  { h: 'Calmer, too', get p() { return [`Each dot is one run: average return over its last 100 walks. Dashed line: 0.4; big dark dots: runs below it.`, `REINFORCE with a baseline: ${race(AT).rb.stuck} of ${NRUN} runs below 0.4. In ${race(AT).rb.wander}, Pip wanders: 90 or more of its last 100 walks hit the step limit, scoring 0, so return minus yardstick is about 0 and pushes fade. Actor-critic: ${race(AT).ac.stuck} below 0.4, lowest ${f2(Math.min(...race(AT).ac.late))}.`]; },
    shot: [4, 11],
+   get say() { const R = race(AT); return [["Each dot is one run. Its average return over the last walks."], [["Top row, REINFORCE with a baseline.", [30, 70, 350, 70]], `${R.rb.stuck} runs fall below the dashed line.`, "In most of them, Pip just wanders. Its walks get stopped, every grade is zero, and pushes fade away."], [["Bottom row, actor-critic.", [30, 160, 350, 70]], R.ac.stuck ? `Only ${R.ac.stuck}.` : 'None at all.']]; },
    draw(t) { const R = race(AT); runAxis(250, clamp(t - .3)); txt('each run’s average return, last 100 walks', 200, 32, { s: 14, c: C.soft, a: clamp(t - .3) });
      runDots(R.rb, 110, C.rose, `REINFORCE + baseline:  ${R.rb.stuck} runs below 0.4`, t - 1.2); runDots(R.ac, 200, '#3f8f8b', `actor-critic:  ${R.ac.stuck} runs below 0.4`, t - 3.5);
      if (t > 6) card([`runs below 0.4:  ${R.rb.stuck}  vs  ${R.ac.stuck}`, { s: `${R.rb.wander} stuck runs: 90+ of the last 100 walks stopped`, c: C.soft }], t - 6, { gap: 1.2, y: 296 }); } },
  { h: 'Fair step sizes?', get p() { const a = race(AT), y2 = fairRB(), c1 = crit(.1);
      return [`The yardstick learned with step 0.1, the critic with 0.2, and step sizes matter. So we swapped the two steps. REINFORCE with a baseline and yardstick step 0.2: ${f2(y2.cur[49])} after 50 walks, ${y2.stuck} runs below 0.4. Actor-critic with critic step 0.1: ${f2(c1.cur[49])} after 50 walks, ${c1.stuck} runs below 0.4.`, 'Same picture either way: REINFORCE with a baseline starts faster and leaves more runs behind.']; },
    shot: [4, 10],
+   say: [["Were the step sizes fair? The yardstick and the critic learned at different speeds. So we swapped them."], [["Here's the table.", [20, 26, 360, 200]], ["Same picture either way.", [20, 26, 360, 200]]], [["REINFORCE with a baseline starts faster, but leaves more runs behind.", [30, 270, 340, 64]]]],
    draw(t) { const a = race(AT), y2 = fairRB(), c1 = crit(.1), rows = [[`REINFORCE + b., yardstick 0.1`, a.rb], [`REINFORCE + b., yardstick 0.2`, y2], [`actor-critic, critic 0.1`, c1], [`actor-critic, critic 0.2`, a.ac]];
      txt('after 50 walks · after 300 · runs below 0.4', 370, 40, { s: 13, c: C.soft, al: 'right', a: clamp(t) });
      rows.forEach(([lab, S], i) => { const u = clamp(t - .5 - i * .6), y = 80 + i * 44, col = i < 2 ? C.roseInk : '#3f7f7c'; txt(lab, 24, y, { s: 15, al: 'left', c: col, a: u });
@@ -243,12 +258,14 @@ const STEPS = [
  { h: 'Your turn', ctl: { label: 'actor step', values: ATS, def: 2, onChange: st => {} },
    p: ['Drag the **actor step size** and rerun both methods on the same seeds. The chart title counts the runs that end below 0.4.', 'Big steps learn fast but trust each push more. Watch which method copes with step 2, and which one is quicker with small steps.'],
    shot: [3],
+   say: [["Your turn. Drag the actor's step size, and both methods rerun on the same seeds."], [["Watch the two curves, and the count of runs left behind.", [40, 20, 320, 250]]], ["Big steps learn fast, but trust every push. Which method copes with a step of two? Which is quicker with small ones?"]],
    draw(t, st) { const a = ATS[st.ci ?? 2], R = race(a), n = Math.floor(clamp((t - (st.changed ?? 0) - .2) / 2) * NW);
      raceChart(R, n, { x0: 60, x1: 340, y0: 262, y1: 70 }); legend(190, 190);
      txt(`actor step ${a}`, 200, 30, { s: 17, c: C.ink }); txt(`runs below 0.4:  REINFORCE + b. ${R.rb.stuck},  actor-critic ${R.ac.stuck}`, 200, 50, { s: 14, c: C.soft });
      card([`walk 50:  ${f2(R.rb.cur[49])}  vs  ${f2(R.ac.cur[49])}`, `walk ${NW}:  ${f2(R.rb.cur[NW - 1])}  vs  ${f2(R.ac.cur[NW - 1])}`, { s: 'REINFORCE + baseline  vs  actor-critic', c: C.soft }], 3, { gap: 0, y: 296 }); } },
  { h: 'A rushed critic', get p() { return [`The critic is only a guess, and how fast it learns matters. With critic step 0.5 it spreads news faster, ${f2(crit(.5).cur[49])} after 50 walks against ${f2(crit(.2).cur[49])} at 0.2.`, `But each walk now jerks the guesses and grades around, and ${crit(.5).stuck} of ${NRUN} runs end below 0.4. At 0.05 the critic is calm but slow: ${f2(crit(.05).cur[49])} after 50 walks. A wrong critic steers the actor wrong.`]; },
    shot: [4, 11],
+   get say() { return [["The critic is only a guess. How fast should it learn?"], [["Look at the top bars. A rushed critic spreads news faster.", [40, 30, 320, 140]]], [["But the bottom bars show the cost.", [40, 180, 320, 130]], `With step zero point five, ${crit(.5).stuck} runs fall behind.`, "A wrong critic steers the actor wrong."]]; },
    draw(t) { txt('actor-critic, actor step 1, four critic step sizes', 200, 18, { s: 14, c: C.soft, a: clamp(t) });
      const x0 = 80, gw = 70; [['after 50 walks (average return)', 49, 156, 100], ['runs below 0.4 (of 100)', -1, 300, 90]].forEach(([lab, i, y0, h], g) => {
        txt('critic step', x0 - 4, y0 + 11, { s: 12, c: C.soft, al: 'right', a: clamp(t - 1 - g * 2) });
@@ -259,6 +276,7 @@ const STEPS = [
      if (t > 6) card(['bigger critic step: news spreads faster', { s: 'too big: jumpy grades, more runs left behind', c: C.roseInk }], t - 6, { gap: 1.2, y: 330 }); } },
  { h: 'Where you’ve seen this', p: ['In 1983, Andrew Barto, Richard Sutton and Charles Anderson balanced a pole on a cart with two learning parts: one chose the pushes, an **adaptive critic** graded them. The actor and the critic.', 'Today A2C, A3C, PPO, DDPG, TD3 and SAC are all actor-critic methods, with neural networks in both roles. Next: many workers at once, and better grades than a single step.'],
    shot: [4, 11],
+   say: [["The idea is old."], [["In nineteen eighty three, Barto, Sutton and Anderson balanced a pole on a cart.", [40, 60, 320, 180]], ["One part chose the pushes. An adaptive critic graded them.", [40, 60, 320, 180]]], [["Today, A2C, PPO, DDPG and SAC are all actor-critic methods.", [30, 292, 340, 87]]]],
    draw(t) { const a = clamp(t - .3), th = Math.sin(t * 1.3) * .12; alpha(a, () => { rline(60, 200, 340, 200, 1940, { w: 1.8 }); const x = 200 + Math.sin(t * .9) * 30;
        rrect(x - 30, 176, 60, 22, 1941, { fill: '#cfe3e2' }); rcircle(x - 18, 200, 5, 1942, { fill: C.ink }); rcircle(x + 18, 200, 5, 1943, { fill: C.ink });
        rline(x, 176, x + Math.sin(th) * 110, 176 - Math.cos(th) * 110, 1944, { w: 3, c: C.goldInk }); dot(x + Math.sin(th) * 110, 176 - Math.cos(th) * 110, 4, C.goldInk); });
@@ -266,6 +284,7 @@ const STEPS = [
      if (t > 3) card(['1983: actor + adaptive critic (Barto, Sutton, Anderson)', { s: 'today: A2C, A3C, PPO, DDPG, TD3, SAC', c: C.goldInk }, { s: 'next: many workers at once; better grades', c: C.soft }], t - 3, { gap: 1.2, fs: 16 }); } },
  { h: 'Recap', p: ['**Actor-critic** splits Pip in two: the actor holds the chances, the critic learns a value notebook by TD. After every step, the critic’s TD error grades the move, and the actor nudges it up or down.', 'No waiting for the walk to end, and steady grades instead of noisy returns. The price: a critic that is wrong, or still blank, grades wrongly. That is bias.'],
    shot: [3, 9],
+   say: [["So, actor-critic splits Pip in two. The actor holds the chances. The critic learns values by TD."], [["After every step, the critic's TD error grades the move, and the actor nudges it.", [30, 292, 340, 106]], "No waiting, and steady grades. The price is bias, when the critic is wrong."]],
    draw(t) { const S = WS[NW - 1]; maze({ V: S.V, t }); nums(S.V, .8); fans(G, S.th, { a: .8 }); pip(cx(0), cy(3), 1, t);
      card(['δ  =  reward  +  0.9 × guess there  −  guess here', 'critic:  guess here  +=  0.2 × δ', 'actor:  move made  +=  step × δ × (1 − its chance)', { s: '            other moves  −=  step × δ × their chance', c: C.soft }], t - .3, { gap: 1, fs: 16, lh: 22 }); } },
 ];

@@ -19,7 +19,7 @@ function capFor(s) { // caption under an animation: slide override, else the ani
   if (!s || !s.a) return ''; if (s.cap) return s.cap;
   const C = (window.RLAnim && window.RLAnim.CAP) || {}; return C[s.a + ':' + ((s.p && s.p.mode) || '')] || C[s.a] || '';
 }
-const isUnit = x => Array.isArray(x) && x.length === 2 && typeof x[0] === 'string' && Array.isArray(x[1]);
+const isUnit = x => Array.isArray(x) && x.length === 2 && typeof x[0] === 'string' && Array.isArray(x[1]) && x[1].length >= 3 && x[1].every(n => typeof n === 'number');   // a focus is 3 or 4 numbers
 function sayUnits(step) { // spoken script -> [{text, focus, para}]; focus = [x, y, w, h] box or [x, y, r] circle on the 400x420 canvas
   const v = typeof step.say === 'function' ? step.say() : step.say, out = [];
   [].concat(isUnit(v) ? [v] : v).forEach((para, pi) => (Array.isArray(para) && !isUnit(para) ? para : [para]).forEach(u => {

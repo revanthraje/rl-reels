@@ -122,32 +122,38 @@ function crossMap(x, y, a) { if (a <= 0) return; ctx.save(); ctx.globalAlpha = a
 const STEPS = [
  { h: 'Where TD left off', p: ['In the TD reel, Pip followed a fixed habit: the arrows, with one move in five random. TD learning worked out, from experience, how good each cell is **under that habit**. Here is that notebook, with the true values of the habit, which TD’s guesses head toward.', 'Now Pip wants to do better than its habit. Can the notebook tell it which move is best?'],
    shot: [3, 9],
+   say: [[["Remember the TD reel? Pip learned how good each cell is, under its habit.", [40, 16, 320, 256]], ["Here's that notebook, with the habit's arrows.", [40, 16, 320, 256]]], ["Now Pip wants to do better than its habit. Can the notebook tell it which move is best?"]],
    draw(t) { maze({ V: HV, nums: 1, t }); for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { if (ARR[key(c, r)] < 0) continue; const a = clamp((t - .6 - key(c, r) * .08) * 3); if (a > 0) { ctx.save(); ctx.globalAlpha = a * .8; G.arrowIn(c, r, ARR[key(c, r)], 500 + key(c, r)); ctx.restore(); } }
      pip(cx(0), cy(3), 1, t);
      if (t > 3) card(['value of a cell = expected return from there', 'following the arrows, 1 move in 5 random', { s: 'how good each cell is, not each move', c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'A notebook is not enough', p: [`From the bottom row’s middle, the cell to its right is worth ${f2(HV[key(3, 3)])}, to its left ${f2(HV[key(1, 3)])}. Right looks better, if Pip knows “right” leads there. Pip doesn’t know the rules: only after a move does it see the reward and where it landed.`, 'It could learn the rules too, a later topic. **Q-learning** skips them and learns a value for each move directly.'],
+   say: [[["Pip stands in the middle of the bottom row.", [40, 16, 320, 256]], ["Right looks worth more than left. But where does right actually lead?", [40, 16, 320, 256]]], [["Pip doesn't know the rules. No map.", [24, 286, 360, 114]], ["It only finds out after it moves.", [24, 292, 290, 87]]], "Q-learning skips the map, and learns a value for each move directly."],
    draw(t) { maze({ V: HV, nums: (c, r) => ((c === 3 || c === 1) && r === 3 ? 1 : 0), t }); pip(cx(2), cy(3), 1, t); peekArrows(t, clamp(t - .6));
      [[1, 3], [3, 3]].forEach(([c, r], i) => txt('?', cx(c), cy(r) + 4, { s: 26, c: C.roseInk, a: clamp(t - 1.2 - i * .4) }));
      crossMap(344, 336, clamp(t - 2.6)); txt('no map', 344, 372, { s: 14, c: C.roseInk, a: clamp(t - 2.6) });
      if (t > 2) card(['Pip knows: the cell it is in', 'after a move: the reward and where it landed', { s: 'Pip does not know: where a move will lead', c: C.roseInk }], t - 2, { x: 24, w: 290, gap: 1.1, fs: 16 }); } },
  { h: 'A number for each move', p: ['Pip now keeps **four** numbers per cell, one per move, drawn as triangles, each pointing its way. Gold is positive, rose negative.', 'Each is an **action value**, Q(s, a). In the values reel it meant: make move a, then follow the habit. Here: make move a, then act **as well as possible**: the best policy’s Q, **Q***, said “Q star”. All start at 0.'],
    shot: [3, 10],
+   say: [[["Now Pip keeps four numbers in every cell, one per move.", [40, 16, 320, 256]], ["Here's the start cell, made big. Each triangle points its way.", [30, 286, 110, 114]]], [["Each is an action value. Make this move, then act as well as possible.", [145, 290, 230, 87]], "That's Q star. All start at zero."]],
    draw(t) { const Qd = ZQ.slice(); qmaze(Qd, { t }); const k = corners(1, 3);
      zoom(QBEST, 0, 3, 40, 296, 92, { a: clamp(t - 1), label: 'the start cell, made big' });
      if (t > 1) { ctx.save(); ctx.globalAlpha = clamp(t - 1); arrow(cx(0) + 10, OY + 4 * CS - 2, 86, 293, 610, { c: C.soft }); ctx.restore(); }
      card(['up: number for “up”', 'right, down, left: the same', { s: 'shown: the Q* numbers', c: C.soft }], t - 2.5, { x: 150, w: 220, gap: 1.1, fs: 16 });
      pip(cx(0), cy(3), 1, t); } },
  { h: 'Choosing needs no map', p: ['To move, Pip looks only at its own cell and takes the move with the **biggest** number, ties broken at random. Bumping a wall is a move too, with its own number.', 'One move in five is still random, any direction, so every move gets tried. This habit is **ε-greedy**, with ε (epsilon) = 0.2: greedy means taking the biggest number.'],
+   say: [[["To move, Pip only looks at its own cell.", [40, 16, 320, 256]], ["It takes the biggest number. Here, that's up.", [40, 16, 320, 256]]], [["And one move in five is still random, so every move gets tried.", [30, 292, 340, 87]], "That habit is epsilon greedy."]],
    draw(t) { const Q = QBEST; qmaze(Q, { t, nums: (c, r) => (c === 0 && r === 2 ? clamp(t - 1) : 0) }); pip(cx(0), cy(3), 1, t);
      if (t > 2.2) { ctx.save(); ctx.globalAlpha = clamp(t - 2.2); G.arrowIn(0, 2, argQ(Q, 0, 2), 620, { c: C.teal, w: 2.2 }); ctx.restore(); }
      card([`in this cell: biggest is “${N[argQ(Q, 0, 2)]}”, ${f2(maxQ(Q, 0, 2))}  →  go ${N[argQ(Q, 0, 2)]}`, '4 moves in 5: the biggest number', { s: '1 move in 5: any direction at random', c: C.soft }], t - 3, { gap: 1.1 });
      caption('numbers shown: the Q* values Pip is after', clamp(t - 1)); } },
  { h: 'The update, in words', p: ['After each move, Pip updates that move’s number. The target: that move’s reward, plus 0.9 times the **biggest** of the four numbers where it landed.', 'Then it nudges the old number a fifth of the way toward the target. That fifth is **α (alpha)**, the learning rate, as in TD learning. On the cheese or cat, the walk ends and nothing is added.'],
+   say: [[["Watch Pip make a move.", [40, 16, 320, 256]], ["Then look where it landed, made big below.", [30, 286, 110, 114]]], [["The target is the reward, plus zero point nine times the biggest number there.", [140, 290, 235, 87]], ["Then the old number moves a fifth of the way toward it.", [140, 290, 235, 87]]], "That fifth is alpha, the learning rate."],
    draw(t) { const Q = QBEST, mv = G.walkPos(DEMO, 0, 1, clamp(t - .4, 0, 1), 1); qmaze(Q, { t, hl: { [key(2, 0)]: [1, C.teal, .45 * clamp(t - 1.6)] } }); pip(mv.x, mv.y, 1, t);
      ghost(2, 0, 'move made', clamp(t - 1.6), 24);
      zoom(Q, 3, 0, 36, 296, 92, { label: 'landed here', a: clamp(t - 2.2), hl: [argQ(Q, 3, 0), C.gold, .3] });
      card(['target  =  reward for the move', '   + 0.9 × biggest in landed cell', 'new = old + 0.2 × (target − old)'], t - 3, { x: 145, w: 228, gap: 1.3, fs: 16 }); } },
  { h: 'In symbols', p: ['With s the cell Pip left, a its move, r the reward, and s′, said “s prime”, where it landed:', 'Q(s, a) becomes Q(s, a) + α × (r + γ × max Q(s′, ·) − Q(s, a)). “max Q(s′, ·)” is the biggest of the four numbers in s′. γ (gamma) = 0.9 and α = 0.2, the same knobs as in TD learning.'],
+   say: [[["Here's the same rule in symbols.", [10, 50, 380, 30]], ["Each piece gets a label as it appears.", [10, 80, 380, 200]]], [["The key part is the max. The biggest of the four numbers where Pip landed.", [10, 50, 380, 30]], ["Gamma and alpha are the same knobs as in TD.", [30, 292, 340, 87]]]],
    draw(t) { qmaze(ZQ, { t }); pip(cx(0), cy(3), 1, t); dim(.7);
      const y = 70; txt('Q(s, a)  ←  Q(s, a) + α ( r + γ max Q(s′, ·) − Q(s, a) )', W / 2, y, { s: 19, a: clamp(t * 2) });
      const parts = [['s, a', 'cell left, move made', 92], ['r', 'reward for that move', 170], ['max Q(s′, ·)', 'best number where it landed', 245], ['r + γ max Q(s′, ·)', 'the target', 205]];
@@ -155,6 +161,7 @@ const STEPS = [
      card(['γ = 0.9: later rewards count a bit less', 'α = 0.2: move one fifth of the way', { s: 'walk over (cheese or cat): no max term', c: C.soft }], t - 5.2, { gap: 1 }); } },
  { h: 'Walk 1', p: [`All numbers are 0, so every choice is a tie, a coin toss. For ${e0.length - 1} steps every update says “0 stays 0”.`, `On step ${e0.length}, from the cell below the cheese, one of the one-in-five random moves points up, onto the cheese: reward +1, walk over. Target 1, so that one number, “up” in that cell, goes from 0 to 0.2. Nothing else changes.`],
    shot: [5, 13],
+   say: [[["Walk one. Every number is zero, so every choice is a coin toss.", [40, 16, 320, 256]], ["Watch Pip wander, sped up.", [40, 16, 320, 256]]], [["Finally, a random move up, onto the cheese. Plus one!", [40, 16, 320, 256]]], [["So that one number, up below the cheese, becomes zero point two.", [30, 286, 345, 114]], "Nothing else changes."]],
    draw(t) { const dur = .2, n = e0.length, tEnd = (n - 1) * dur; let Q = ZQ.slice(), m;
      if (t < tEnd) { m = G.walkPos(e0, 0, n - 1, t, dur); trail(e0.slice(0, m.k + 1).map(s => [s.c, s.r]), .5); }
      else { m = G.walkPos(e0, n - 1, n, Math.min(1, t - tEnd), 1); trail(e0.map(s => [s.c, s.r]), .3); if (t > tEnd + 6) Q[qk(L0.c, L0.r, L0.m)] = L0.nw * ease((t - tEnd - 6) / 1); }
@@ -164,6 +171,7 @@ const STEPS = [
        zoom(Q, L0.c, L0.r, 36, 296, 92, { hl: [L0.m, C.teal, .3], label: 'the cell below the cheese', a: clamp(t - tEnd - 1.5) });
        card(['move: up (a random one)', 'target = 1   (walk over)', `new = 0 + 0.2 × (1 − 0) = ${f2(L0.nw)}`], t - tEnd - 2.5, { x: 150, w: 222, gap: 1.2, fs: 16 }); } } },
  { h: 'The news travels back', p: ['Walk 2 ends stepping right onto the cheese, so “right” there becomes 0.2. Walk 3: Pip steps right into that cell, whose biggest number is 0.2.', `Target = 0 + 0.9 × 0.2 = 0.18, and “right” in the cell it left becomes 0 + 0.2 × 0.18 = ${f2(S3.nw)}. As in TD, a guess learned from the next guess, but stored on a move.`],
+   say: [[["Walk three. Pip steps right, beside the cheese.", [40, 16, 320, 256]], ["The biggest number there is zero point two.", [30, 286, 110, 114]]], [["So the move Pip just made gets a little credit too.", [145, 290, 230, 87]], ["A guess learned from the next guess, stored on a move.", [145, 290, 230, 87]]]],
    draw(t) { const Qb = Qat(W3I, W3K), Q = Qb.slice(); if (t > 6.5) Q[qk(S3.c, S3.r, S3.m)] = S3.nw * ease((t - 6.5) / 1);
      const mv = G.walkPos(E[W3I].tr, W3K, W3K + 1, clamp(t - .5, 0, 1), 1);
      qmaze(Q, { t, hl: { [key(S3.c, S3.r)]: [S3.m, C.teal, .35 * clamp(t - 1.6)] } }); pip(mv.x, mv.y, mv.face || 1, t);
@@ -172,21 +180,25 @@ const STEPS = [
      caption(`walk 3, step ${W3K + 1}`, clamp(t - .2)); } },
  { h: 'The max ignores what comes next', p: [`Walk ${CATW + 1}. Pip steps right into the cell beside the cheese and updates at once, before choosing its next move. The biggest number there is ${f3(CP.next)}, for “right”: target 0.9 × ${f3(CP.next)} = ${f3(CP.target)}, and the old ${f3(CP.old)} becomes ${f3(CP.nw)}.`, 'The target asks: what if Pip makes the **best** move from here? Whatever Pip actually does next plays no part.'],
    shot: [4, 11],
+   say: [[["Walk seven. Pip steps beside the cheese, and updates right away.", [40, 16, 320, 256]]], [["The target uses the best move from there, right, worth zero point six seven.", [30, 286, 345, 114]]], [["Whatever Pip actually does next plays no part.", [40, 16, 320, 256]]]],
    draw(t) { const Qb = Qat(CATW, CT.length - 2), Q = Qb.slice(); if (t > 6) Q[qk(CP.c, CP.r, CP.m)] = lerp(CP.old, CP.nw, ease((t - 6) / 1));
      const mv = G.walkPos(CT, CT.length - 2, CT.length - 1, clamp(t - .5, 0, 1), 1);
      qmaze(Q, { t, hl: { [key(CP.c, CP.r)]: [CP.m, C.teal, .35 * clamp(t - 1.6)] } }); pip(mv.x, mv.y, mv.face || 1, t);
      zoom(Q, 3, 0, 36, 296, 92, { label: 'landed: beside the cheese', a: clamp(t - 2), hl: [1, C.gold, .3 * clamp(t - 3)], d3: 1 });
      card([`biggest here: right, ${f3(CP.next)}`, `target = 0 + 0.9 × ${f3(CP.next)} = ${f3(CP.target)}`, `new = ${f3(CP.old)} + 0.2 × ${f3(CP.target - CP.old)} = ${f3(CP.nw)}`], t - 3, { x: 145, w: 228, gap: 1.3, fs: 16 }); } },
  { h: 'Bad news stays with the bad move', p: ['Then Pip’s next move is a random one: down, onto the cat. Reward −1, walk over. Only that cell’s “down” number changes, from 0 to −0.2. “Right” keeps its ' + f3(Q30[CATW][1]) + '.', 'With one number per cell, as in the TD reel, this −1 would have pulled down the whole cell’s value. Four numbers keep a bad move apart from a good one.'],
+   say: [[["And what does Pip do next? A random move. Down, onto the cat.", [40, 16, 320, 256]], ["Minus one.", [40, 16, 320, 256]]], [["Only that one number, down, drops.", [30, 286, 345, 114]], ["Right keeps its zero point six seven.", [30, 286, 345, 114]]], "Four numbers keep a bad move apart from a good one."],
    draw(t) { const Qb = Qat(CATW, CT.length - 1), Q = Qb.slice(); if (t > 2.4) Q[qk(3, 0, 2)] = CL.nw * ease((t - 2.4) / .8);
      const mv = G.walkPos(CT, CT.length - 1, CT.length, clamp(t - .6, 0, 1), 1);
      qmaze(Q, { t, hl: { [key(3, 0)]: [2, C.rose, .3 * clamp(t - 1.6)] } }); pip(mv.x, mv.y, mv.face || 1, t); if (t > 1.2) bubble('−1', cx(3), cy(1) - 18, t - 1.4);
      zoom(Q, 3, 0, 36, 296, 92, { label: 'beside the cheese', a: clamp(t - 2), hl: [2, C.rose, .25], d3: 1 });
      card(['move: down (random)  →  cat', `down: 0 + 0.2 × (−1 − 0) = ${f3(CL.nw)}`, `right: still ${f3(Q30[CATW][1])}`], t - 2.6, { x: 150, w: 222, gap: 1.3, fs: 16 }); } },
  { h: 'Walk by walk', p: ['Two of the four numbers beside the cheese. Across: walk number, 1 to 20; up: the number after that walk. Gold is “right”, onto the cheese; rose is “down”, onto the cat.', `“Right” climbs: ${f2(Q30[1][1])}, ${f2(Q30[2][1])}, ${f2(Q30[3][1])} … ${f2(Q30[19][1])} after 20 walks. Cat scares only push “down” lower. “Right” never drops: it lands on the cheese, so its target is always exactly 1.`],
+   say: [[["This chart tracks two numbers beside the cheese, walk by walk.", [20, 285, 360, 115]], ["Gold is right, onto the cheese. Rose is down, onto the cat.", [20, 285, 360, 115]]], [["Watch gold climb, close to one after twenty walks.", [20, 285, 360, 115]], "It never drops. Its target is always exactly one."]],
    draw(t) { const n = clamp(Math.floor(t / .55) + 1, 1, 20); qmaze(E[n - 1].Q, { t, nums: (c, r) => (c === 3 && r === 0 ? 1 : 0) }); pip(cx(ends[n - 1] > 0 ? 4 : 3), cy(ends[n - 1] > 0 ? 0 : 1), 1, t);
      q30Chart(n, { labels: [1, 2, 3, 19] }); caption(`after walk ${n}`, 0); } },
  { h: `${NEP} walks later`, p: [`Repeat for ${NEP} walks. Bars show each walk’s steps; teal cheese, rose cat. Early walks wander: ${lens.slice(0, 4).join(', ')} steps. Last-100 average: ${AVGLEN.toFixed(1)}.`, 'Arrows show Pip’s best guess at the best move; small numbers count visits. Rarely visited cells off the route can be wrong: the bottom row’s two left arrows are not best moves. A ? means all four numbers are still equal.'],
+   say: [[["Three hundred walks, sped up.", [40, 16, 320, 256]], ["The bars below are walk lengths. They shrink fast.", [20, 285, 360, 115]]], [["At the end, arrows show Pip's best guesses.", [40, 16, 320, 256]], ["Along the route they're right. In rarely visited cells, some are wrong.", [40, 16, 320, 256]]]],
    draw(t) { let w, k; if (t < 5) { w = 1 + Math.floor(t / .8); k = (t % .8) / .8; } else { w = 7 + Math.floor((t - 5) / .03); k = ((t - 5) % .03) / .03; }
      const done = w >= NEP; if (done) { w = NEP - 1; k = 1; }
      const tr = E[w].tr, i = Math.min(tr.length - 1, Math.floor(k * tr.length)), q = tr[i];
@@ -194,14 +206,17 @@ const STEPS = [
      pip(done ? cx(4) : cx(q.c), done ? cy(0) : cy(q.r), 1, t); strip(done ? NEP : w, 'steps per walk'); caption(done ? `walk ${NEP} of ${NEP}` : `walk ${w + 1} of ${NEP}`); },
    shot: [3, 18] },
  { h: 'The best route’s numbers', p: [`Along the arrows, each cell’s biggest number: ${f2(maxQ(FIN, ...PATH[PATH.length - 2]))} beside the cheese, then ${f2(maxQ(FIN, ...PATH[PATH.length - 3]))}, ${f2(maxQ(FIN, ...PATH[PATH.length - 4]))}, down to ${f2(maxQ(FIN, 0, 3))} at the start. These are the values of always taking the shortest route: the Bellman reel’s V star, learned from walks alone.`, `Under the old habit that cell is worth ${f2(HV[key(3, 0)])}. Q-learning learned 1, despite Pip’s random moves: the max makes every target assume the **best next move**.`],
+   say: [[["Follow the arrows back from the cheese.", [40, 16, 320, 256]], ["One, then zero point nine, zero point eight one, down to zero point five three at the start.", [40, 16, 320, 256]]], [["Those are the best possible values, learned from walks alone.", [30, 292, 340, 87]], "The max makes every target assume the best next move."]],
    draw(t) { qmaze(FIN, { t }); arrowsQ(FIN, -5, t + 10, { a: .5 });
      PATH.slice(0, -1).reverse().forEach(([c, r], i) => { const a = clamp((t - .6 - i * .5) * 2); if (a <= 0) return; box(cx(c) - 21, cy(r) - 11, 42, 22, C.card, .9 * a); txt(f2(maxQ(FIN, c, r)), cx(c), cy(r), { s: 18, c: C.goldInk, a }); });
      card([`biggest numbers: ${PATH.slice(0, -1).reverse().slice(0, 4).map(([c, r]) => f2(maxQ(FIN, c, r))).join(', ')} … ${f2(maxQ(FIN, 0, 3))}`, `perfect:              1, 0.9, 0.81, 0.73 … 0.53`, { s: `old habit, same cell beside the cheese: ${f2(HV[key(3, 0)])}`, c: C.soft }], t - 4.5, { gap: 1.1 }); } },
  { h: 'Why they sit still', p: ['In the TD reel, a fixed α of 0.2 kept the guesses wobbling. Here they settle exactly. Why?', 'The floor is dry, and the max ignores Pip’s random next move. Once the next cell’s numbers settle, every target for a move is the same number, walk after walk: nothing left to wobble. TD’s targets kept changing because random moves changed where Pip went next.'],
+   say: [[["In the TD reel, the guesses kept wobbling. Here they sit still. Why?", [40, 16, 320, 256]]], [["Take right, beside the cheese. Its target is one, every single time.", [30, 286, 345, 114]], ["And the max ignores Pip's random next move.", [145, 290, 230, 87]]], "Same target every time, so nothing is left to wobble."],
    draw(t) { qmaze(FIN, { t }); arrowsQ(FIN, -5, t + 10, { a: .35 }); dim(.25);
      zoom(FIN, 3, 0, 36, 296, 92, { label: 'beside the cheese', a: clamp(t - .5) });
      card(['“right”: target = 1, every single time', `cell to its left: 0.9 × ${f2(maxQ(FIN, 3, 0))} = ${f2(GAM * maxQ(FIN, 3, 0))}, every time`, { s: 'same target each time: no wobble', c: C.soft }], t - 1.5, { x: 140, w: 236, gap: 1.4, fs: 15 }); } },
  { h: 'But Pip still stumbles', p: [`Those numbers describe a Pip that never moves at random. The real Pip still does, one time in five. Each dot: one of its last 100 walks, at its return; gold cheese, rose cat. ${CATS} met the cat; the average is ${f2(AVGRET)}, not ${f2(maxQ(FIN, 0, 3))}.`, 'Q-learning learns the best way to act, not how Pip acts while learning. The next reel learns the real walker’s numbers.'],
+   say: [[["But those numbers describe a Pip that never moves at random.", [40, 16, 320, 256]], ["Each dot is one of the real Pip's last hundred walks.", [20, 285, 360, 115]]], [["A few hit the cat. The average is zero point three nine, not zero point five three.", [20, 285, 360, 115]]], "Q-learning learns the best way to act, not how Pip acts while learning."],
    draw(t) { qmaze(FIN, { t }); arrowsQ(FIN, -5, t + 10, { a: .45 });
      const n = Math.min(100, Math.floor(t * 9)); const pts = LAST.slice(0, n);
      const x0 = 50, x1 = 360, y0 = 392, y1 = 304, X = i => x0 + i * (x1 - x0) / 99, Y = v => lerp(y0, y1, (v + 1) / 2);
@@ -215,6 +230,7 @@ const STEPS = [
    shot: [5, 14] },
  { h: 'Your turn', ctl: { label: 'ε', values: EPSV, def: 2, fmt: v => v, onChange: st => { st.path = null; } }, tap: tapCell,
    p: [`Drag **ε**, how often Pip moves at random, to rerun all ${NEP} walks. At every setting the start’s number reaches 0.53. More randomness means more cells visited: at 1, all ${summary(1).best} arrows are best moves, at 0.2 only ${summary(.2).best}. But a more random Pip earns less along the way.`, 'Tap a cell to drop Pip there and follow the arrows.'],
+   say: [[["Your turn. Drag epsilon, how often Pip moves at random.", [40, 16, 320, 256]], ["At every setting, the start reaches zero point five three.", [30, 292, 340, 87]]], [["More randomness visits more cells, so more arrows come out right.", [40, 16, 320, 256]], ["Tap a cell to drop Pip there.", [60, 392, 280, 24]]]],
    draw(t, st) { const e = EPSV[st.ci ?? 2], S = summary(e), P0 = st.prevCi != null ? summary(EPSV[st.prevCi]).Q : S.Q, u = ease((t - (st.changed ?? -9)) / .9);
      const Q = S.Q.map((v, i) => lerp(P0[i], v, u)); qmaze(Q, { t }); arrowsQ(S.Q, -5, t + 10, { a: .55 });
      const P = st.path; if (P) { const t2 = t - st.pt, kk = clamp(Math.floor(t2 / .45), 0, P.length - 1), uu = ease((t2 % .45) / .45 * 1.3), a = P[kk], b = P[Math.min(P.length - 1, kk + 1)];
@@ -223,9 +239,11 @@ const STEPS = [
      } else { pip(cx(0), cy(3), 1, t); caption('tap a cell to drop Pip there'); }
      card([`ε = ${e}: random move ${e === 0 ? 'never' : e === 1 ? 'every time' : (e === .1 ? '1 time in 10' : e === .2 ? '1 time in 5' : '1 time in 2')}`, `biggest Q at the start: ${f2(S.start)}   (perfect 0.53)`, `real return, last 100 walks: ${f2(S.ret)}`, { s: `arrows that are best moves: ${S.best} of ${CELLS.length}`, c: C.soft }], 10, { lh: 21, fs: 16, y: 290 }); } },
  { h: 'Where it came from', p: ['Chris Watkins introduced Q-learning in his 1989 PhD thesis. In 1992 he and Peter Dayan proved the table reaches the best values, if every move everywhere keeps being tried and steps shrink suitably. Our run broke both, yet found the route; its rarely tried cells stayed wrong.', 'In 2015 DeepMind’s **DQN** swapped the table for a network reading Atari screens: one Q per joystick move.'],
+   say: [[["Chris Watkins introduced Q-learning in nineteen eighty nine.", [30, 292, 340, 110]], ["A few years later, he and Peter Dayan proved it works, under some conditions.", [30, 292, 340, 110]]], [["In twenty fifteen, DQN swapped the table for a network that read Atari screens.", [30, 292, 340, 110]]]],
    draw(t) { qmaze(FIN, { t }); arrowsQ(FIN, -5, t + 10, { a: .5 }); pip(cx(0), cy(3), 1, t); dim(.35);
      card(['1989  Watkins: Q-learning', '1992  Watkins and Dayan: it converges (table)', '2015  DQN: a network instead of a table', { s: 'screen pixels in, one Q per joystick move out', c: C.soft }], t - .5, { gap: 1.1 }); } },
  { h: 'Recap', p: ['Without a map, keep a number for every move: **Q(s, a)**. Pick the biggest, explore now and then.', 'After each move, nudge its number toward the reward plus γ times the **best** number where you landed. Because of that max, the numbers head for the best way to act, even while Pip acts at random.'],
+   say: [[["So, Q-learning keeps a number for every move.", [30, 292, 340, 110]], ["Pick the biggest, and explore now and then.", [30, 292, 340, 110]]], ["After each move, aim at the reward plus gamma times the best number where you landed. Because of that max, Pip learns the best way to act."]],
    draw(t) { qmaze(FIN, { t }); arrowsQ(FIN, -5, t + 10); pip(cx(0), cy(3), 1, t);
      card(['one number per cell and move: Q(s, a)', 'act: biggest number, random 1 time in 5 (ε)', 'target = r + γ × biggest Q where you land', 'new = old + α × (target − old)'], t - .3, { gap: 1 }); } },
 ];

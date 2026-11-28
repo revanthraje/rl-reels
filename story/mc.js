@@ -163,25 +163,30 @@ const w1 = WK[0], w2 = WK[1], w3 = WK[2];
 const STEPS = [
  { h: 'Back in the maze', p: ['The floor is **dry** again: every move goes where Pip intends. Stepping onto the cheese pays +1, onto the cat −1, and either ends the walk; other steps pay 0. A bump leaves Pip in place but counts as a step. γ (gamma) is 0.9.', 'Pip follows its **habit** from the values reel: the arrow, except one move in five goes a random direction.'],
    shot: [5, 11],
+   say: [[["Back in the maze, on a dry floor.", [40, 16, 320, 256]], ["Cheese plus one, cat minus one, and gamma at zero point nine.", [40, 16, 320, 256]]], [["The faint arrows are Pip's habit. One move in five goes random.", [40, 16, 320, 256]]]],
    draw(t) { maze({ draw: t / 1.6, pop: { cheese: ease((t - 1.8) * 3), cat: ease((t - 2.3) * 3) }, labels: clamp(t - 3), t }); if (t > 2.8) pip(cx(0), cy(3), 1, t); if (t > 4) arrows(clamp(t - 4) * .8);
      if (t > 5.5) card(['cheese +1, cat −1, on the step onto them; walk ends', 'other steps 0  ·  bump: stay put, still a step', { s: 'dry floor  ·  habit: arrow 4 in 5, random 1 in 5', c: C.soft }], t - 5.5, { gap: 1, fs: 16 }); } },
  { h: 'No rulebook', p: ['No one told Pip where moves lead or what they pay, so it can’t work values out on paper. It can only walk.', 'The values reel started 1000 walks in every cell: already Monte Carlo, the wasteful kind. Real Pip always starts in the corner. **Monte Carlo learning** learns from the complete walks it actually takes, named after the famous casino.'],
    shot: [3, 10],
+   say: [[["This time, nobody hands Pip the rulebook.", [110, 90, 180, 80]], ["So it can't work values out on paper. It can only walk.", [40, 16, 320, 256]]], [["And real Pip always starts in the corner.", [30, 292, 340, 87]], ["Learning from the complete walks it actually takes is called Monte Carlo.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); arrows(.3); pip(cx(0), cy(3), 1, t); const a = clamp(t - .6);
      alpha(a, () => { box(118, 96, 164, 66, C.card, 1); rrect(118, 96, 164, 66, 1100, { c: C.line }); txt('rulebook', 200, 116, { s: 17 }); txt('where moves lead, what they pay', 200, 140, { s: 13, c: C.soft }); rline(124, 102, 276, 156, 1101, { c: C.rose, w: 2.2 }); rline(276, 102, 124, 156, 1102, { c: C.rose, w: 2.2 }); });
      if (t > 4) card(['values reel: 1000 walks from every cell', 'now: only the walks Pip takes, from the start', { s: 'learn from complete walks: Monte Carlo', c: C.goldInk }], t - 4, { gap: 1.3 }); } },
  { h: 'One walk, seven returns', p: [`Walk 1, as in the values reel: cheese in ${w1.length} steps. When it ends, Pip writes a **return** into every cell it passed, not just the start.`, `A cell’s return counts rewards from the step leaving it to the walk’s end. Beside the cheese that is 1. Each cell further back waited one step longer, one more × 0.9, down to ${f2(w1[0].g)} at the start.`],
    shot: [4, 12],
+   say: [[["Here's walk one. Cheese in seven steps.", [40, 16, 320, 256]]], [["When it ends, Pip writes a return into every cell it passed.", [40, 16, 320, 256]], ["Beside the cheese, that's one.", [40, 16, 320, 256]], ["Each step back gets one more times zero point nine, down to zero point five three at the start.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); arrows(.25); const m = animWalk(w1, t - .5, .55), tEnd = .5 + w1.length * .55;
      if (m.done) bubble('+1', cx(4), cy(0) - 18, t - tEnd); else caption(`step ${Math.min(w1.length, m.k + 1)}`);
      if (t > tEnd + .8) writeBack(w1, t - tEnd - .8, .7);
      if (t > tEnd + 1) card(['return from a cell = rewards after leaving it', 'beside the cheese: 1  ·  one step back: × 0.9', { s: `start: 0.9 multiplied ${w1.length - 1} times = ${f2(w1[0].g)}`, c: C.goldInk }], t - tEnd - 1, { gap: 2 }); } },
  { h: 'A notebook of averages', p: ['For every cell the notebook keeps two things: how many returns it has, **n**, and their average.', 'A new return nudges the average: new = old + (return − old) ÷ n. The hundredth return moves it only a hundredth of the way. Some versions nudge by a fixed fraction instead, so old walks fade: useful when the habit keeps changing.'],
    shot: [3, 10],
+   say: [[["Each cell keeps two things. How many returns, and their average.", [40, 16, 320, 256]]], [["A new return nudges the average, by a share that shrinks as returns pile up.", [30, 292, 340, 87]], ["After walk one, each average is just that walk's return.", [30, 292, 340, 87]]]],
    draw(t) { const V = VS[1], N = NS[1]; maze({ V, t }); arrows(.2); trail(w1.map(s => [s.c, s.r]), .3); nums(V, N, (c, r) => clamp(t - .4 - ROUTE.findIndex(q => q[0] === c && q[1] === r) * .25), { n: 1 }); pip(cx(4), cy(0), 1, t);
      card(['corner: average  ·  bottom: n, returns so far', 'new = old + (return − old) ÷ n', { s: 'walk 1: n = 1, so average = that return', c: C.soft }], t - 2.2, { gap: 1.5 }); } },
  { h: 'Walk 2: twice in one cell', p: ['On walk 2 Pip steps back down once and bumps the top wall once, passing three cells twice. Which return counts? Here, only each walk’s **first visit**. Counting every visit also works: after 1000 walks the two notebooks differ by at most ' + f2(FE_DIFF) + '.', `The start averages (0.53 + 0.39) ÷ 2 = ${f2(VS[2][SK])}. Beside the cheese: (1 + 0.9) ÷ 2 = ${f2(VS[2][key(3, 0)])}.`],
    shot: [5, 13],
+   say: [[["Walk two. Watch Pip step back down once, and bump the top wall.", [40, 16, 320, 256]], ["Some cells get passed twice. Only the first visit counts.", [40, 16, 320, 256]]], [["The start now averages zero point four six.", [30, 292, 340, 87]], ["Beside the cheese, zero point nine five.", [30, 292, 340, 87]]]],
    draw(t) { const D = .42, tEnd = .4 + w2.length * D, done = t > tEnd + .6 + w2.length * .45 + .6;
      maze({ V: done ? VS[2] : VS[1], t }); arrows(.2); const m = animWalk(w2, t - .4, D); if (m.done) bubble('+1', cx(4), cy(0) - 18, t - tEnd); else caption(`step ${Math.min(w2.length, m.k + 1)}`);
      nums(done ? VS[2] : VS[1], done ? NS[2] : NS[1], 1, { n: done || t < tEnd + .6 });
@@ -190,6 +195,7 @@ const STEPS = [
      else if (t > tEnd + .6) caption('struck-through grey: a second visit, not counted'); } },
  { h: 'Walk 3: same path, opposite lesson', p: ['Walk 3 starts along the same path. Halfway, Pip can’t write anything: whether these cells lead to cheese or cat is still unknown.', `Then, right beside the cheese, a random move points down, onto the cat. Every return on the path is negative. The start’s average drops to ${f2(VS[3][SK])}, beside the cheese to ${f2(VS[3][key(3, 0)])}. A single walk can swing the notebook a lot.`],
    shot: [2.6, 13],
+   say: [[["Walk three starts along the same path.", [40, 16, 320, 256]], ["See the hourglasses? Mid walk, nothing can be written yet.", [40, 16, 320, 256]]], [["Then, beside the cheese, a random move. Onto the cat.", [40, 16, 320, 256]], ["Every return on the path turns negative.", [30, 292, 340, 87]]], "A single walk can swing the notebook a lot."],
    draw(t) { const D = .5, tEnd = .4 + w3.length * D, t2 = tEnd + .8 + w3.length * .4, done = t > t2 + .5;
      maze({ V: done ? VS[3] : VS[2], t }); arrows(.2); const mw = walkAt(w3, t - .4, D);
      if (!mw.done) { w3.slice(0, mw.k + 1).forEach(s => hourglass(cx(s.c), cy(s.r) + 4)); caption('mid-walk: hourglass = return not known yet'); }
@@ -199,21 +205,25 @@ const STEPS = [
      if (done) card([`start: (0.53 + 0.39 − 0.48) ÷ 3 = ${f2(VS[3][SK])}`, `beside the cheese: (1 + 0.9 − 1) ÷ 3 = ${f2(VS[3][key(3, 0)])}`, { s: 'one cat walk pulls every cell on the path down', c: C.roseInk }], t - t2 - .5, { gap: 1.1 }); } },
  { h: 'Many walks', p: [`Pip keeps walking from the start. After 10 walks the start reads ${f2(VS[10][SK])}, after 100 walks ${f2(VS[100][SK])}, after 1000 walks ${f2(V1000[SK])}: exactly the values reel’s number, because these are the same 1000 walks.`, `But now every cell on the route got its own returns from those walks too, at least ${Math.min(...ROUTE.map(([c, r]) => N1000[key(c, r)]))} each, with no extra walking.`],
    shot: [3, 7, 13],
+   say: [[["Pip keeps walking from the start. Watch the numbers settle.", [40, 16, 320, 256]]], [["After a thousand walks, the start reads zero point four.", [30, 312, 340, 87]], ["The same as the values reel, because these are the same walks.", [30, 312, 340, 87]]], "But every cell on the route got its own returns too, with no extra walking."],
    draw(t) { let n; if (t < 3) n = 3 + Math.floor(clamp(t / 2.5) * 7); else if (t < 7) n = 10 + Math.floor(clamp((t - 3) / 3) * 90); else n = 100 + Math.floor(clamp((t - 7) / 4) * 900);
      maze({ V: VS[n], t }); arrows(.2); const w = WK[n - 1]; trail(w.map(s => [s.c, s.r]), .35); nums(VS[n], NS[n], 1, { n: 1 }); pip(cx(w[w.length - 1].nc), cy(w[w.length - 1].nr), 1, t);
      txt(`after walk ${n} of ${NW}`, W / 2, 298, { s: 16, c: C.soft });
      card([`start after 10 walks: ${f2(VS[10][SK])}`, `after 100: ${f2(VS[100][SK])}   ·   after 1000: ${f2(V1000[SK])}`, { s: 'values reel, same 1000 walks: 0.40', c: C.goldInk }], n >= 1000 ? t - 11.2 : -1, { y: 312, gap: 1 }); } },
  { h: 'Where Pip rarely goes', p: [`Compare the values reel, which started 1000 walks in every cell. Along Pip’s usual route the notebooks agree within ${f2(ROUTE_DIFF)}.`, `Off the route, cells got only ${Math.min(...OFFN)} to ${Math.max(...OFFN)} returns, mostly from the same few walks, and are off by about ${OFF_ERR.toFixed(1)}: below the cheese, ${f2(V1000[key(4, 1)])} against ${f2(NBV[key(4, 1)])}; below the cat, only ${N1000[RK]} returns, ${f2(V1000[RK])} against ${f2(NBV[RK])}. Monte Carlo only learns where Pip goes.`],
    shot: [4, 11],
+   say: [[["Along Pip's usual route, these numbers match the values reel closely.", [40, 16, 320, 256]]], [["But off the route, cells got far fewer returns.", [40, 16, 320, 256]], ["Below the cat, just three. And its average is way off.", [40, 16, 320, 256]]], [["Monte Carlo only learns where Pip goes.", [30, 292, 340, 64]]]],
    draw(t) { const a1 = clamp(t - 3.5); maze({ V: V1000, t, hi: [[3, 0, C.gold, .25 * clamp(t - .5) * (1 - a1)], [3, 2, C.rose, .3 * a1]] }); nums(V1000, N1000, 1, { n: 1 });
      card([{ s: `beside the cheese: n ${N1000[key(3, 0)]}, average ${f2(V1000[key(3, 0)])}  (values reel ${f2(NBV[key(3, 0)])})`, c: C.goldInk }, { s: `below the cat: n ${N1000[RK]}, average ${f2(V1000[RK])}  (values reel ${f2(NBV[RK])})`, c: C.roseInk }, { s: `other off-route cells: n ${Math.min(...OFFN)} to ${Math.max(...OFFN)}, off by about ${OFF_ERR.toFixed(1)}`, c: C.soft }], t - 1, { gap: 2.6, fs: 15 }); } },
  { h: 'How much one return varies', p: ['Here are all 1000 returns from the start. Across is the return of one walk, from −1 to +1. Each bar counts how many walks gave that return: gold walks reached the cheese, rose ones the cat.', `They spread from ${f2(RMIN)} to ${f2(RMAX)}, because every random move until the end of the walk changes the return. Only the average of many walks settles, near ${f2(V1000[SK])}.`],
    shot: [3, 11],
+   say: [[["Here are all thousand returns from the start.", [20, 70, 360, 210]], ["Gold bars reached the cheese, rose bars the cat.", [20, 70, 360, 210]]], [["They spread from minus zero point five three to plus zero point five three.", [20, 70, 360, 210]], ["Every random move changes the return. Only the average settles.", [30, 292, 340, 87]]]],
    draw(t) { histogram(t);
      if (t > 6) card([`${H053} walks: the shortest route, 0.53`, `${NCAT} walks: the cat, a negative return`, { s: `one walk alone: anywhere from ${f2(RMIN)} to ${f2(RMAX)}`, c: C.soft }], t - 6, { gap: 1.1 }); } },
  { h: 'Your turn', ctl: { label: 'walks', values: NWALKS, def: 2, onChange: st => {} }, tap: tapCell,
    p: ['Drag the slider to choose how many of Pip’s walks the notebook has seen. Tap any cell to see every return it has collected, as dots on a line from −1 to +1, with its average.', 'Try the start, then a cell in the bottom right. With few walks, see how far one return can pull an average.'],
    shot: [3],
+   say: [[["Your turn. Drag the slider to choose how many walks the notebook has seen.", [40, 16, 320, 256]], ["Tap a cell to see every return it collected.", [20, 286, 360, 106]]], ["Try the start, then a cell in the bottom right. With few walks, one return can pull an average a long way."]],
    draw(t, st) { const n = NWALKS[st.ci ?? 2], V = VS[n], N = NS[n], sel = st.sel || [0, 3], k = key(sel[0], sel[1]);
      maze({ V, t, hi: [[sel[0], sel[1], C.teal, .25]] }); arrows(.15); nums(V, N, 1, { n: 1 }); pip(cx(0), cy(3), 1, t);
      const rs = RL[k].filter(q => q.i < n); box(20, 286, 360, 106, C.card, .95); rrect(20, 286, 360, 106, 1700, { c: C.line });
@@ -225,18 +235,21 @@ const STEPS = [
      caption('tap a cell to see its returns'); } },
  { h: 'From judging to improving', p: ['Someone else gave the arrows; the notebook only judged them. To improve, cell values aren’t enough: without a rulebook, Pip can’t tell where moves lead.', 'So Pip averages per move: **Q(cell, move)**, said “Q of cell and move”, the average return after that move there, first visit per walk. Choosing by Q changes the habit: policy iteration’s evaluate-then-improve loop, done after every walk.'],
    shot: [4, 11],
+   say: [[["So far, the notebook only judged someone else's arrows.", [40, 16, 320, 256]], ["To improve them, Pip needs a number for each move.", [40, 16, 320, 256]]], [["Watch the four Q labels appear. One per cell and move.", [40, 16, 320, 256]], ["Pip picks moves by them, and they change after every walk.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t, hi: [[2, 0, C.teal, .2]] }); pip(cx(2), cy(0), 1, t); const qa = clamp(t - 1.5); [0, 1, 2, 3].forEach(m => alpha(qa, () => edgeArrow(2, 0, m, 1500 + m, C.ink, 17)));
      const lab = [[cx(2), 8, 'Q up'], [cx(3) + 4, cy(0) + 22, 'Q right'], [cx(2), cy(1) + 24, 'Q down'], [cx(1) - 4, cy(0) + 22, 'Q left']];
      lab.forEach(([x, y, s], i) => { const u = clamp(t - 2 - i * .4); box(x - 26, y - 9, 52, 18, C.card, .9 * u); txt(s, x, y, { s: 14, a: u }); });
      card(['value: one number per cell', 'Q: one number per cell and move', { s: 'after a walk: each move used gets its return', c: C.soft }], t - 4.5, { gap: 1.2 }); } },
  { h: 'A habit built from averages', p: ['Pip drops the arrows; every Q starts at 0. In each cell it takes the biggest-Q move, ties broken at random. One move in five is random anyway, so bad-looking moves still get tried.', `Walk 1 wanders for ${CL[0]} steps and ends on the cat. Every move it used now averages negative, so next time an untried move, still at 0, looks better.`],
    shot: [5, 12.5],
+   say: [[["Now Pip drops the arrows. Every Q starts at zero.", [40, 16, 320, 256]], ["It takes the biggest Q, and one move in five at random.", [30, 292, 340, 87]]], [["Walk one wanders for fifty one steps, and ends on the cat.", [40, 16, 320, 256]], ["Every move it used now averages negative. Watch the rose arrows.", [40, 16, 320, 256]]]],
    draw(t) { const D = Math.min(.14, 7 / CL[0]), tEnd = .5 + CL[0] * D, done = t > tEnd + .6, tr = CE[0].tr;
      maze({ t }); const m = animWalk(tr, t - .5, D, { ta: .35 }); if (!m.done) caption(`walk 1, step ${Math.min(CL[0], m.k + 1)}`); else bubble('−1', cx(3), cy(1) - 18, t - tEnd, C.roseInk);
      if (done) { const Q = CE[0].Q, u = clamp(t - tEnd - .6); CELLS.forEach(([c, r]) => [0, 1, 2, 3].forEach(a => { if (Q[key(c, r) * 4 + a] < 0) alpha(u * .85, () => edgeArrow(c, r, a, 1800 + key(c, r) * 4 + a, C.roseInk, 10, 26)); })); caption('rose arrows: moves with a negative Q after walk 1', u); }
      card(['take the move with the biggest Q (ties: random)', '1 move in 5: random, to keep trying things', { s: done ? `walk 1: ${CL[0]} steps, the cat` : ' ', c: C.roseInk }], t - .3, { gap: 1.2 }); } },
  { h: 'The catch: wait for the end', p: [`Walk 4 takes ${CL[3]} steps. In the top-left corner, “up” has the least bad average, ${Q00UP}: the walks that tried it were so long the cat’s −1 had shrunk to almost nothing. So Pip bumps that wall ${W4REP.n} times.`, 'Averages can’t change until the walk ends; a walk that never ended would teach nothing. **TD learning**, in a coming reel, updates after every step.'],
    shot: [5, 12],
+   say: [[["Walk four takes almost five hundred steps.", [40, 16, 320, 256]], ["In the top left corner, Pip bumps the wall again and again.", [40, 16, 320, 256]]], [["Up looked least bad there, because the cat's penalty had shrunk to almost nothing.", [30, 292, 340, 87]]], "And averages can't change until the walk ends. TD learning, coming later, fixes that."],
    draw(t) { const tr = W4.tr, D = 9 / CL[3], m = walkAt(tr, t - .5, D), k = Math.min(tr.length, m.k + 1);
      maze({ t, hi: [[W4REP.c, W4REP.r, C.rose, .22]] }); trail(tr.slice(0, k).map(s => [s.c, s.r]), .25); pip(m.x, m.y, m.face, t);
      if (m.done) bubble('−1', cx(3), cy(1) - 18, t - .5 - CL[3] * D, C.roseInk);
@@ -244,6 +257,7 @@ const STEPS = [
      card([`walk 4, step ${k}   ·   bumps into the top-left wall: ${cb}`, { s: `corner Q:  up (bump) ${Q00UP},  down ${Q3[2].toFixed(3).replace('-', '−')}`, c: C.ink }, { s: `               left (bump) ${f2(Q3[3])},  right ${f2(Q3[1])}`, c: C.ink }, { s: m.done ? 'walk over: now the averages update' : 'averages frozen until the walk ends', c: m.done ? C.goldInk : C.soft }], 2, { gap: 0, fs: 15, lh: 21 }); } },
  { h: 'How Pip got out', p: ['After walk 4, up and down in the corner both averaged just below 0, the best there, so long walks went on. The way out: a walk reaching the cheese gives every move it used a positive return.', `On walk ${ESCW} Pip left the corner rightward and reached the cheese. “Right” got the corner’s only positive average, ${f2(ESCQ)}, so Pip now turns right there.`],
    shot: [3, 12],
+   say: [[["So how did Pip get out?", [40, 16, 320, 256]], ["A walk that reaches the cheese gives every move it used a positive return.", [40, 16, 320, 256]]], [["On walk eight, Pip left the corner rightward and found the cheese.", [40, 16, 320, 256]], ["Now right has the corner's only positive average. A gold arrow appears.", [30, 292, 340, 87]]]],
    draw(t) { const n = clamp(4 + Math.floor(t / .8), 4, SETTLE), Q = CE[n - 1].Q; maze({ t, hi: [[0, 0, C.teal, .2]] });
      CELLS.forEach(([c, r]) => { const m = bestMove(Q, c, r); if (m >= 0 && Q[key(c, r) * 4 + m] > 0) G.arrowIn(c, r, m, 400 + key(c, r), { c: C.goldInk, w: 1.6 }); });
      const l = CE[n - 1].tr[CE[n - 1].n - 1]; pip(cx(l.nc), cy(l.nr), 1, t);
@@ -251,6 +265,7 @@ const STEPS = [
      card([`after walk ${n}: ${CL[n - 1]} steps, ${CEND[n - 1] > 0 ? 'cheese' : 'cat'}`, { s: `corner Q: up ${q(0)}, right ${q(1)}, down ${q(2)}, left ${q(3)}`, c: C.ink }, { s: 'gold arrow: best move, with a positive average', c: C.goldInk }], 2, { gap: 0, fs: 15 }); } },
  { h: `${NC} walks later`, p: [`Bars: steps per walk, up to 100, faint line at 10; teal cheese, rose cat. After about ${SETTLE} walks most take 7 to 10.`, `The biggest-Q arrows take the shortest route, ${QP.P.length - 1} steps. Over 40 reruns, ${N7} found it; ${N9S.length} kept a 9-step detour, since the shorter way, tried mostly by random moves, still looked worse. With 1000 walks, ${N9FIX} of the ${N9S.length} find 7.`],
    shot: [4, 16.5],
+   say: [[["Two hundred walks, sped up. Each bar is one walk's length.", [25, 285, 345, 100]], ["After about twenty walks, most take seven to ten steps.", [25, 285, 345, 100]]], [["Then watch Pip follow the arrows. The shortest route, seven steps.", [40, 16, 320, 256]], "Cells it rarely visits keep rough arrows. They never mattered."]],
    draw(t) { let n; if (t < 6) n = 1 + Math.floor(t / .5); else n = 13 + Math.floor((t - 6) / .035); const done = n >= NC; n = Math.min(n, NC);
      const Q = CE[n - 1].Q; maze({ t }); qArrows(Q, .9);
      if (done && t > 12.8) { const t2 = t - 12.8, kk = clamp(Math.floor(t2 / .5), 0, QP.P.length - 1); trail(QP.P.slice(0, kk + 1), .7); pip(cx(QP.P[kk][0]), cy(QP.P[kk][1]), 1, t); }
@@ -258,10 +273,12 @@ const STEPS = [
      strip(n); caption(done ? (t > 12.8 + QP.P.length * .5 ? 'rarely visited cells: rough arrows, never mattered  (? = a tie)' : `following the arrows: ${NC} walks learned`) : `walk ${n} of ${NC}`); } },
  { h: 'Where you’ve seen this', p: ['The name dates from the 1940s, when Stanislaw Ulam and John von Neumann used random sampling for physics calculations at Los Alamos.', 'A classic RL example is **blackjack**: the value of holding 18 is estimated by playing many hands to the end and averaging the results. AlphaGo, in 2016, also judged Go positions partly by playing fast games to the end and averaging who won.'],
    shot: [4, 10],
+   say: [[["The name dates from the nineteen forties, and random sampling for physics at Los Alamos.", [30, 40, 340, 170]]], [["A classic RL example is blackjack. Play many hands to the end, and average the results.", [30, 292, 340, 87]], ["AlphaGo judged positions partly by playing fast games to the end.", [30, 292, 340, 87]]]],
    draw(t) { alpha(clamp(t - .3), cards); txt('play to the end, then average', W / 2, 200, { s: 17, c: C.soft, a: clamp(t - 1.5) });
      if (t > 3) card(['1940s: Monte Carlo methods, random sampling', 'blackjack: average result of many hands', { s: 'AlphaGo 2016: fast games played to the end', c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'Recap', p: ['**Monte Carlo learning** needs no rulebook. After each complete walk, every cell passed gets its return, and its average moves toward it.', 'The returns are real outcomes, but they vary a lot, and cells Pip rarely visits stay rough. Averages per move, Q, let Pip improve its own habit. The price: nothing is learned until the walk ends.'],
    shot: [4, 10],
+   say: [[["So, Monte Carlo needs no rulebook.", [30, 292, 340, 110]], ["After each walk, every cell passed gets its return, and its average moves toward it.", [30, 292, 340, 110]]], ["Returns are real but noisy, rare cells stay rough, and nothing is learned until the walk ends."]],
    draw(t) { maze({ V: V1000, t }); nums(V1000, N1000); arrows(.25); pip(cx(0), cy(3), 1, t);
      card(['after a walk: return for each cell passed', 'new = old + (return − old) ÷ n', 'Q per move → pick the biggest, 1 in 5 random', { s: 'noisy returns · must wait for the end', c: C.soft }], t - .3, { gap: 1 }); } },
 ];

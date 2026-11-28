@@ -121,20 +121,24 @@ const LAB1 = (() => { const seen = {}; W1S.forEach((q, i) => { seen[q.s] = i; })
 const STEPS = [
  { h: 'Learning from tries', p: ['In the last reel, Pip climbed toward the best door using the exact gradient. But that needed the hidden crumb chances, which Pip does not have.', '**REINFORCE** fixes this. Pip simply tries: it picks a door with its current chances, sees what happens, and nudges its preferences. No hidden chances, no rulebook, only its own experience.'],
    shot: [3, 9],
+   say: [["Welcome back to the door room."], [["Last time, Pip climbed using the hidden crumb chances.", [16, 30, 368, 160]], ["Watch them disappear. Pip never had them.", [16, 30, 368, 160]]], [["REINFORCE needs no secrets.", [30, 292, 340, 64]], "Pip just tries a door, sees what happens, and nudges its preferences."]],
    draw(t) { room(t, { secret: t < 2.5 });
      if (t > 3) card([{ s: 'exact gradient: needs hidden chances  ✗', c: C.roseInk }, { s: 'REINFORCE: learn from Pip’s own tries', c: DINK[2] }], t - 3, { gap: 1.3 }); } },
  { h: 'One try', p: ['All preferences start at 0, so each door has chance 0.33. Pip rolls its dice and picks door C. A crumb appears: reward 1.', `The idea is simple: an action followed by a good return becomes **more likely**. So C’s preference goes up, and the other two go down a little.`],
    shot: [4, 11],
+   say: [["Every door starts at a third."], [["Watch Pip roll its dice and walk to door C.", [16, 30, 368, 256]], ["A crumb! Plus one.", [16, 30, 368, 256]]], [["Now the rule. A choice followed by a good return becomes more likely.", [16, 30, 368, 256]], ["So C goes up, and the other two dip a little.", [30, 292, 340, 64]]]],
    draw(t) { const go = ease((t - 1) / 1.2), back = ease((t - 4) / 1.2), x = lerp(110, DX[2] - 60, go * (1 - back)), y = lerp(244, 214, go * (1 - back));
      const u = ease((t - 6) / 1.5), th = TH1.map(v => v * u); room(t, { th, pip: false, glow: t > 1 ? 2 : null });
      L.mouse(x, y, t > 4 && t < 5.2 ? -1 : 1, 1, t); bubble('crumb! +1', 180, 262, t - 2.3);
      if (t > 6) card([`C up: ${sg(TH1[2])}    A and B down: ${sg(TH1[0])} each`, { s: `new chances: A ${f2(P1[0])}  B ${f2(P1[1])}  C ${f2(P1[2])}`, c: DINK[2] }], t - 6, { gap: 1.4 }); } },
  { h: 'The nudge, exactly', p: [`Each preference moves by **step size** α (alpha) × return × a factor. For the chosen door the factor is 1 − its chance: 1 − 0.33 = 0.67. For every other door it is minus its chance, −0.33.`, `With α = ${ADOOR} and return 1: C gets ${sg(TH1[2])}, A and B ${sg(TH1[0])}. Had the reward been 0, nothing would change at all.`],
    shot: [4, 11],
+   say: [["How big is each nudge? It's the step size, times the return, times a factor."], [["For the chosen door, the factor is one minus its chance. Here, about two thirds.", [30, 292, 340, 110]], ["The other doors drop by their own chance.", [30, 292, 340, 110]]], ["And if the reward had been zero? Nothing would change at all."]],
    draw(t) { room(t, { th: TH1, glow: 2 });
      card(['chosen door:  + α × return × (1 − its chance)', 'other doors:   − α × return × their chance', { s: `C:  ${ADOOR} × 1 × 0.67 = ${sg(TH1[2])}`, c: DINK[2] }, { s: `A, B:  ${ADOOR} × 1 × 0.33 = ${f2(-TH1[0])} down`, c: C.roseInk }], t - .8, { gap: 1.4, fs: 16 }); } },
  { h: 'How surprising was the choice?', p: ['That factor is the gradient of the **log-probability**, the log of the chosen door’s chance. The nudge scales with the return and how surprising the choice was: chance 0.9 gives a factor of 0.1, chance 0.1 gives 0.9.', 'Why? Likely doors get picked, and nudged, often; rare doors seldom, so each nudge counts more. Dividing by the chance exactly cancels how often it is picked.'],
    shot: [4, 11],
+   say: [["That factor measures how surprising the choice was."], [["On the left, a door picked nine times out of ten. Its factor is small.", [40, 26, 140, 250]], ["On the right, a rare pick. Its factor is big.", [220, 26, 140, 250]]], [["Why? Likely doors get nudged often, rare ones seldom.", [30, 286, 340, 118]], "Scaling by surprise evens that out, exactly."]],
    draw(t) { const xs = [110, 290];
      [[.9, 'likely pick'], [.1, 'surprising pick']].forEach(([p, s], j) => { const a = clamp(t - .5 - j * 2); if (a <= 0) return;
        alpha(a, () => { pie(xs[j], 110, 46, [p, 1 - p], { cols: [DCOL[2], '#e4d8c7'] }); txt(s, xs[j], 40, { s: 16 }); txt(`chance ${p}`, xs[j], 176, { s: 15, c: DINK[2] });
@@ -142,6 +146,7 @@ const STEPS = [
      if (t > 5) card(['factor = change in chance ÷ chance', '   (for the chosen door: 1 − its chance)', 'on average, door picked with its chance:', '   chance × reward × change ÷ chance', { s: '   = reward × change in chance: exact gradient', c: C.goldInk }], t - 5, { gap: 1.2, fs: 15, lh: 20, y: 286 }); } },
  { h: 'On average, uphill', p: [`One try is a rough guess. Here Pip tries ${NAVG.toLocaleString('en-US')} times without changing its chances, and we average reward × factor for each door. Each line is a running average; the dashed lines are the exact gradient from the last reel: −0.10, 0 and +0.10.`, `After ${NAVG.toLocaleString('en-US')} tries the averages are ${f2(AVG[NAVG - 1][0])}, ${fz(AVG[NAVG - 1][1])} and ${f2(AVG[NAVG - 1][2])}. REINFORCE’s nudges are noisy, but on average they point **uphill**.`],
    shot: [4, 12],
+   say: [["One try is a rough guess. So let's try many times, without changing anything, and average the nudges."], [["Watch the three lines settle.", [36, 186, 334, 210]], ["They wobble wildly at first, then close in on the dashed lines, the true gradient.", [36, 186, 334, 210]]], ["Noisy, yes. But on average, REINFORCE points uphill."]],
    draw(t) { room(t, { secret: 1, rows: false, pie: false, pip: false }); const n = clamp(Math.floor((t - 1) * 200), 0, NAVG);
      const x0 = 60, x1 = 340, y0 = 372, y1 = 200, Y = v => y0 - (v + .4) / .8 * (y0 - y1), X = i => x0 + Math.log(i + 1) / Math.log(NAVG) * (x1 - x0);
      rline(x0, Y(0), x1, Y(0), 930, { c: C.line, w: 1, once: true }); rline(x0, y0, x0, y1, 931, { c: C.line, w: 1, once: true });
@@ -154,10 +159,12 @@ const STEPS = [
      caption(n ? `after ${n.toLocaleString('en-US')} tries` : ''); } },
  { h: 'A whole walk', p: ['The maze: dry floor, +1 onto the cheese, −1 onto the cat, both end the walk, γ (gamma) 0.9. Preferences start at 0.', 'REINFORCE waits for the walk to end, like Monte Carlo, then gives each move the **return that followed it**: a move cannot change earlier rewards. Textbook REINFORCE also shrinks later moves’ nudges by 0.9 per step; like most code, we skip that.'],
    shot: [3, 9],
+   say: [[["Now, the maze. Cheese plus one, cat minus one, and all arrows start equal.", [40, 16, 320, 256]]], ["REINFORCE waits for the walk to end, like Monte Carlo.", ["Then each move gets the return that came after it.", [30, 292, 340, 87]], "A move can't change rewards that already happened."]],
    draw(t) { G.maze({ t, labels: clamp(t - .5) }); fans(G, new Float64Array(80), { skip: (c, r) => c === 0 && r === 3 }); G.pip(cx(0), cy(3), 1, t);
      if (t > 4) card(['return of a move = final reward × 0.9 per later move', { s: 'cheese 3 moves later: 0.9 × 0.9 × 1 = 0.81', c: C.goldInk }, { s: 'a walk stopped after 100 moves scores 0', c: C.soft }], t - 4, { gap: 1.3, fs: 16 }); } },
  { h: 'Walk 1', p: [`Walk 1 takes ${W1N} moves. Pip wanders, bumps into walls ${W1S.filter(q => q.nc === q.c && q.nr === q.r).length} times, and finally steps up onto the cat: reward −1.`, `Now every move gets its return: −1 for the last, ${f2(W1G[W1N - 2])} for the one before, and so on back to ${f2(W1G[0])} for Pip’s first move. The labels show the return of the last move made in each cell.`],
    shot: [4, 12],
+   get say() { return [[["Here's walk one. Watch Pip wander.", [40, 16, 320, 256]], ["It bumps into walls, and finally steps onto the cat. Minus one.", [40, 16, 320, 256]]], [["Now every move gets its return.", [40, 16, 320, 256]], ["The closer to the cat, the bigger the blame.", [40, 16, 320, 256]], `Pip's first move only gets ${f2(W1G[0])}.`]]; },
    draw(t) { const dur = .45, P = walkAt(W1S, t - .5, dur); G.maze({ t }); fans(G, new Float64Array(80), { a: .5 });
      for (let i = 0; i < Math.min(P.k, W1N); i++) dot(cx(W1S[i].nc) + ((i * 7) % 11) - 5, cy(W1S[i].nr) + ((i * 5) % 11) - 5, 2.4, C.teal, .6);
      G.pip(P.x, P.y, P.face, t); const tEnd = .5 + W1N * dur; if (t > tEnd) bubble('−1', cx(3), cy(1) - 18, t - tEnd);
@@ -166,30 +173,36 @@ const STEPS = [
      if (!P.done) caption(`walk 1, move ${Math.min(W1N, P.k + 1)}`); } },
  { h: 'Every move pushed down', p: ['Each move’s preference changes by α × its return × its factor, with α = 0.2. All returns were negative, so **every move** became less likely.', 'Fair for the last move, up into the cat: there its chance drops from 0.25 to ' + f2(softmax(Array.from(E[0].th.slice(key(3, 2) * 4, key(3, 2) * 4 + 4)))[0]) + '. But Pip’s first move, up from the start, was fine. Its chance drops too, to ' + f2(softmax(Array.from(E[0].th.slice(key(0, 3) * 4, key(0, 3) * 4 + 4)))[0]) + ', only because this walk ended badly.'],
    shot: [3, 10],
+   say: [["Every return was negative. So every move Pip made becomes a little less likely."], [["Watch the cell below the cat. Its up move led straight into the cat, so pushing it down is fair.", [40, 16, 320, 256]], ["But the start cell's up move was fine. It gets pushed down too, just because this walk ended badly.", [40, 16, 320, 256]]]],
    draw(t) { const u = ease((t - 1) / 2), th = E[0].th.map(v => v * u); G.maze({ t, hi: t > 3 ? [[3, 2, C.rose, .25], [0, 3, C.teal, .2]] : null }); fans(G, th);
      const pc = (c, r) => softmax(Array.from(E[0].th.slice(key(c, r) * 4, key(c, r) * 4 + 4)))[0];
      if (t > 3) card([{ s: `below the cat, up: 0.25 → ${f2(pc(3, 2))}   fair`, c: C.roseInk }, { s: `start, up: 0.25 → ${f2(pc(0, 3))}   unlucky`, c: '#3f7f7c' }, { s: 'small steps (α = 0.2): the arrows barely change', c: C.soft }, { s: 'a cell visited twice gets two nudges', c: C.soft }], t - 3, { gap: 1.3 }); } },
  { h: 'The first cheese', p: [`Walk ${CH1 + 1} is the first to reach the cheese, after ${WC.tr.length} moves. The last move gets return 1, but Pip’s first move only ${f2(WC.ret)}: the cheese was too many steps away to matter much.`, 'So learning starts near the cheese, where returns are big, and spreads back toward the start as walks get shorter.'],
    shot: [3, 10],
+   get say() { return [[`Walk ${CH1 + 1} is the first to find the cheese.`, ["Watch the arrows shift.", [40, 16, 320, 256]]], [["The last move gets a full one.", [40, 16, 320, 256]], ["But the first move gets very little. The cheese was too far away.", [40, 16, 320, 256]]], ["So learning starts near the cheese, and spreads back toward the start."]]; },
    draw(t) { const th = E[CH1].th, th0 = thBefore(CH1), u = ease((t - 2) / 2); const T = th0.map((v, i) => lerp(v, th[i], u));
      G.maze({ t }); fans(G, T); for (let i = 0; i < WC.tr.length; i++) dot(cx(WC.tr[i].nc) + ((i * 7) % 11) - 5, cy(WC.tr[i].nr) + ((i * 5) % 11) - 5, 2.2, C.teal, .35);
      if (t > 3) gLabel(WC.tr[WC.tr.length - 1], clamp(t - 3)); gLabel(WC.tr[0], clamp(t - 5)); bubble('+1', cx(4), cy(0) - 18, t - .5); G.pip(cx(4), cy(0) + 6, 1, t);
      caption(`walk ${CH1 + 1}: cheese after ${WC.tr.length} moves`); } },
  { h: `${NEP} walks`, p: ['Across: walk number. Each dot is that walk’s return from the start: gold for cheese, rose for cat. Long walks score near 0, so ticks along the bottom also mark cat walks, rose, and stopped walks, grey. The line averages the last 25 walks.', `Early walks are long and score near 0. Then returns climb: the last-25 average reaches ${f2(SM[NEP - 1])}, near the best possible ${f2(BEST)}.`],
    shot: [4, 13],
+   get say() { return [[`Now Pip walks ${NEP} times.`, ["Watch the arrows in the maze line up.", [40, 16, 320, 256]]], [["Below, each dot is one walk's return. Gold for cheese, rose for cat.", [36, 284, 334, 120]], ["Early walks are long, and score near zero.", [36, 284, 334, 120]], ["Then the gold line climbs, close to the best possible.", [36, 284, 334, 120]]]]; },
    draw(t) { const n = clamp(Math.floor((t - 1.5) * 30), 0, NEP); G.maze({ t }); fans(G, n ? E[n - 1].th : new Float64Array(80), { a: .9 });
      box(0, 284, W, 120, C.bg); chart({ n, series: [{ v: S.rets, dots: true }, { v: SM, col: C.goldInk, w: 2 }], best: true, title: 'return of each walk', ticks: true }); caption(n ? `after walk ${n}` : ''); } },
  { h: 'What Pip learned', p: [`After ${NEP} walks, following the biggest arrow from the start gives a route of ${ROUTE.length - 1} moves to the cheese, the shortest possible. At the start, “up” now has chance ${f2(STARTP(NEP - 1)[0])}.`, `Along the way, ${CATS} walks ended on the cat and ${STOPS} were stopped at 100 moves. Stopped walks scored 0 and changed nothing. Off the route, cells were rarely visited, so their arrows stay rough.`],
    shot: [3, 10],
+   get say() { return [[["Follow the biggest arrows from the start.", [40, 16, 320, 256]], `Watch the teal route. It reaches the cheese in ${ROUTE.length - 1} moves, the shortest way.`], [["Along the way, some walks hit the cat, and some were stopped. Stopped walks changed nothing.", [30, 292, 340, 64]], "Cells off the route were rarely visited, so their arrows stay rough."]]; },
    draw(t) { G.maze({ t }); fans(G, E[NEP - 1].th); const n = clamp(Math.floor((t - 1.5) / .4), 0, ROUTE.length); for (let i = 1; i < n; i++) { const [a, b] = ROUTE[i - 1], [c, d] = ROUTE[i]; rline(cx(a), cy(b) - 14, cx(c), cy(d) - 14, 940 + i, { c: C.teal, w: 3 }); } G.pip(cx(0), cy(3), 1, t);
      if (t > 5) card([`biggest arrows: ${ROUTE.length - 1}-move route to the cheese`, { s: `${CATS} cat walks (pushed down), ${STOPS} stopped (no change)`, c: C.soft }], t - 5, { gap: 1.3 }); } },
  { h: 'Same recipe, other dice', p: [`Run REINFORCE again with different dice. The thin lines are five runs, each the average of its last 25 walks. Around walk 100 they range from ${f2(Math.min(...at100))} to ${f2(Math.max(...at100))}: some runs learn early, some late.`, `The thick line averages ${NRUN} runs. It climbs smoothly, to ${f2(M2.end)} over the last 25 walks. A single run is a very noisy version of it.`],
    shot: [4, 12],
+   say: [["Same recipe, different dice. Does it always go the same way?"], [["Each thin line is one run.", [36, 44, 334, 270]], ["Some learn early, some late.", [36, 44, 334, 270]]], [["The thick line averages many runs. It climbs smoothly.", [36, 44, 334, 270]], "A single run is a very noisy copy of it."]],
    draw(t) { const n = clamp(Math.floor((t - .8) * 60), 0, NEP); const cols = ['#c99a3a', '#4f7fb0', '#3f9a96', '#c4581f', '#a06cb0'];
      chart({ y0: 300, y1: 60, n, series: FIRST.map((rr, k) => ({ v: smooth(rr, 25), col: cols[k], w: 1.2, a: .8 })).concat(t > 6 ? [{ v: M2.sm, col: C.ink, w: 3 }] : []), best: true, lo: -.2, title: 'average return of the last 25 walks' });
      if (t > 6) card([`thin: runs 1 to 5, around walk 100 from ${f2(Math.min(...at100))} to ${f2(Math.max(...at100))}`, { s: `thick: average of ${NRUN} runs`, c: C.ink }], t - 6, { gap: 1.2, y: 322 }); } },
  { h: 'Why so noisy?', p: ['Each walk’s luck colours **every move**. One random detour into the cat punishes the good moves before it, like walk 1; one lucky walk rewards its bumps.', `The bars count Pip’s ${NEP} walks by return, from ${f2(RMIN)} to ${f2(RMAX)}. Nudges scale with these returns, so they swing as widely. This is **high variance**: right on average, but each estimate jumps. The next reel calms it.`],
    shot: [3, 9],
+   say: [["Why so noisy? One walk's luck colours every move in it."], [["A detour into the cat punishes the good moves before it. A lucky walk rewards its bumps.", [40, 26, 330, 250]]], [["These bars count Pip's walks by return. They're spread wide, so the nudges swing just as wide.", [40, 26, 330, 250]], "That's high variance. The next reel calms it."]],
    draw(t) { const x0 = 50, x1 = 360, base = 250, bw = .05, lo = -.6, nb = 24, cnt = new Array(nb).fill(0); S.rets.forEach(v => cnt[Math.min(nb - 1, Math.floor((v - lo) / bw))]++);
      const mx = Math.max(...cnt), X = v => x0 + (v - lo) / (nb * bw) * (x1 - x0), u = ease((t - .5) / 2);
      txt(`returns of Pip’s ${NEP} walks (how many walks per bar)`, W / 2, 40, { s: 15, c: C.soft });
@@ -200,22 +213,26 @@ const STEPS = [
  { h: 'Your turn', ctl: { label: 'α', values: ALPHAS, def: 2, onChange: st => {} },
    p: [`Drag the step size **α**. Each setting reruns ${NRUN} runs of ${NEP} walks with the same dice. The thick line is their average return; the thin lines are runs 1 to 5.`, 'Small α learns slowly but steadily. Big α learns faster at first, but watch the count of runs that end up stuck.'],
    shot: [3, 9],
+   say: [["Your turn. Drag alpha, the step size, and the same dice replay."], [["Watch the thick line.", [36, 44, 334, 240]], ["Small alpha learns slowly, but steadily.", [36, 44, 334, 240]]], [["Big alpha starts faster. But keep an eye on the count of stuck runs.", [30, 304, 340, 64]]]],
    draw(t, st) { const a = ALPHAS[st.ci ?? 2], M = many(a), n = clamp(Math.floor((t - (st.changed ?? 0) - .3) * 80), 0, NEP);
      chart({ y0: 270, y1: 60, lo: -.2, n, series: M.runs.slice(0, 5).map(rr => ({ v: smooth(rr, 25), col: C.grey, w: 1, a: .9 })).concat([{ v: M.sm, col: C.goldInk, w: 3 }]), best: true, title: `α = ${a}: average return (thick), runs 1–5 (thin)` });
      card([`average over the last 25 walks: ${f2(M.end)}`, { s: `stuck runs (last 25 walks all stopped): ${M.stuck} of ${NRUN}`, c: M.stuck > 5 ? C.roseInk : C.soft }], 9, { gap: 0, y: 304 }); } },
  { h: 'Too big a step', p: [`With α = 1, ${M1.stuck} of ${NRUN} runs get stuck. Run ${STUCKRUN + 1}’s early walks hit the cat ${STK_ENDCAT.cats} times, never the cheese; big pushes turned most arrows left or down, away from it.`, `From walk ${STK_ENDCAT.firstStop + 1}, all ${NEP - STK_ENDCAT.firstStop} walks hit the 100-move stop: return 0, no nudge. No chance is exactly 0, so an ending is possible, just unlikely. Big steps on noisy estimates can wreck a policy.`],
    shot: [3, 10],
+   get say() { return [[`With alpha at one, ${M1.stuck} runs get stuck.`, ["Look at this one's arrows. Early cat walks pushed them hard, away from the cheese.", [40, 16, 320, 256]]], [["Now Pip wanders until the walk is stopped. Return zero, so no nudge.", [40, 16, 320, 256]], "Nothing left to learn from. Big steps on noisy estimates can wreck a policy."]]; },
    draw(t) { const e = STUCK.eps[NEP - 1]; G.maze({ t }); fans(G, e.th); const tr = e.tr.slice(0, 40), P = walkAt(tr, (t % 18) - .5, .35); G.pip(P.x, P.y, P.face, t);
      if (t > 4) card([`early walks: cat ${STK_ENDCAT.cats} times, cheese ${STK_ENDCAT.ches} times`, 'big pushes away from the right side', { s: 'walks hit the 100-move stop → return 0 → no nudge', c: C.roseInk }], t - 4, { gap: 1.3 });
      caption(`run ${STUCKRUN + 1}, α = 1, walk ${NEP}: stopped after 100 moves, return 0`); } },
  { h: 'Where it is used', p: ['Ronald **Williams** published REINFORCE in 1992. AlphaGo, described in 2016, improved its policy network this way: games against earlier versions of itself, with each move nudged by whether the game was won or lost.', 'REINFORCE-style updates are still used today, for example to fine-tune language models on a reward score, usually together with the noise-calming tricks of the next reels.'],
    shot: [3, 9],
+   say: [["Ronald Williams published REINFORCE in nineteen ninety two."], [["AlphaGo used it, with games against older versions of itself. Win or lose, every move got nudged.", [40, 50, 140, 150]]], [["Today it still helps fine-tune language models on a reward score.", [230, 70, 130, 130]], "Usually together with the noise-calming tricks coming next."]],
    draw(t) { alpha(clamp(t - .3), () => { for (let i = 0; i <= 4; i++) { rline(60 + i * 22, 70, 60 + i * 22, 158, 950 + i, { c: C.line, w: 1, once: true }); rline(60, 70 + i * 22, 148, 70 + i * 22, 956 + i, { c: C.line, w: 1, once: true }); }
        dot(82, 92, 7, C.ink); dot(104, 114, 7, '#f5efe6'); rcircle(104, 114, 7, 962, { j: .3 }); txt('Go: win = +1, loss = −1', 104, 186, { s: 15 }); });
      alpha(clamp(t - 2), () => { rrect(240, 80, 110, 60, 970, { fill: C.card }); txt('reply A  ★ 0.8', 295, 100, { s: 14 }); txt('reply B  ★ 0.3', 295, 122, { s: 14, c: C.soft }); txt('language models', 295, 186, { s: 15 }); });
      if (t > 4) card(['whole episode, then nudge each action', { s: 'by the return that followed it', c: C.soft }], t - 4, { gap: 1.2 }); } },
  { h: 'Recap', p: ['**REINFORCE** learns a policy from complete episodes. After each one, every action’s log-probability is nudged by step size × the return that followed it.', 'Rare choices get bigger nudges, so on average the nudges follow the true gradient. But one episode’s luck colours every action, so single updates are noisy, and big steps can wreck the policy.'],
    shot: [3, 9],
+   say: [["So, REINFORCE learns from complete episodes. Each action gets nudged by the return that followed it."], [["Surprising choices get bigger nudges, so on average it climbs the true gradient.", [30, 292, 340, 110]], "But each episode's luck colours every action. Updates are noisy, and big steps can wreck the policy."]],
    draw(t) { G.maze({ t }); fans(G, E[NEP - 1].th); G.pip(cx(0), cy(3), 1, t);
      card(['play a whole episode with the current chances', 'return after each move: reward discounted by γ', 'pref += α × return × (onehot − chance)', { s: 'right on average, noisy: high variance', c: C.soft }], t - .3, { gap: 1, fs: 16 }); } },
 ];

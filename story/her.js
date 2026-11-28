@@ -259,17 +259,20 @@ function walkAnim(P, t, rate = 6, o = {}) { const n = clamp(Math.floor(t * rate)
 const STEPS = [
  { h: 'Go to the flag', p: [`Cheese and cat are gone. Each walk a **flag**, the **goal**, is planted at a random spot for Pip to reach, starting at a random spot at least 0.3 away.`, `Same moves and wobble. Landing within ${GR} of the flag pays +1 and ends the walk; other moves pay 0. Walks stop after ${TM} moves; that is not an ending, so the last target still adds 0.9 × a guess. γ stays 0.9.`],
    shot: [3, 10],
+   say: [[["The cheese and cat are gone. Now, each walk, a flag is planted somewhere random.", [72, 14, 256, 256]], ["That's Pip's goal.", [72, 14, 256, 256]]], [["Land close to the flag and Pip gets plus one, and the walk ends.", [30, 292, 340, 87]], "Every other move pays nothing."]],
    draw(t) { field(t); const [a, g] = TP[0]; flag(g[0], g[1], clamp(t - .8)); D.pipAt(a[0], a[1], 1, t);
      if (t > 2) txt('goal', D.px(g[0]) + 16, D.py(g[1]) - 20, { s: 14, c: FLAG, al: 'left', a: clamp(t - 2) });
      card([`+1: land within ${GR} of the flag (walk ends)`, 'every other move: 0', { s: `stopped after ${TM} moves: not an ending`, c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'The goal is an input', p: ['A new flag every walk means no fixed set of Q-values works: “up” is good for a flag above Pip, bad for one below. So the goal becomes an input.', `Six inputs: Pip’s spot, the flag’s, and the gap between them, across and up. Handing over the gap, which it could compute, eases this small network’s job. ${NH} hidden units, four Q-values out: one **goal-conditioned** network for every goal.`],
    shot: [4, 11],
+   say: [[["A new flag every walk means no fixed set of Q-values can work.", [72, 14, 256, 256]], "Up is great for a flag above Pip, and bad for one below."], [["So the goal becomes an input.", [140, 20, 200, 240]], ["The network reads Pip's spot, the flag's spot, and the gap between them.", [140, 20, 200, 240]], ["One network, for every goal. That's goal conditioned.", [30, 292, 340, 87]]]],
    draw(t) { field(t); dimScene(.8); const n = D.newNet(6, NH, 4, 7100);
      D.drawNet(n, { x: 150, y: 30, w: 130, h: 220 }, { inL: GNAMES, outL: D.MN, a: clamp(t - .5), build: clamp((t - .5) / 2), wa: .5 });
      card(['in: Pip’s spot, the flag’s spot, the gap', 'out: one Q-value per move', { s: 'same network, any flag', c: C.goldInk }], t - 4, { gap: 1.2 }); } },
  { get p() { const N = nE(); return [`At first Pip’s network knows nothing, so its moves are aimless, and the flag’s circle is tiny, only ${GR} from centre to edge: aimless walks almost never land in it. Here are a training run’s first walks.`,
      `In the first 100 walks Pip reached the flag ${N.early[0]} times in this run; over four runs, ${f1(N.earlyAvg)} on average. Rewards this rare are called **sparse**.`]; },
    h: 'Almost never there', shot: [5, 13],
+   say: [[["At first, Pip's network knows nothing, so its moves are aimless.", [72, 14, 256, 256]], ["And the flag's circle is tiny.", [72, 14, 256, 256]]], [["Watch a few early walks. Missed. Missed again.", [72, 14, 256, 256]], ["Rewards this rare are called sparse.", [30, 316, 340, 64]]]],
    draw(t) { if (busyKeys(['n0'], 330)) { field(t); return; } const N = nE(), i = clamp(Math.floor(t / 2.2), 0, 5), w = N.r.walks[i], u = t - i * 2.2; field(t);
      flag(w.g[0], w.g[1]); walkAnim(w.P, u, 14, { c: w.ok ? C.gold : C.teal }); const e = w.P[w.P.length - 1];
      if (u > w.P.length / 14 + .2) txt(w.ok ? 'reached!' : 'missed', D.px(e[0]), D.py(e[1]) + 18, { s: 15, c: w.ok ? C.goldInk : C.roseInk });
@@ -278,6 +281,7 @@ const STEPS = [
  { get p() { const N = nE(); return [`Look inside Pip’s replay memory after 2000 moves: ${N.mem.n} cards, only ${N.mem.win} with a reward of +1. Every other target is 0 + 0.9 × a guess, and guesses start near 0.`,
      `So nearly every lesson copies one guess from another, with no real reward behind it. The ${N.mem.win} successes are drowned out; almost nothing tells the network which way leads to a flag.`]; },
    h: 'A memory full of zeros', shot: [4, 11],
+   say: [[["Look inside Pip's replay memory.", [50, 22, 300, 250]], ["Each box holds five cards. Gold means it holds a plus one.", [50, 22, 300, 250]]], [["Almost none are gold.", [50, 22, 300, 250]], ["So nearly every lesson copies one guess from another, with no real reward behind it.", [30, 292, 340, 87]]]],
    draw(t) { if (busyKeys(['n0'], 200)) return; const N = nE(); field(t); dimScene(.82);
      const M = N.mem;
      memGrid(M, t);
@@ -285,11 +289,13 @@ const STEPS = [
  { get p() { const N = nR(); return [`Four training runs, ${STEPS_N} moves each. Every 500 moves, Pip is tested on 30 fixed start-and-flag pairs, following its largest Q-value. The chart counts the flags it reaches, out of 30.`,
      `After ${STEPS_N} moves the four runs reach ${N.fN.join(', ')} flags. One run broke through late; the other three stayed low.`]; },
    h: 'Training on zeros', shot: [5, 12],
+   say: [[["Here's how training goes, four runs.", [40, 25, 330, 250]], ["Every so often, Pip is tested on thirty fixed flags.", [40, 25, 330, 250]]], [["Watch the orange lines.", [40, 25, 330, 250]], ["One run breaks through late. The other three stay low.", [40, 25, 330, 250]]]],
    draw(t) { if (busyKeys(NK)) return; const N = nR(), n = clamp(Math.floor((t - .5) * 3), 0, 20), ser = KS.map(k => ({ v: N.evN[k], col: ORG, w: 1.6, a: .75, n }));
      raceChart(ser); card([{ s: 'orange: four training runs', c: ORG }, { s: 'reward only at the flag', c: C.soft }], t - 1, { y: 300, gap: 1.1 }); } },
  { get p() { const N = nH(); return [`Here is one failed walk from training. The flag was at (${fx(N.w.g[0])}, ${fx(N.w.g[1])}); after ${N.w.P.length - 1} moves Pip was stopped at (${fx(N.end[0])}, ${fx(N.end[1])}), well outside the flag’s circle.`,
      'Now ask a question in **hindsight**: what if the flag had been where Pip ended? Then the very same walk would have been a success. Nothing about the moves changes; only the goal written on the cards.']; },
    h: 'A miss, in hindsight', shot: [5, 13],
+   say: [[["Here's one failed walk from training.", [72, 14, 256, 256]], ["Watch Pip wander, and get stopped well short of the flag.", [72, 14, 256, 256]]], [["Now ask a question, in hindsight.", [72, 14, 256, 256]], ["What if the flag had been right where Pip ended?", [72, 14, 256, 256]], ["Then the very same walk would have been a success.", [30, 292, 340, 87]]]],
    draw(t) { if (busyKeys(['h0'], 330)) { field(t); return; } const N = nH(); field(t);
      flag(N.w.g[0], N.w.g[1], t > 7 ? .35 : 1); const done = walkAnim(N.w.P, t - .5, 7, { c: C.teal });
      if (t > 7) { flag(N.end[0], N.end[1], clamp(t - 7), C.gold, true); txt('hindsight goal', D.px(N.end[0]), D.py(N.end[1]) - 34, { s: 15, c: C.goldInk, a: clamp(t - 7.5), al: N.end[0] < .3 ? 'left' : 'center' }); }
@@ -297,6 +303,7 @@ const STEPS = [
  { get p() { const N = nH(); return ['This is **Hindsight Experience Replay**, or HER (Marcin Andrychowicz and colleagues, OpenAI, 2017). Each failed walk’s cards are stored twice: with the real goal and reward 0, and with the goal moved to where the walk ended.',
      `In the copy, each move landing within ${GR} of the new goal pays +1 and ends it: always the last move, plus any earlier one that close (here, none). The rest pay 0 but bootstrap from the +1, as in TD.`]; },
    h: 'Store it twice', shot: [4, 12],
+   say: ["That's Hindsight Experience Replay, or HER, from OpenAI in 2017.", [["Each failed walk is stored twice. Once with the real goal, and reward zero.", [25, 288, 350, 90]], ["And once with the goal moved to where Pip ended.", [25, 288, 350, 90]]], ["In the copy, the last move pays plus one. The earlier moves learn from it, just like TD.", [25, 288, 350, 90]]],
    draw(t) { if (busyKeys(['h0'], 200)) return; const N = nH(), w = N.w, n = w.P.length - 1, last = n - 1; field(t); dimScene(.45);
      D.path(w.P, w.P.length, { c: C.teal, a: .7 }); flag(w.g[0], w.g[1], .5); flag(N.end[0], N.end[1], 1, C.gold, true);
      const mOf = i => w.M[i];
@@ -306,6 +313,7 @@ const STEPS = [
      caption(`and so on for all ${n} moves of the walk`, clamp(t - 6)); } },
  { h: 'Why that is not cheating', p: ['The copied cards tell the truth: from those spots, those moves really did lead to that place. So Pip truly learns to reach it.', 'Early walks often end against the fence, so many hindsight goals sit there, gold below. That still helps: the network reads the **gap** to the goal, so practice on any goal teaches the skill the real flags need, shrinking the gap.'],
    shot: [4, 11],
+   say: ["Isn't that cheating? No.", [["The copied cards tell the truth. From those spots, those moves really did reach that place.", [72, 14, 256, 256]], ["Watch the gold dots, where early walks ended. Many sit by the fence.", [72, 14, 256, 256]]], ["That still helps. The network reads the gap, so any goal teaches the same skill. Shrink the gap.", [30, 316, 340, 64]]],
    draw(t) { if (busyKeys(['h0'], 330)) { field(t); return; } const N = nH(); field(t); const ws = N.r.walks.filter(w => !w.ok).slice(0, 24);
      ws.forEach((w, i) => { const a = clamp(t - .5 - i * .2); if (a <= 0) return; const e = w.P[w.P.length - 1]; dot(D.px(e[0]), D.py(e[1]), 4, C.gold, a); });
      txt('gold: where 24 early failed walks ended', W / 2, 296, { s: 14, c: C.goldInk, a: clamp(t - 3) });
@@ -313,12 +321,14 @@ const STEPS = [
  { get p() { const N = nH(); return [`With HER, after 2000 moves: ${N.mem.n} cards. Only failed walks are copied: ${N.mem.h / TM} walks × ${TM} moves = ${N.mem.h} copies. ${N.mem.win} cards carry +1 (without HER: ${nE().mem.win}). ${N.mem.hwin} are copies, about ${Math.round(N.mem.hwin / (N.mem.h / TM))} per copied walk, because Pip often lingered near its end spot: ${N.mem.hfence} from walks pinned against the fence.`,
      'Real successes stay rare at first, but plenty of lessons now end in +1, teaching the network to steer toward a goal.']; },
    h: 'A memory with successes', shot: [4, 11],
+   say: [[["Now look at the memory with HER.", [50, 22, 300, 250]], ["Far more gold now.", [50, 22, 300, 250]]], [["Real successes are still rare at first.", [30, 292, 340, 87]], ["But plenty of lessons now end in plus one, teaching the network to steer toward a goal.", [30, 292, 340, 87]]]],
    draw(t) { if (busyKeys(['h0', 'n0'], 200)) return; const N = nH(), M = N.mem; field(t); dimScene(.82);
      memGrid(M, t);
      card([`${M.n} cards, ${M.h} of them hindsight copies`, { s: `reward +1: ${M.win}  (without HER: ${nE().mem.win})`, c: C.goldInk }], t - 4, { gap: 1.2 }); } },
  { get p() { const N = nR(); return [`Now the race: four runs with HER, teal, and the same four without, orange, same seeds, same number of updates. Each minibatch draws 32 cards at random from the whole memory, real cards and copies alike. Thin lines: single runs; thick: averages.`,
      `After ${STEPS_N} moves, with HER the runs reach ${N.fH.join(', ')} of 30 flags, ${f1(avg(N.fH))} on average. Without it, ${f1(avg(N.fN))}.`]; },
    h: 'The race', shot: [5, 13],
+   say: [[["Now the race.", [40, 25, 330, 250]], ["Teal is with HER. Orange is without. Same seeds, same number of updates.", [40, 25, 330, 250]]], [["Watch the thick lines, the averages.", [40, 25, 330, 250]], ["Teal climbs well above orange.", [40, 25, 330, 250]]]],
    draw(t) { if (busyKeys(NK.concat(HK))) return; const N = nR(), n = clamp(Math.floor((t - .5) * 3), 0, 20), ser = [];
      KS.forEach(k => { ser.push({ v: N.evN[k], col: C.orange, w: 1, a: .35, n }); ser.push({ v: N.evH[k], col: C.teal, w: 1, a: .35, n }); });
      ser.push({ v: N.mN, col: ORG, w: 2.6, n }, { v: N.mH, col: TEAL, w: 2.6, n }); raceChart(ser);
@@ -326,6 +336,7 @@ const STEPS = [
  { get p() { const N = nR(), k = N.demo.filter(d => d.ok).length; return ['Here is the HER network of run 1 after training, sent to six test flags in turn. It never trained on these exact pairs; it reads the gap and steers.',
      `It reaches ${k} of these 6. Near a flag it sometimes overshoots: one move covers 0.15, while the flag’s circle reaches only ${GR} from its centre, so the last step must land just right.`]; },
    h: 'Any flag', shot: [6, 14],
+   say: [["Here's the trained network, sent to six test flags it never practised on.", [72, 14, 256, 256]], [["Watch it read the gap, and steer.", [72, 14, 256, 256]], "Near a flag, it sometimes overshoots. One move is bigger than the flag's circle, so the last step has to land just right."]],
    draw(t) { if (busyKeys(['h0'], 330)) { field(t); return; } const N = nR(), i = clamp(Math.floor(t / 2.6), 0, 5), d = N.demo[i], u = t - i * 2.6; field(t);
      N.demo.slice(0, i).forEach(e => D.path(e.P, e.P.length, { c: e.ok ? C.gold : C.grey, a: .25 }));
      flag(d.g[0], d.g[1]); walkAnim(d.P, u, 8, { c: TEAL }); if (u > d.P.length / 8 + .2) { const e = d.P[d.P.length - 1]; txt(d.ok ? 'reached' : 'not in 30 moves', D.px(e[0]), D.py(e[1]) + 18, { s: 15, c: d.ok ? C.goldInk : C.roseInk }); }
@@ -333,20 +344,24 @@ const STEPS = [
  { h: 'Your turn', p: ['**Tap the meadow** to plant a flag. Pip starts bottom left and follows the HER network’s largest Q-value, no random moves.', 'Try flags far away, near the edges, and close by. The network was never told about your flag; it only reads where it is.'],
    shot: [3, 8],
    tap(x, y, st, t) { const wx = (x - D.FX) / D.FS, wy = 1 - (y - D.FY) / D.FS; if (wx < 0 || wx > 1 || wy < 0 || wy > 1 || Math.hypot(wx - .1, wy - .1) < .1) return; st.g = [wx, wy]; st.go = null; st.tt = t; st.n = (st.n || 0) + 1; },
+   say: [["Your turn. Tap the meadow to plant a flag.", [72, 14, 256, 256]], [["Pip starts at the bottom left, and follows its network.", [72, 14, 256, 256]], "Try flags far away, near the edges, and close by. The network was never told about your flag."]],
    draw(t, st) { if (busyKeys(['h0'], 330)) { field(t); return; } field(t); const net = force('h0').net;
      if (!st.g) { D.pipAt(.1, .1, 1, t); txt('tap the meadow to plant a flag', W / 2, 320, { s: 18, c: C.soft, a: .5 + .5 * Math.sin(t * 3) ** 2 }); return; }
      if (!st.go) st.go = greedyGo(net, [.1, .1], st.g, 500 + st.n); flag(st.g[0], st.g[1]); const done = walkAnim(st.go.P, t - st.tt, 7, { c: TEAL });
      if (done) txt(st.go.ok ? `reached in ${st.go.P.length - 1} moves` : `not reached in ${TM} moves`, W / 2, 320, { s: 18, c: st.go.ok ? C.goldInk : C.roseInk }); } },
  { h: 'Where it’s used', p: ['Andrychowicz and colleagues used HER with DDPG, the DDPG reel’s off-policy learner for continuous moves, on a simulated robot arm: pushing a block, sliding a puck, picking and placing an object, with reward only on success. Without HER, plain DDPG failed these tasks; with it, the arm learned all three.', 'A pick-and-place policy trained in simulation also worked on a real arm. Feeding the goal in as input goes back to Tom Schaul and colleagues, 2015.'],
    shot: [3, 10],
+   say: [[["The HER paper trained a simulated robot arm.", [30, 90, 340, 110]], ["Push a block, slide a puck, pick and place an object, with reward only on success.", [30, 90, 340, 110]]], ["Without HER, those tasks failed. With it, the arm learned all three.", "A pick and place policy even worked on a real arm."]],
    draw(t) { field(t); dimScene(.6);
      card(['2015  goal as an input (Schaul and others)', '2017  HER (Andrychowicz and others, OpenAI)', '      robot arm: push, slide, pick and place', { s: '      reward only on success; DDPG + HER', c: C.soft }], t - .5, { y: 90, gap: 1.2 }); } },
  { h: 'Limits', p: ['HER needs goals that are reachable places, so wherever a walk ends can be written down as a goal. For a goal like “win the game”, an accidental ending is rarely useful.', 'It also needs an **off-policy** learner like DQN or DDPG, since the copies were made chasing another goal. Here each copy uses the walk’s final spot; the paper did even better with its “future” strategy, relabelling each card with spots the same walk reached later.'],
    shot: [3, 10],
+   say: [["HER has limits.", [30, 90, 340, 110]], [["It needs goals that are reachable places, so wherever a walk ends can be written down as a goal.", [30, 90, 340, 110]], ["And it needs an off policy learner, like DQN or DDPG, because the copies were made chasing a different goal.", [30, 90, 340, 110]]]],
    draw(t) { field(t); dimScene(.6);
      card([{ s: 'needs: any reached state can be a goal', c: C.ink }, { s: 'needs: off-policy learning (DQN, DDPG)', c: C.ink }, { s: 'here: goal = final spot of the walk', c: C.soft }, { s: 'paper’s best: spots reached after each move', c: C.soft }], t - .5, { y: 90, gap: 1.2 }); } },
  { h: 'Recap', p: ['A **goal-conditioned** network gets the goal as input, so one network serves every goal. With a reward only at the goal, early walks almost never succeed, and the memory fills with zeros.', '**Hindsight Experience Replay** stores each failed walk again as a success for the spot it reached. The moves really got there, so the lessons are true, and they teach the network to steer.'],
    shot: [3, 9],
+   say: [["So that's HER. A goal conditioned network gets the goal as an input.", [30, 100, 340, 110]], ["With reward only at the goal, the memory fills with zeros.", [30, 100, 340, 110]], "HER stores each miss again, as a success for the spot it reached. The lessons are true, and they teach Pip to steer."],
    draw(t) { field(t); dimScene(.5);
      card(['goal = part of the input', 'sparse reward: nearly every card says 0', 'HER: relabel a miss with where it ended', { s: 'needs reachable goals, off-policy learning', c: C.soft }], t - .3, { y: 100, gap: 1 }); } },
 ];

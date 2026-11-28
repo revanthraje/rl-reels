@@ -120,10 +120,12 @@ const GREEN = '#3f7f7c', BLUE = '#4f7fb0', ROSEL = '#c0605f';
 const STEPS = [
  { h: 'Pip starts from scratch', p: ['Same maze, dry floor: cheese +1, cat −1, both end the walk; γ (gamma) is 0.9. Walks still going after 100 steps are stopped, scoring 0.', `Pip’s arrows, its move chances, start at a quarter each. Of 1000 test walks: ${E0.ch} cheese, ${E0.ca} cat, ${E0.no} stopped. Its **score**, the expected return from the start, computed exactly from the rulebook, is ${f2(S0)}; the best is 0.53.`],
    shot: [3, 9],
+   say: [["Welcome back to the maze. Pip starts from scratch again."], [["Watch the arrows appear, a quarter each.", [40, 16, 320, 256]], "Most test walks hit the cat, or wander until they're stopped."], [["Its score, the expected return from the start, is low.", [30, 292, 340, 87]], "The best possible is zero point five three."]],
    draw(t) { maze({ t }); fans(P0, { a: k => clamp((t - .4 - IDX[k] * .06) * 3) }); pipAt(SK, t);
      if (t > 3.5) card(['arrow length = chance of that move', `1000 test walks: ${E0.ch} cheese, ${E0.ca} cat, ${E0.no} stopped`, { s: `score ${f2(S0)}  ·  best possible 0.53`, c: C.soft }], t - 3.5, { gap: 1.2, fs: 16 }); } },
  { h: 'One update', p: [`Each update, Pip walks ${NB} times: a **batch**. Each move’s **advantage** is the return that followed it minus the critic’s value of the cell. The critic here is exact, so we watch the actor alone.`, `The move made gains α (alpha) × advantage × (1 − its chance); the others lose α × advantage × their chance; divided by the ${NB} walks. α = ${LR}.`],
    shot: [6, 12.5],
+   get say() { return [[`Each update, Pip walks ${NB} times. That's a batch.`, ["Watch the walks, one after another.", [40, 16, 320, 256]], ["The tally keeps count of how each one ends.", [30, 286, 340, 26]]], [["Then each move gets its advantage. The return that followed, minus what the critic expected.", [30, 318, 340, 64]], "Good moves are pushed up, bad ones down."]]; },
    draw(t) { const D = .9, i = clamp(Math.floor((t - .3) / D), 0, NB - 1), w = B1.W[i]; maze({ t }); fans(P0, { a: .3 });
      for (let j = 0; j < i; j++) trailW(B1.W[j], .08); trailW(w, .7, Math.ceil(clamp(((t - .3) % D) / (D * .8)) * w.length) + (t > .3 + NB * D ? w.length : 0));
      const tally = B1.W.slice(0, i + 1).map(w => w[w.length - 1].rew), nc = tally.filter(e => e < 0).length, nh = tally.filter(e => e > 0).length, ns = tally.filter(e => !e).length;
@@ -131,26 +133,31 @@ const STEPS = [
      if (t > 9.5) card(['advantage = return after the move − critic’s value', { s: `the update’s step size: α = ${LR}`, c: C.goldInk }], t - 9.5, { y: 318 }); } },
  { h: 'Walks are precious', p: ['This batch cost ten walks, used once and thrown away. In a real game or robot, collecting walks is the slow, expensive part; computing is cheap.', `So learn more from each batch: go over the same walks ${K} times, ${K} **passes**, each an update with α = ${LR}. But ten passes can push up to ten times as far as one, unless something stops them.`],
    shot: [3, 9],
+   say: [["Those ten walks were used once, then thrown away."], [["In a real game or robot, collecting walks is the slow, expensive part. Computing is cheap.", [40, 16, 320, 256]]], [["So why not go over the same walks several times?", [30, 290, 340, 80]], "Ten passes, though, could push ten times too far."]],
    draw(t) { maze({ t }); fans(P0, { a: .3 }); B1.W.forEach((w, j) => trailW(w, .12)); box(0, 0, W, 285, C.bg, .35);
      for (let k = 0; k < K; k++) { const u = clamp(t - 3 - k * .35); if (u <= 0) continue; rrect(40 + k * 32, 300, 26, 34, 1200 + k, { fill: k < 1 ? C.yellow : '#efe6d8', a: u }); txt(String(k + 1), 53 + k * 32, 317, { s: 14, a: u }); }
      if (t > 3) txt(`… or ${K} passes over the same 10 walks?`, W / 2, 356, { s: 16, c: C.goldInk, a: clamp(t - 6.5) }); caption('pass 1 is the ordinary update', clamp(t - 3.5)); } },
  { h: 'The ratio', p: ['After one pass the chances have changed, but the walks came from the old ones. So PPO weighs each move by the **ratio**: its new chance ÷ old chance in that cell.', `Take the cheese step from the cell to its left. Old chance 0.25; after one pass ${f3(.25 * RN[1])}, so the ratio is ${f3(RN[1])}: new Pip makes that move about ${f2(RN[1])} times as often.`],
    shot: [4, 11],
+   get say() { return [["After one pass, Pip's chances have changed. But the walks came from the old Pip."], [["So PPO compares, new chance over old chance. That's the ratio.", [30, 292, 340, 87]]], [["Look at the cheese step, from the gold cell.", [40, 16, 320, 256]], `After one pass, the new Pip makes it about ${f2(RN[1])} times as often.`]]; },
    draw(t) { const u = ease((t - 2) / 1.5), P = mixP(P0, probs(UN.hist[1]), u); maze({ t }); box(G.ox + 3 * 64 + 3, G.oy + 3, 58, 58, C.gold, .25); fans(P, { a: k => k === key(3, 0) ? 1 : .35 });
      const pn = P[key(3, 0) * 4 + 1]; txt(`right: ${f3(pn)}`, cx(3), cy(0) + 24, { s: 13, c: C.goldInk });
      card(['ratio  =  new chance ÷ old chance', `cheese step:  ${f3(.25 * RN[1])} ÷ 0.25  =  ${f3(RN[1])}`, { s: 'ratio 1: the move’s chance has not changed', c: C.soft }], t - 3.5, { gap: 1.2 }); } },
  { h: 'What each pass climbs', p: ['Each pass raises an **objective**: the average of **ratio × advantage** over the batch. The walks came from old Pip; weighting by new ÷ old chance turns their average into an estimate for new Pip: moves it makes more often count more.', 'At ratio 1, the slope of new ÷ old equals that of log(new chance), so the first pass is exactly the ordinary update.'],
    shot: [4, 11],
+   say: [["Each pass climbs an objective. The ratio, times the advantage, averaged over the batch."], [["Watch the line. For a good move, a bigger ratio gives a bigger objective.", [50, 30, 330, 250]], ["At ratio one, the first pass is exactly the ordinary update.", [50, 30, 330, 250]]], ["Moves the new Pip makes more often simply count more."]],
    draw(t) { clipPlot(70, 260, 260, 200, 1, t, { plain: clamp((t - .8) / 2), clip: 0 }); txt('advantage > 0', 250, 40, { s: 15, al: 'left', c: C.goldInk });
      txt('ratio × advantage', PX(1.55), PY(1.55) - 22, { s: 14, c: C.soft, a: clamp(t - 2.5) }); if (t > 4) { dot(PX(1), PY(1), 4, C.ink); txt('ratio 1: start of pass 1', PX(1) + 8, PY(1) + 16, { s: 13, al: 'left' }); }
      card(['objective = average of  ratio × advantage', { s: 'advantage > 0: bigger ratio, bigger objective', c: C.goldInk }], t - 5.5, { y: 300 }); } },
  { h: 'Ten passes, no brakes', p: [`Pip takes ${K} passes over its first batch, pushing ratio × advantage each time, with no brake. Of 1000 test walks, ${EN.no === 1000 ? 'not one' : 1000 - EN.no} now ends: Pip wanders and bumps until it is stopped, meeting neither cat nor cheese.`, `So the score goes from ${f2(S0)} to ${f2(SCN)}. That looks harmless. It is not: watch what happens next.`],
    shot: [5, 12],
+   get say() { return [["Now ten passes over the first batch, with no brake."], [["Watch the arrows twist, pass after pass.", [40, 16, 320, 256]]], [["Every test walk now gets stopped. Pip just wanders and bumps, meeting neither cat nor cheese.", [30, 316, 340, 64]], "The score barely changes, to about zero. Looks harmless. It isn't."]]; },
    draw(t) { const k = clamp(Math.floor((t - 1) / .6), 0, K), u = clamp(((t - 1) % .6) / .5), Pa = probs(UN.hist[Math.max(0, k - 1)]), Pb = probs(UN.hist[k]);
      maze({ t }); fans(k === 0 ? P0 : mixP(Pa, Pb, k >= K ? 1 : u)); txt(`pass ${k} of ${K}`, W / 2, 298, { s: 17 });
      if (t > 8) card([`score  ${f2(S0)}  →  ${f2(SCN)}`, { s: `1000 test walks: ${EN.ch} cheese, ${EN.ca} cat, ${EN.no} stopped`, c: C.roseInk }], t - 8, { y: 316, gap: 1 }); } },
  { h: 'Why never finish?', p: [`The batch: ${NCAT} hit the cat, ${NCH} the cheese, ${NSTOP} stopped at 100 steps, return 0. The critic expected below 0 everywhere, down to ${f2(VMIN)} beside the cat. So all ${STOPS.length} stopped-walk moves had positive advantage, averaging ${f2(STOPAVG)}.`, `Pushed ten times, “keep wandering” beat “reach the cheese”. One ordinary pass pushes them once: the score barely moves, to ${f2(SC1)}, and later batches can correct it.`],
    shot: [4, 11],
+   say: [["Why would Pip stop finishing?"], [["Look at the batch. Some walks hit the cat, some the cheese, and some were stopped, with return zero.", [30, 296, 340, 50]]], [["The critic expected less than zero everywhere. So zero looked better than expected!", [40, 16, 320, 256]], ["Pushed ten times, keep wandering beat reach the cheese.", [30, 360, 340, 26]]]],
    draw(t) { maze({ t }); fans(P0, { a: .25 }); B1.W.forEach((w, j) => { const e = w[w.length - 1].rew; if (!e) trailW(w, .35 * clamp(t - 1)); });
      const x0 = 40, y0 = 316; ENDW.forEach((e, j) => { const u = clamp(t - .5 - j * .15); if (u <= 0) return; const col = e > 0 ? C.gold : e < 0 ? C.rose : '#9fc9c7';
        box(x0 + j * 32, y0 - 14, 26, 28, col, .8 * u); txt(e > 0 ? '+' : e < 0 ? '−' : '0', x0 + j * 32 + 13, y0, { s: 16, a: u }); });
@@ -158,21 +165,25 @@ const STEPS = [
      if (t > 4) txt(`stopped walks: return 0, critic said below 0  →  advantage > 0`, W / 2, 374, { s: 14, c: GREEN, a: clamp(t - 4) }); } },
  { h: 'Stuck for good', p: [`Now every walk is stopped. In the next batch, ${AFTER.stopped} of ${NB} walks stop at 100 steps, every return is 0, and the critic, exact for a Pip who never finishes, says about 0 everywhere. The largest advantage is ${AFTER.maxA.toFixed(4)}.`, `With no surprises there is nothing to learn from. The chart shows this run’s score after each update: forty updates later it is still ${f2(RUNN.sc[40])}.`],
    shot: [4, 11],
+   get say() { return [["And now Pip is stuck for good."], [["Every walk gets stopped. Every return is zero, and the critic expects zero.", [30, 300, 340, 64]], "No surprises, so nothing to learn."], [["Watch the score over forty more updates. It stays flat.", [36, 36, 300, 230]]]]; },
    draw(t) { const n = clamp(Math.floor((t - 1) * 5), 0, 40); upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, series: [{ v: RUNN.sc, col: ROSEL, label: f2(RUNN.sc[40]) }], title: `this run: score after each update, ${K} passes, no clip` });
      card(['every walk stopped  →  every return 0', { s: 'advantage ≈ 0  →  no push  →  no change', c: C.roseInk }], t - 2, { y: 300, gap: 1.3 }); } },
  { h: 'Clip the ratio', p: ['**PPO**, Proximal Policy Optimization, adds a brake: clip the ratio to between 1 − ε and 1 + ε. ε (epsilon, not the ε-greedy one) is usually 0.2, so 0.8 to 1.2.', 'With positive advantage, the objective follows ratio × advantage up to 1.2, then stays flat: no reward for pushing further. Below 0.8 the line continues: making a good move rarer is still penalised.'],
    shot: [4, 11],
+   say: [["PPO, proximal policy optimization, adds a brake. It clips the ratio to a band, usually from zero point eight to one point two."], [["Watch the line for a good move.", [50, 30, 330, 250]], ["Past one point two, it goes flat. No reward for pushing further.", [50, 30, 330, 250]], "Below the band, the line keeps falling. Making a good move rarer is still penalised."]],
    draw(t) { clipPlot(70, 260, 260, 200, 1, t, { band: clamp(t - 1), plain: 1, clip: clamp((t - 3) / 3) }); txt('advantage > 0', 250, 40, { s: 15, al: 'left', c: C.goldInk });
      txt('0.8', 70 + .8 * 130, 268, { s: 12, c: C.goldInk, a: clamp(t - 1) }); txt('1.2', 70 + 1.2 * 130, 268, { s: 12, c: C.goldInk, a: clamp(t - 1) });
      if (t > 6.5) txt('flat: stop pushing', PX(1.6), PY(1.2) + 16, { s: 14, c: C.goldInk, a: clamp(t - 6.5) });
      card(['band: ratio from 1 − ε to 1 + ε', { s: 'positive advantage: no reward beyond 1 + ε', c: C.goldInk }], t - 7.5, { y: 300 }); } },
  { h: 'When the advantage is negative', p: ['For a move with negative advantage, it mirrors: lowering the ratio helps only down to 0.8, then the objective goes flat.', 'But raising that bad move’s chance still costs, with no cap. PPO keeps whichever of the two numbers, clipped or not, is lower. It removes the reward for going too far, never the penalty.'],
    shot: [4, 11],
+   say: [["For a bad move, it mirrors."], [["Lowering its ratio helps, but only down to zero point eight. Then it's flat.", [50, 30, 330, 250]], ["Raising a bad move's chance still costs, with no cap.", [50, 30, 330, 250]]], ["PPO removes the reward for going too far. Never the penalty."]],
    draw(t) { clipPlot(70, 260, 260, 200, -1, t, { band: 1, plain: 1, clip: clamp((t - 1) / 3) }); txt('advantage < 0', 250, 40, { s: 15, al: 'left', c: C.roseInk });
      if (t > 4) { txt('flat below 0.8', PX(.4), PY(-.8) + 16, { s: 14, c: C.roseInk, a: clamp(t - 4) }); txt('still falls: bad move made likelier', PX(1.1), PY(-1.9) + 4, { s: 13, c: C.roseInk, a: clamp(t - 5) }); }
      card(['objective = the lower of', '    ratio × advantage   and   clipped ratio × advantage'], t - 6.5, { y: 300, gap: 1.2 }); } },
  { h: 'Flat means stop', p: [`On a flat stretch the objective has no slope, so that move stops pushing. The cheese step, over ${K} passes: unclipped, its ratio climbs to ${f2(RN[K])}. With ε = 0.2 it overshoots on the first pass, to ${f2(RC[1])}, then stays.`, 'The first pass starts at ratio 1, inside the band, so the clip cannot hold it yet. Nothing else in that cell moves it afterwards.'],
    shot: [5, 12],
+   get say() { return [["Flat means no slope, so the move stops pushing."], [["Watch the cheese step over ten passes.", [40, 40, 330, 230]], `Without the clip, its ratio climbs to ${f2(RN[K])}.`], [["With the clip, it overshoots a little on the first pass, then stays put.", [40, 40, 330, 230]], "The first pass starts inside the band, so the clip can't catch it yet."]]; },
    draw(t) { const x0 = 70, x1 = 340, y0 = 250, y1 = 60, X = k => x0 + k / K * (x1 - x0), Y = r => y0 - (r - .6) / 2.2 * (y0 - y1), n = clamp(Math.floor((t - 1) / .5), 0, K);
      box(x0, Y(1.2), x1 - x0, Y(.8) - Y(1.2), C.yellow, .4); txt('band 0.8 to 1.2', x1, Y(.8) + 10, { s: 12, c: C.goldInk, al: 'right' });
      rline(x0, y0, x1, y0, 1300, { c: C.line, w: 1, once: true }); rline(x0, y0, x0, y1, 1301, { c: C.line, w: 1, once: true });
@@ -183,28 +194,33 @@ const STEPS = [
      card([{ s: `no clip: 1 → ${f2(RN[1])} → … → ${f2(RN[K])}`, c: ROSEL }, { s: `ε = 0.2: 1 → ${f2(RC[1])}, then flat`, c: BLUE }], t - 6.5, { y: 300 }); } },
  { h: 'The same batch, with the brake', p: [`Same batch, ${K} passes, now clipped at 0.2. Score ${f2(SCC)}; ${EC.ch + EC.ca} of 1000 test walks still end, fewer than the blank policy’s ${E0.ch + E0.ca}. The brake limits the bad advice but does not undo it. Average KL divergence, how far old and new chances differ: ${f3(KLC)}, against ${f3(KLN)} unclipped.`, `Later batches correct it: the clipped run, blue, reaches ${f2(RUNC.sc[10])} after 10 updates, ${f2(RUNC.sc[40])} after 40.`],
    shot: [4, 12],
+   get say() { return [["Same batch, ten passes, now with the brake."], [["The brake limits the bad advice, but doesn't undo it. Fewer walks finish than before.", [36, 36, 300, 230]]], [["But watch the blue line. Later batches correct it.", [36, 36, 300, 230]], `After forty updates, it reaches ${f2(RUNC.sc[40])}. The unclipped rose line stays stuck.`]]; },
    draw(t) { const n = clamp(Math.floor((t - 1.5) * 5), 0, 40);
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, series: [{ v: RUNN.sc, col: ROSEL, label: f2(RUNN.sc[40]) }, { v: RUNC.sc, col: BLUE, label: f2(RUNC.sc[40]) }], title: `this run, ${K} passes per batch: score after each update` });
      card([{ s: 'rose: no clip', c: ROSEL }, { s: 'blue: clipped, ε = 0.2', c: BLUE }], t - .8, { y: 300, gap: .8 }); } },
  { h: 'Fifty runs', p: [`50 runs, different dice, 40 updates each, averaged. Teal: one ordinary pass. Rose: ${K} passes, unclipped. Blue: ${K} passes, clipped at 0.2.`, '{AVG}'],
    shot: [4, 13],
+   say: [["One run could be luck. So here are fifty, averaged."], [["Teal takes one ordinary pass. Rose takes ten passes, unclipped. Blue takes ten, clipped.", [36, 36, 300, 230]]], [["Watch how many runs get stuck.", [30, 292, 340, 87]], "Ten passes cost ten times the computing, but the same number of walks."]],
    draw(t) { const n = clamp(Math.floor((t - 1) * 6), 0, 40), a1 = avgAll('one', fn1), a2 = avgAll('e' + Infinity, fnE(Infinity)), a3 = avgAll('e0.2', fnE(.2));
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, series: [{ v: a1.v, col: GREEN, label: f2(a1.v[40]), dy: 9 }, { v: a2.v, col: ROSEL, label: f2(a2.v[40]) }, { v: a3.v, col: BLUE, label: f2(a3.v[40]), dy: -6 }], title: 'average score after each update (50 runs)' });
      card([{ s: `one pass: ${a1.stuck} of 50 runs stuck near 0`, c: GREEN }, { s: `${K} passes, no clip: ${a2.stuck} stuck`, c: ROSEL }, { s: `${K} passes, ε = 0.2: ${a3.stuck} stuck`, c: BLUE }], t - 7.5, { gap: .9 }); } },
  { h: 'Ten passes, one big step?', p: [`Ten unclipped passes at α = ${LR} can push about as far as one at α = 30. Teal: ten passes at α = 0.3, a tenth each.`, '{BIG}'],
    shot: [4, 13],
+   say: [["Ten passes at once is like one giant step. What if we just take a giant step?"], [["Rose takes one pass, thirty times bigger. Many runs crash.", [36, 36, 300, 230]], ["Teal takes ten tiny passes. Safe, but slow.", [36, 36, 300, 230]]], [["Blue, the clipped passes, gets both. Fast, and nothing stuck.", [30, 292, 340, 87]]]],
    draw(t) { const n = clamp(Math.floor((t - 1) * 6), 0, 40), a1 = avgAll('one30', fn30), a2 = avgAll('small', fnSmall), a3 = avgAll('e0.2', fnE(.2));
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, series: [{ v: a1.v, col: ROSEL, label: f2(a1.v[40]) }, { v: a2.v, col: GREEN, label: f2(a2.v[40]), dy: 9 }, { v: a3.v, col: BLUE, label: f2(a3.v[40]), dy: -6 }], title: 'average score after each update (50 runs)' });
      card([{ s: `one pass, α = 30: ${a1.stuck} of 50 stuck`, c: ROSEL }, { s: `${K} passes, α = 0.3: ${a2.stuck} stuck`, c: GREEN }, { s: `${K} passes, α = ${LR}, ε = 0.2: ${a3.stuck} stuck`, c: BLUE }], t - 7.5, { gap: .9 }); } },
  { h: 'Your turn', ctl: { label: 'clip ε', values: EPSV, def: 2, fmt: fmtE },
    p: [`Drag **ε**. Each setting reruns the same 50 runs: ${K} passes per batch, α = ${LR}. The line is the average score; the card counts runs stuck near 0.`, '{SLIDE}'],
    shot: [4, 10],
+   say: [["Your turn. Drag epsilon, the width of the band, and the same fifty runs replay."], [["Watch the blue line against the pale one.", [36, 36, 300, 230]], ["A tight band is safe, but slow. A wide band lets more through.", [36, 36, 300, 230]]], ["With no clip at all, count the stuck runs."]],
    draw(t, st) { const e = EPSV[st.ci ?? 2], a = avg('e' + e, fnE(e)), ref = avgAll('e0.2', fnE(.2));
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, series: [{ v: ref.v, col: '#b9cde3', w: 1.2 }, { v: a.v, col: BLUE, n: a.done ? 40 : 0, label: a.done ? f2(a.v[40]) : '' }], title: `${K} passes, ${e === Infinity ? 'no clip' : 'ε = ' + e}: average score (50 runs)` });
      txt('pale blue line: ε = 0.2, for comparison', 56, 278, { s: 12, c: C.soft, al: 'left' });
      card(a.done ? [e === Infinity ? 'no clip' : `ε = ${e}`, `after 10 updates ${f2(a.v[10])},  after 40 ${f2(a.v[40])}`, { s: `${a.stuck} of 50 runs stuck near 0`, c: a.stuck ? C.roseInk : GREEN }] : [`running … ${a.k} of 50`], 1, { gap: 0 }); } },
  { h: 'A brake, not a wall', p: [`The clip only stops a move from pushing itself further. Other moves in its cell still shift its chance. After the clipped update, ${ROUT} of the batch’s ${B1.S.length} ratios lie outside 0.8 to 1.2, from ${f2(RMIN)} to ${f2(RMAX)}.`, 'So PPO is a soft limit, not a guarantee. Practical versions often also stop passes early once average KL exceeds a small threshold, such as 0.015.'],
    shot: [4, 10],
+   say: [["A warning. The clip is a brake, not a wall."], [["It stops a move from pushing itself. But other moves in the same cell still shift its chance.", [30, 50, 340, 220]], ["So some ratios end up outside the band. The rose bars.", [30, 50, 340, 220]]], ["Practical versions often also stop early, once old and new chances drift too far apart."]],
    draw(t) { const x0 = 50, x1 = 350, y0 = 250, y1 = 70, lo = 0, hi = 1.6, nb = 32, X = r => x0 + (r - lo) / (hi - lo) * (x1 - x0), cnt = new Array(nb).fill(0);
      RATIOS.forEach(r => { cnt[clamp(Math.floor((r - lo) / (hi - lo) * nb), 0, nb - 1)]++; }); const mx = Math.max(...cnt), u = ease((t - .8) / 2);
      box(X(.8), y1, X(1.2) - X(.8), y0 - y1, C.yellow, .4);
@@ -214,12 +230,14 @@ const STEPS = [
      card([`${ROUT} of ${B1.S.length} outside the band`, { s: 'the clip removes the push, not the change', c: C.soft }], t - 4, { y: 300 }); } },
  { h: 'Where it is used', p: ['Schulman’s team at OpenAI introduced PPO in 2017. Easy to code and tune, it became a common default.', 'A scaled-up PPO trained **OpenAI Five**, which played Dota 2 from 2018, beating the world champions in 2019. In 2022, InstructGPT used PPO for **RLHF**’s reinforcement step, steering a language model toward answers people preferred. A cell is the text so far; a move, the next word.'],
    shot: [3, 9],
+   say: [["Schulman's team at OpenAI introduced PPO in twenty seventeen. Easy to code and tune, it became a common default."], [["A scaled-up PPO trained OpenAI Five, which beat the Dota 2 world champions.", [40, 70, 130, 135]]], [["And InstructGPT used PPO to steer a language model toward answers people preferred.", [220, 70, 150, 135]]]],
    draw(t) { rline(20, 170, 380, 170, 1500, { c: C.line });
      alpha(clamp(t - .5), () => { rrect(50, 80, 110, 74, 1501, { fill: '#e8e0d4' }); for (let k = 0; k < 5; k++) dot(70 + k * 18, 104 + Math.sin(t * 2 + k) * 6, 4, C.blue); for (let k = 0; k < 5; k++) dot(70 + k * 18, 132 + Math.cos(t * 2 + k) * 6, 4, C.rose); txt('Dota 2, 5 vs 5', 105, 192, { s: 15 }); });
      alpha(clamp(t - 2), () => { rrect(230, 80, 130, 74, 1502, { fill: C.card }); txt('Q: …', 244, 100, { s: 14, al: 'left' }); txt('A: preferred ✓', 244, 124, { s: 14, al: 'left', c: GREEN }); txt('A: less liked ✗', 244, 144, { s: 14, al: 'left', c: C.roseInk }); txt('RLHF, 2022', 295, 192, { s: 15 }); });
      card(['2017: PPO (Schulman and colleagues, OpenAI)', '2018–2019: OpenAI Five, Dota 2', '2022: InstructGPT, RLHF with PPO'], t - 3.5, { gap: 1.1 }); } },
  { h: 'Recap', p: ['Reusing a batch for several passes squeezes more learning out of each walk, but unchecked passes can push the policy far past what the batch supports, and a wrecked policy may never recover.', 'PPO clips the **ratio**, new chance ÷ old chance, to 1 ± ε, so a move stops earning credit once it has moved enough.'],
    shot: [3, 9],
+   say: [["So, reusing a batch squeezes more learning out of every walk. But unchecked passes push too far, and a wrecked policy may never recover."], [["PPO clips the ratio, new chance over old, to a narrow band.", [30, 292, 340, 110]], "Once a move has moved enough, it stops earning credit."]],
    draw(t) { maze({ t }); fans(probs(RUNC.T)); pipAt(SK, t);
      card(['ratio = new chance ÷ old chance', 'objective: lower of ratio × advantage, clipped or not', 'clip band: 1 − ε to 1 + ε, ε about 0.2', { s: 'several passes per batch, with a soft brake', c: C.goldInk }], t - .3, { gap: 1 }); } },
 ];

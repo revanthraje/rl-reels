@@ -138,16 +138,19 @@ const GREEN = '#3f7f7c', BLUE = '#4f7fb0', ROSEL = '#c0605f';
 const STEPS = [
  { h: 'Pip’s policy, as chances', p: ['Same maze, dry floor: +1 onto the cheese, −1 onto the cat, both end the walk, γ (gamma) 0.9. Walks still going after 100 steps stop and score 0.', `Pip holds four chances per cell, the arrows. After 10 ordinary updates from blank, its **score**, the expected return from the start, from the rulebook, is ${f2(S0)}. The best: 0.53, seven steps straight to the cheese.`],
    shot: [3, 9],
+   say: [[["Same maze, same dry floor.", [40, 16, 320, 256]], ["The arrows are Pip's chances in each cell. Longer means more likely.", [40, 16, 320, 256]]], [["After a little learning, Pip's score is zero point three six.", [30, 292, 340, 87]], ["The best possible is zero point five three, seven steps straight to the cheese.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); fans(P0, { a: k => clamp((t - .4 - IDX[k] * .06) * 3) }); pipAt(SK, t);
      if (t > 3.5) card(['arrow length = chance of that move', `score now ${f2(S0)}   ·   best possible 0.53`, { s: 'scores use the rulebook: we can, Pip cannot', c: C.soft }], t - 3.5, { gap: 1.2 }); } },
  { h: 'One update', p: [`Each update, Pip walks ${NB} times with its current chances: a **batch**, where REINFORCE used one walk. For each move it asks: did things go better than usual from here?`, 'That is the move’s **advantage**: the return after the move minus the critic’s value of the cell, the simplest grade. The critic here is exact, so we watch the actor alone.'],
    shot: [5, 12],
+   say: [[["Here's one update. Pip walks ten times with its current chances. That's a batch.", [40, 16, 320, 256]], ["Watch the walks pile up.", [40, 16, 320, 256]]], [["For each move, Pip asks, did things go better than usual from here?", [30, 300, 340, 70]], ["That's the move's advantage. The return after the move, minus the critic's value of the cell.", [30, 300, 340, 70]]]],
    draw(t) { const D = .9, i = clamp(Math.floor((t - .3) / D), 0, NB - 1), w = B11.W[i]; maze({ t }); fans(P0, { a: .35 });
      for (let j = 0; j < i; j++) trailW(B11.W[j], .1); const done = (t - .3) % D > D * .8 || t > .3 + NB * D; trailW(w, .75, Math.ceil(clamp(((t - .3) % D) / (D * .8)) * w.length) + (t > .3 + NB * D ? w.length : 0));
      const end = w[w.length - 1].rew; if (done) txt(`walk ${i + 1} of ${NB}:  ${end > 0 ? 'cheese' : end < 0 ? 'cat' : 'stopped'}, ${w.length} steps`, W / 2, 298, { s: 16, c: end > 0 ? C.goldInk : end < 0 ? C.roseInk : C.soft });
      if (t > 3) card(['advantage = return after the move', '                    − critic’s value of the cell', { s: '> 0: went better than usual from here', c: C.goldInk }], t - 3, { y: 312, gap: 1, lh: 21, fs: 16 }); } },
  { h: 'What the batch says at the start', p: [`At the start Pip moved up ${BYM[0].length} times. Twice, that walk later met the cat: advantages ${f2(UPCAT[0])} and ${f2(UPCAT[1])}. Down and left both bump a wall, wasting a step, yet after ${BYM[2].filter(s => s.A > 0).length} of ${BYM[2].length} down bumps the walk went better than usual by luck.`, `So: less up, more of two useless moves. Summed: up ${f2(SUMA[0])}, down ${f2(SUMA[2])}, left ${f2(SUMA[3])}. Right was never tried.`],
    shot: [4, 11],
+   say: [["Look at the start cell. Each bar is one time Pip made that move there.", [30, 280, 340, 100]], [["Up often went fine, but twice that walk later met the cat.", [30, 280, 340, 100]], ["Down and left just bump a wall. Yet by luck, some of those walks went better than usual.", [30, 280, 340, 100]]], "So the batch says, less up, and more of two useless moves."],
    draw(t) { maze({ t }); hiCell(SK); fans(P0, { a: k => k === SK ? 1 : .3 });
      const x0 = 40, y0 = 300; [0, 2, 3].forEach((m, row) => { const l = BYM[m], u = clamp(t - .6 - row * 1.6); if (u <= 0) return;
        txt(`${MN[m]}:`, x0, y0 + row * 30, { s: 16, al: 'left', a: u });
@@ -157,14 +160,17 @@ const STEPS = [
      caption('one bar per time Pip made that move at the start: its advantage', clamp(t - 1)); } },
  { h: 'A normal step', p: [`For each batch move, the move made gains α (alpha) × advantage × (1 − its chance) in preference; each other move loses α × advantage × its chance. Divide by the ${NB} walks. Usual step: α = ${A0}.`, `At the start, up drops from ${pc(P0, 0)} to ${pc(P3, 0)}, down rises from ${pc(P0, 2)} to ${pc(P3, 2)}, and other batch moves make the top row surer of right. Score: ${f2(S0)} to ${f2(S3)}.`],
    shot: [3, 9],
+   say: [[["Now take a normal step in that direction.", [40, 16, 320, 256]], ["Watch the start cell. Up shrinks a little, down grows a little.", [40, 16, 320, 256]]], [["The rest of the maze improves too.", [40, 16, 320, 256]], ["The score rises, from zero point three six to zero point three nine.", [30, 292, 340, 87]]]],
    draw(t) { const u = ease((t - 1.5) / 2); maze({ t }); hiCell(SK); fans(mixP(P0, P3, u)); pipAt(SK, t);
      card([`step size α = ${A0}`, `start: up ${pc(P0, 0)} → ${pc(P3, 0)},  down ${pc(P0, 2)} → ${pc(P3, 2)}`, { s: `score ${f2(S0)} → ${f2(S3)}`, c: C.goldInk }], t - 2.5, { gap: 1.3 }); } },
  { h: 'Why not a bigger step?', p: [`If a small step helps, a bigger one should help more and learn faster. Same batch, same direction, but α = ${ABIG}: about 33 times bigger.`, `At the start, up falls from ${pc(P0, 0)} to ${pc(P100, 0)} and down climbs to ${pc(P100, 2)}. Pip now mostly walks into the wall. The score crashes from ${f2(S0)} to ${f2(S100)}.`],
    shot: [4, 11],
+   say: ["If a small step helps, surely a bigger one helps more?", [["Same batch, same direction, but a step about thirty three times bigger.", [40, 16, 320, 256]], ["Watch the start cell. Up almost vanishes. Down takes over.", [40, 16, 320, 256]]], ["Pip now mostly walks into the wall. The score crashes to almost zero.", [30, 292, 340, 87]]],
    draw(t) { const u = ease((t - 1.5) / 2.5); maze({ t }); hiCell(SK, u > .5 ? C.rose : C.teal, .25); fans(mixP(P0, P100, u)); pipAt(SK, t);
      card([`step size α = ${ABIG}`, `start: up ${pc(P0, 0)} → ${pc(P100, 0)},  down ${pc(P0, 2)} → ${pc(P100, 2)}`, { s: `score ${f2(S0)} → ${f2(S100)}`, c: C.roseInk }], t - 3, { gap: 1.3 }); } },
  { h: 'Bump, bump, bump', p: [`With the new chances, Pip bumps into the bottom wall again and again. In its next batch, ${CAPPED} of ${NB} walks hit the 100-step limit and score 0. After the normal step, ${CAPPED3 ? CAPPED3 : 'none'} did.`, 'The wrecked policy now collects poor walks, and poor walks are what it must learn from next.'],
    shot: [5, 11],
+   say: [[["Watch what happens next.", [40, 16, 320, 256]], ["Pip bumps into the bottom wall, again and again.", [40, 16, 320, 256]]], [["In its next batch, eight of ten walks hit the step limit, and score nothing.", [30, 318, 340, 41]], "And those poor walks are exactly what it must learn from next."]],
    draw(t) { maze({ t }); hiCell(SK, C.rose, .2); fans(P100, { a: .4 }); const w = BUMPWALK, n = Math.min(w.length, Math.floor(clamp(t - .5, 0, 99) * 14));
      const s = w[Math.max(0, n - 1)], bump = n > 0 && s.nk === s.k, k = n ? s.nk : SK;
      L.mouse(cx(k % 5) + (bump ? Math.sin(t * 30) * 2 : 0), cy((k / 5) | 0) + 5, 1, .85, t); if (bump && s.m === 2) txt('bump!', cx(0) + 4, cy(3) - 22, { s: 14, c: C.roseInk, a: .5 + .5 * Math.sin(t * 9) });
@@ -172,10 +178,12 @@ const STEPS = [
      if (n >= w.length) card([`next batch: ${CAPPED} of ${NB} walks stopped at 100 steps`, { s: 'stopped walks score 0', c: C.soft }], t - .5 - w.length / 14, { y: 318 }); } },
  { h: 'Climbing back is slow', p: ['Both policies now keep learning with the usual α = 3. The chart shows the score after each update: teal continues from the normal step, rose from the big one. The dashed line is the best possible, 0.53.', `The teal line reaches ${f2(C3.sc[40])} after 40 updates. The rose line stays below 0.1 for ${LOW} more updates, and is still only at ${f2(C100.sc[40])} after 40.`],
    shot: [3, 12],
+   say: [[["Now both policies keep learning with the normal step.", [30, 35, 350, 240]], ["Teal continues from the normal step. Rose from the big one.", [30, 35, 350, 240]]], [["Watch rose crawl along the bottom, while teal climbs.", [30, 35, 350, 240]], ["Bad walks bring slow news.", [30, 292, 340, 87]]]],
    draw(t) { const n = clamp(Math.floor((t - 1.5) * 5), 0, 40);      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, xl0: 'right after the step', xl1: '40 updates later', series: [{ v: C3.sc, col: GREEN, label: f2(C3.sc[40]), dy: 8 }, { v: C100.sc, col: ROSEL, label: f2(C100.sc[40]) }], title: 'score after each update (both with α = 3)' });
      card([{ s: 'teal: after the normal step', c: GREEN }, { s: 'rose: after the step 33 times bigger', c: ROSEL }, { s: 'Pip learns from its own walks: bad walks, slow news', c: C.soft }], t - 1, { gap: .8 }); } },
  { h: 'The batch is a local map', p: ['Why did the batch mislead? Its advice is a slope: which way to nudge each preference, measured at the old policy. A slope is reliable only near where it was measured, and all its walks came from the old policy.', `The chart steps along that direction by different sizes, scored exactly. Small steps help, up to about α = ${PEAK}; further out the same advice hurts: at ${ABIG} the score is ${f2(S100)}.`],
    shot: [4, 12],
+   say: [[["Why did the batch mislead?", [30, 35, 350, 240]], ["Its advice is a slope, measured at the old policy. A slope is only reliable nearby.", [30, 35, 350, 240]]], [["Watch the line. Small steps along the advice help, up to about five.", [30, 35, 350, 240]], ["Further out, the very same advice hurts.", [30, 35, 350, 240]]]],
    draw(t) { const x0 = 60, x1 = 350, y0 = 250, y1 = 60, X = a => x0 + a / 100 * (x1 - x0), Y = v => y0 - v / .45 * (y0 - y1), n = clamp(Math.floor((t - 1.5) * 6), 0, SSX.length);
      rline(x0 - 4, y0, x1 + 4, y0, 970, { c: C.line, w: 1, once: true }); rline(x0 - 4, y0, x0 - 4, y1, 971, { c: C.line, w: 1, once: true });
      txt('0', x0 - 14, y0, { s: 12, c: C.soft }); txt('0.4', x0 - 18, Y(.4), { s: 12, c: C.soft }); txt('score', x0 - 8, y1 - 14, { s: 13, c: C.soft, al: 'left' });
@@ -187,6 +195,7 @@ const STEPS = [
      if (t > 9) card(['the advice holds near the old policy', { s: 'trust it only within a small region', c: C.goldInk }], t - 9, { y: 300 }); } },
  { h: 'How far is too far?', p: [`So limit how far one update may move. But measure it in behaviour, not in preference numbers. In a cell with all preferences 0, adding 2 to up lifts its chance from 0.25 to ${f2(sm(2))}. If up’s preference is already 10, the same +2 leaves its chance at ${f2(sm(12))}.`, 'What matters is how different the chances become.'],
    shot: [4, 11],
+   say: [["So limit how far one update may move. But measure it in behaviour, not numbers.", [50, 70, 300, 170]], [["Watch both cells get the same plus two for up.", [50, 70, 300, 170]], ["On the left, up jumps from a quarter to about seventy one percent. On the right, it was already near certain, and barely changes.", [50, 70, 300, 170]]]],
    draw(t) { const GA = L.gridWorld({ cs: 90, ox: 40, oy: 70 }), xA = 110, xB = 290, y = 150, u = ease((t - 2) / 1.5);
      const cell = (x, base, lab) => { rrect(x - 55, y - 55, 110, 110, 870 + x, { c: C.ink, w: 1.4 }); const e = [Math.exp(base + 2 * u), 1, 1, 1], s = e[0] + 3;
        for (let m = 0; m < 4; m++) { const p = e[m] / s, [dx, dy] = MV[m]; if (p >= .01) arrow(x + dx * 6, y + dy * 6, x + dx * (6 + p * 42), y + dy * (6 + p * 42), 880 + m + x, { c: m ? '#a89c8f' : C.goldInk, w: 1.6, head: 6 }); }
@@ -196,6 +205,7 @@ const STEPS = [
      if (t > 5) card([`same +2:  0.25 → ${f2(sm(2))}   vs   ${f2(sm(10))} → ${f2(sm(12))}`, { s: 'measure the change in chances, not in numbers', c: C.goldInk }], t - 5, { gap: 1.2 }); } },
  { h: 'Surprise', p: ['First, a way to score one choice. The **surprise** at a choice is minus the log of its chance. A sure thing, chance 1, surprises 0. Chance one half gives 0.69, one quarter 1.39, one tenth 2.30.', 'Rarer choices surprise more, without limit as the chance shrinks to 0. The curve shows surprise against chance.'],
    shot: [4, 10],
+   say: [["First, a way to score one choice. Its surprise.", [50, 35, 320, 240]], [["A sure thing surprises zero.", [50, 35, 320, 240]], ["Watch the dots. Chance one half gives zero point six nine. One tenth gives two point three.", [50, 35, 320, 240]]], "Rarer choices surprise more, without limit."],
    draw(t) { const x0 = 70, x1 = 350, y0 = 250, y1 = 50, X = p => x0 + p * (x1 - x0), Y = s => y0 - s / 4 * (y0 - y1);
      rline(x0, y0, x1 + 4, y0, 975, { c: C.line, w: 1, once: true }); rline(x0, y0, x0, y1, 976, { c: C.line, w: 1, once: true });
      txt('chance', x1, y0 + 26, { s: 13, c: C.soft, al: 'right' }); txt('surprise', x0 - 6, y1 - 12, { s: 13, c: C.soft, al: 'left' });
@@ -206,10 +216,12 @@ const STEPS = [
      card(['surprise = − log(chance)', { s: 'rare choices surprise more', c: C.soft }], t - 7, { y: 300 }); } },
  { h: 'KL divergence', p: ['The batch came from old Pip. How much less likely is new Pip to make old Pip’s moves? Per move, log of old chance over new; averaged by old Pip’s chances, that is the **KL divergence**, 0 for identical policies.', `At the start, new Pip almost never goes up, which old Pip did ${pc(P0, 0)} of the time: that term alone is ${f2(LUP)}. The others add ${f2(klCell(P100, P0, SK) - LUP)}; single terms can be negative, never the total. KL ${f2(klCell(P100, P0, SK))}; after the normal step, ${f3(klCell(P3, P0, SK))}.`],
    shot: [4, 12],
+   say: [["The batch came from old Pip. How much less likely is new Pip to make old Pip's moves?", [40, 50, 320, 170]], ["Averaged over old Pip's choices, that's the KL divergence. Zero for identical policies.", [30, 256, 340, 106]], ["At the start cell, new Pip almost never goes up, which old Pip did often. That alone makes the KL large.", [30, 256, 340, 106]]],
    draw(t) { bigCell(110, 130, P0, SK, 'old Pip, start cell', C.ink, clamp(t - .3)); bigCell(290, 130, P100, SK, 'new Pip (α = 100)', ROSEL, clamp(t - 1.2));
      if (t > 3) card([`up: old ${f3(P0[SK * 4])}, new ${P100[SK * 4].toFixed(4)}: log(old ÷ new) = ${f2(Math.log(P0[SK * 4] / P100[SK * 4]))}`, `KL = sum of old chance × log(old ÷ new)`, { s: 'log(old ÷ new) = new Pip’s surprise − old Pip’s', c: C.soft }, { s: `start cell:  big step ${f2(klCell(P100, P0, SK))},  normal step ${f3(klCell(P3, P0, SK))}`, c: C.goldInk }], t - 3, { y: 256, gap: 1.4, fs: 16, lh: 22 }); } },
  { h: 'The trust region rule', p: [`**TRPO**, Trust Region Policy Optimization (Schulman and colleagues, 2015), turns this into a rule: improve as the batch suggests, but keep the KL under a limit, commonly ${LIM}. The KL is computed in each visited cell, then averaged over visits.`, `Here the big step’s average KL is ${f2(KL100)}. Even the normal step, ${f3(KL3)}, is over, though harmless: ${LIM} is a large-network habit, stricter than this maze needs.`],
    shot: [4, 11],
+   say: [["TRPO, trust region policy optimization, turns this into a rule.", ["Improve as the batch suggests, but keep the average KL under a limit.", [30, 292, 340, 87]]], [["Watch the bars. The big step blows far past the limit.", [20, 55, 360, 165]], ["Even the normal step goes over, though harmlessly here.", [20, 55, 360, 165]]]],
    draw(t) { const x0 = 70, x1 = 340, y = [120, 170], X = v => x0 + Math.min(1, v / .45) * (x1 - x0);
      txt('average KL over the batch', x0, 70, { s: 15, al: 'left', c: C.soft }); const lx = X(LIM);
      [[`α = ${ABIG}`, KL100, ROSEL], [`α = ${A0}`, KL3, GREEN]].forEach(([lab, v, col], i) => { const u = ease((t - .8 - i * 1.2) / 1.2); if (u <= 0) return;
@@ -218,6 +230,7 @@ const STEPS = [
      card(['find a better policy, as the batch suggests', { s: `while  average KL ≤ ${LIM}`, c: C.goldInk }, { s: 'trust region: where the batch can be believed', c: C.soft }], t - 3.2, { gap: 1.2 }); } },
  { h: 'Halve until it fits', p: [`Real TRPO computes a step that just fits, with heavier maths. Our toy halves the big step until the KL fits and the batch still predicts a gain: the sum of each move’s advantage times new chance ÷ old chance must beat the old policy’s.`, `Here: six halvings, from ${ABIG} to ${fa(HALF.beta)}, KL ${f3(HALF.tries[HALF.tries.length - 1].kl)}. Score ${f2(S0)} → ${f2(ST_T)}, a bit below the plain α = ${A0} step: safety costs some speed.`],
    shot: [4, 13],
+   say: [["Real TRPO computes a step that just fits. Our toy simply halves the big step until it fits.", [30, 15, 340, 260]], [["Watch the rows. Each halving shrinks the KL.", [30, 15, 340, 260]], ["Six halvings later, it fits.", [30, 15, 340, 260]]], ["The score rises a bit less than the plain step. Safety costs some speed.", [30, 292, 340, 87]]],
    draw(t) { const rows = HALF.tries, x0 = 44, y0 = 40, dy = 32, X = v => 200 + Math.min(1, v / .45) * 105, lx = X(LIM);
      txt('step α', x0, y0 - 18, { s: 13, c: C.soft, al: 'left' }); txt('average KL', 200, y0 - 18, { s: 13, c: C.soft, al: 'left' });
      rows.forEach((r, i) => { const u = clamp((t - .6 - i * 1.2) * 2); if (u <= 0) return; const ok = r.kl <= LIM && r.dL > 0, y = y0 + i * dy;
@@ -227,17 +240,20 @@ const STEPS = [
      const tt = .6 + rows.length * 1.2; if (t > tt) card([`accepted: α = ${fa(HALF.beta)}`, `start: up ${pc(P0, 0)} → ${pc(PT, 0)},  down ${pc(P0, 2)} → ${pc(PT, 2)}`, { s: `score ${f2(S0)} → ${f2(ST_T)}`, c: C.goldInk }], t - tt, { gap: 1, y: 292 }); } },
  { h: 'Forty updates, fifty runs', p: [`From a blank policy, 40 updates, averaged over 50 runs with different dice. Rose: plain α = ${ABIG}. Teal: plain α = ${A0}. Blue: TRPO, limit ${LIM}, halving from ${ABIG}.`, '{STUCK}'],
    shot: [4, 13],
+   say: [[["Now forty updates from a blank policy, averaged over fifty runs.", [30, 35, 350, 240]], ["Rose takes big plain steps. Teal takes small ones. Blue is TRPO.", [30, 35, 350, 240]]], [["Watch rose stall. Many of its runs get stuck near zero.", [30, 35, 350, 240]], ["TRPO starts slower, but ends near the best, with no run stuck.", [30, 292, 340, 87]]]],
    draw(t) { const n = clamp(Math.floor((t - 1) * 6), 0, 40), a1 = avgAll('p100', fnP(ABIG)), a2 = avgAll('p3', fnP(A0)), a3 = avgAll('t' + LIM, fnT(LIM));
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, series: [{ v: a1.v, col: ROSEL, label: f2(a1.v[40]) }, { v: a2.v, col: GREEN, label: f2(a2.v[40]), dy: 9 }, { v: a3.v, col: BLUE, label: f2(a3.v[40]), dy: -7 }], title: 'average score after each update (50 runs)' });
      card([{ s: `α = ${ABIG}: ${a1.stuck} of 50 runs stuck near 0`, c: ROSEL }, { s: `α = ${A0}: ${a2.stuck} stuck`, c: GREEN }, { s: `TRPO: ${a3.stuck} stuck`, c: BLUE }], t - 7.5, { gap: .9 }); } },
  { h: 'Which part does the work?', p: ['TRPO here halves the step and checks the KL. Which prevents the crashes? Rose keeps the halving and gain check but drops the KL check.', '{GAIN}'],
    shot: [4, 12],
+   say: ["TRPO here does two things. It halves the step, and checks the KL. Which one prevents the crashes?", [["Rose keeps the halving, but drops the KL check.", [30, 35, 350, 240]], "Watch it stall, as badly as plain big steps."], ["The KL limit does the work.", [30, 292, 340, 64]]],
    draw(t) { const n = clamp(Math.floor((t - 1) * 6), 0, 40), a1 = avgAll('gain', fnG), a3 = avgAll('t' + LIM, fnT(LIM));
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, n, series: [{ v: a1.v, col: ROSEL, label: f2(a1.v[40]) }, { v: a3.v, col: BLUE, label: f2(a3.v[40]) }], title: 'average score after each update (50 runs)' });
      card([{ s: `halving + gain check, no KL: ${a1.stuck} of 50 stuck`, c: ROSEL }, { s: `full toy TRPO, limit ${LIM}: ${a3.stuck} stuck`, c: BLUE }], t - 7.5, { gap: .9 }); } },
  { h: 'Your turn', ctl: { label: 'KL limit', values: LIMS, def: 2, fmt: v => v },
    p: ['Drag the **KL limit**. Each setting reruns the same 50 runs of TRPO from a blank policy, always halving from α = 100. The line is the average score; the card counts runs stuck near 0.', '{SLIDE}'],
    shot: [4, 10],
+   say: [["Your turn. Drag the KL limit. Each setting reruns the same fifty runs.", [30, 35, 350, 240]], [["Tiny limits are safe, but crawl.", [30, 35, 350, 240]], ["Big limits let the big steps through, and runs start getting stuck.", [30, 292, 340, 87]]]],
    draw(t, st) { const d = LIMS[st.ci ?? 2], a = avg('t' + d, fnT(d));
      const ref = avgAll('t' + LIM, fnT(LIM));
      upChart({ x0: 56, x1: 330, y0: 250, y1: 50, series: [{ v: ref.v, col: '#b9cde3', w: 1.2 }, { v: a.v, col: BLUE, n: a.done ? 40 : 0, label: a.done ? f2(a.v[40]) : '' }], title: `TRPO, KL limit ${d}: average score (50 runs)` });
@@ -245,6 +261,7 @@ const STEPS = [
      txt('pale blue line: limit 0.01, for comparison', 56, 278, { s: 12, c: C.soft, al: 'left' }); } },
  { h: 'A limit that adapts, at a price', p: [`A fixed small α also worked here, but the safe α changes as Pip learns. In run 0 the first 10 updates fit only steps of ${fa(Math.min(...RUN0.betas.slice(0, 10)))} to ${fa(Math.max(...RUN0.betas.slice(0, 10)))}; later the full ${ABIG} fit, as chances near 0 or 1 make the (1 − chance) factors and advantages small.`, 'The cost: at the old policy the KL is 0 and flat, so its curvature sets its growth. Real TRPO computes that curvature with second-order maths, slow and fiddly for big networks.'],
    shot: [4, 11],
+   say: ["Why bother with a limit at all, when a small fixed step also worked?", [["Because the safe step changes as Pip learns.", [30, 40, 340, 225]], ["Watch the bars. Early on, only small steps fit. Later, the full big step fits.", [30, 40, 340, 225]]], ["The price is heavy maths, slow and fiddly for big networks.", [30, 300, 340, 64]]],
    draw(t) { const b = RUN0.betas, x0 = 50, x1 = 350, y0 = 250, y1 = 60, X = i => x0 + (i + .5) / 40 * (x1 - x0), Y = v => y0 - Math.log2(v / .5) / Math.log2(200) * (y0 - y1);
      rline(x0, y0, x1, y0, 979, { c: C.line, w: 1, once: true }); txt('accepted step α, run 0, each update', x0 - 6, y1 - 20, { s: 13, c: C.soft, al: 'left' });
      [1, 10, 100].forEach(v => { txt(String(v), x0 - 12, Y(v), { s: 12, c: C.soft }); }); txt('update 1', x0, y0 + 11, { s: 12, c: C.soft, al: 'left' }); txt('update 40', x1, y0 + 11, { s: 12, c: C.soft, al: 'right' });
@@ -252,6 +269,7 @@ const STEPS = [
      if (t > 7) card(['the limit is on behaviour, so the step adapts', { s: 'cost: second-order maths, slow for big networks', c: C.roseInk }], t - 7, { y: 300, gap: 1.2 }); } },
  { h: 'Where it was used', p: ['In 2015 TRPO trained simulated robots to swim, hop and walk, and played several Atari games straight from the screen pixels. Its steady improvement made it a standard baseline.', 'In 2017 Schulman and colleagues, now at OpenAI, introduced **PPO**, which keeps the “don’t move too far” idea with a much simpler trick. PPO then largely replaced TRPO in practice.'],
    shot: [3, 9],
+   say: [[["In 2015, TRPO taught simulated robots to swim, hop and walk.", [30, 90, 350, 110]], "It also played Atari games straight from the screen."], ["Two years later, the same group introduced PPO. It keeps the idea of not moving too far, with a much simpler trick.", [30, 292, 340, 64]]],
    draw(t) { rline(20, 170, 380, 170, 990, { c: C.line });
      [['swim', 70], ['hop', 160], ['walk', 250]].forEach(([s, x], i) => { const u = clamp(t - .5 - i * .6); if (u <= 0) return; alpha(u, () => {
        const y = i === 1 ? 140 - Math.abs(Math.sin(t * 3)) * 18 : 140; if (i === 0) for (let k = 0; k < 3; k++) rline(x - 30, 160 + k * 6 - 6, x + 30, 160 + k * 6 - 6, 991 + k, { c: C.blue, w: 1.2 });
@@ -260,6 +278,7 @@ const STEPS = [
      card(['2015: TRPO, Schulman and colleagues', '2017: PPO, the simpler successor (OpenAI)'], t - 3, { gap: 1.2 }); } },
  { h: 'Recap', p: ['A step that is too big can wreck a good policy, and the wrecked policy then collects poor walks to learn from. A batch’s advice is a local map: trust it only near the old policy.', 'TRPO measures how far a step goes by the **KL divergence** between old and new chances, and only accepts steps within a limit.'],
    shot: [3, 9],
+   say: ["So that's TRPO.", ["A step that's too big can wreck a good policy. And then the wreck collects poor walks to learn from.", [30, 292, 340, 110]], ["So measure each step by how much the chances change, the KL, and only accept steps within a limit.", [30, 292, 340, 110]]],
    draw(t) { maze({ t }); fans(PT); pipAt(SK, t);
      card(['too big a step can wreck the policy', 'measure the step by how much the chances change', 'KL: how much less likely new Pip makes old Pip’s moves', { s: 'TRPO: improve, but keep average KL ≤ limit', c: C.goldInk }], t - .3, { gap: 1 }); } },
 ];

@@ -254,17 +254,20 @@ function gameStrip(gm, t, o = {}) { const n = gm.rec.length, gap = 8, s = Math.m
 // ───── steps ─────
 const STEPS = [
  { h: 'A better judge', p: ['Back to Pip’s puzzle from the tree search reel: cat in the top left corner, Pip on the middle right, Pip to move. Only **top right** wins.', 'Random playouts rated the centre higher, 0.69 against 0.65, and the search needed about 1000 loops to see past them. What if Pip could **learn** to judge a position, instead of playing it out at random?'],
+   say: [["Welcome back to Pip's puzzle. Only top right wins."], [["Random playouts liked the centre better, and the search needed about a thousand loops to see past them.", [30, 300, 340, 87]]], ["What if Pip could learn to judge a position, instead of playing it out at random?"]],
    draw(t) { G.board(125, 34, 150, B0, { nums: t > 2 ? { 2: '0.65', 4: '0.69' } : null, numS: 20, hi: t > 4.5 ? { 2: C.yellow } : null, hiA: .6 }); legend(214);
      if (t > 2) caption('random-playout averages from the tree search reel', clamp(t - 2));
      if (t > 6) card(['random playouts: crude judges', { s: 'idea: a learned judge of positions', c: C.goldInk }], t - 6, { y: 300 }); } },
 
  { h: 'One network, two answers', p: () => [`**AlphaZero** uses one small neural network. It reads the board, which squares hold cheese, which hold paws and whose turn it is, and gives two answers.`, `The **value**: Pip’s expected points from this position. The **prior**: for each empty square, how promising that move looks, as shares adding up to 100 percent. Ours has 32 hidden units and ${NW} knobs; before training they are random.`],
    shot: [4, 11],
+   say: [["AlphaZero uses one small neural network."], [["It reads the board, and gives two answers.", [10, 40, 380, 200]], ["The value, Pip's expected points from here.", [10, 40, 380, 200]], ["And the prior, how promising each move looks.", [10, 40, 380, 200]]], ["Before training, its knobs are random."]],
    draw(t) { const e = GEN(0); netPic({ a: clamp(t * 2), heads: clamp(t - 2.5), v: t > 6 ? e.v : null, p: t > 6 ? e.p : null });
      if (t > 6) caption('an untrained network: its answers are noise', clamp(t - 6)); } },
 
  { h: 'A judge inside the search', p: ['The search loop stays: select, expand, back up. But there is no random playout. When a loop reaches a new node, the network looks at it once: its **value** is backed up the path, and its **priors** are stored for the node’s moves.', 'If the loop reaches a finished game, the real result is backed up instead: the rules say who won.'],
    shot: [4, 11],
+   say: [["The search loop stays. Select, expand, back up. But there's no random playout anymore."], [["When a loop reaches a new node, the network looks at it once.", [10, 20, 380, 265]], "Its value is backed up the path, and its priors are kept for later."], [["At a finished game, the rules report the real result instead.", [30, 296, 340, 64]]]],
    draw(t) { const P = [[200, 34], [120, 100], [200, 100], [280, 100], [160, 170]], E = [[0, 1], [0, 2], [0, 3], [2, 4]], ph = t % 6;
      E.forEach(([a, b], i) => rline(P[a][0], P[a][1] + 10, P[b][0], P[b][1] - 10, 5900 + i, { c: (a === 0 && b === 2) || (a === 2 && b === 4) ? TEALINK : C.line, w: 2 }));
      P.forEach(([x, y], i) => L.rcircle(x, y, 10, 5910 + i, { fill: i === 4 ? '#cfe7e5' : i ? C.card : C.yellow }));
@@ -276,28 +279,33 @@ const STEPS = [
      card(['new node: ask the network once', { s: 'back up its value, keep its priors', c: C.soft }, { s: 'finished game: back up the real result', c: C.soft }], t - 5, { y: 296, gap: 1.1 }); } },
 
  { h: 'The prior steers the bonus', p: ['AlphaZero swaps in a bonus using the prior, shown on screen. The average still uses the chooser’s points, and c = 1.5 weighs the bonus.', 'A move the network likes gets tried early; one it dislikes waits, but its bonus grows while ignored. Untried moves count as a draw, ½. Unlike UCB, this rule has no proof; it was chosen because it works.'],
+   say: [["The prior steers the exploration bonus."], [["A move the network likes gets tried early.", [30, 300, 340, 64]], ["One it dislikes waits its turn, but its bonus grows while it's ignored.", [30, 300, 340, 64]]], ["Unlike UCB, this rule has no proof. It was chosen because it works."]],
    draw(t) { txt('score = average + c × prior × √N ÷ (1 + n)', 200, 46, { s: 20, a: clamp(t * 2) });
      [['average', 'Pip’s or the cat’s points so far (½ if untried)', C.ink, 1.5], ['prior', 'the network’s share for this move', C.goldInk, 3], ['N, n', 'visits of the node, of this move', C.soft, 4.5], ['c', '1.5 here: weight of the bonus', C.soft, 6]].forEach(([s, d, col, a0], i) => { const a = clamp(t - a0); txt(s + ':', 90, 92 + i * 28, { s: 17, c: col, a, al: 'right' }); txt(d, 100, 92 + i * 28, { s: 15, a, al: 'left' }); });
      if (t > 8) card(['liked moves first, others wait their turn', { s: 'the bonus still shrinks as a move is visited', c: C.soft }], t - 8, { y: 300 }); } },
 
  { h: 'Where the lessons come from', p: ['No human games, no hints. The network plays **against itself**, network plus search choosing every move for both sides: **self-play**.', `Games start from the empty board. To make games differ, the first moves are drawn at random, weighted by visits, and noise is mixed into the top priors, where the move is chosen, so disliked moves still get tried. Later moves take the most visited.`],
+   say: [["Where do the lessons come from? No human games, no hints."], [["The network plays against itself, with search choosing every move for both sides.", [10, 20, 380, 265]], "That's self-play."], [["A little randomness early on makes games differ, so disliked moves still get tried.", [30, 290, 340, 87]]]],
    draw(t) { L.mouse(120, 120, 1, 1.6, t); L.cat(280, 120, t, 1.4); arrow(160, 112, 240, 112, 6000, { c: C.soft }); arrow(240, 132, 160, 132, 6001, { c: C.soft });
      txt('same network + search on both sides', 200, 190, { s: 16, c: C.ink, a: clamp(t - 1) });
      if (t > 4) card([`${CFG.sims} loops of search per move`, `first ${CFG.sampleMoves} moves: random, weighted by visits`, { s: 'plus a little noise in the top priors', c: C.soft }], t - 4, { y: 290, gap: 1.1 }); } },
 
  { h: 'What one game teaches', p: () => { const gm = GAME1(); return [`Game 1, untrained network. Under each board: the visit share of the move played. The cat’s ${pc(gm.rec[3].pi[gm.rec[3].m])} move ignores Pip’s diagonal: a random opening draw. It ends in ${gm.z === .5 ? 'a draw' : gm.z === 1 ? 'a Pip win' : 'a cat win'}.`, 'Each position becomes a lesson: the visit shares, **π** (pi), and the result, **z**. Training shrinks the value’s miss on z and the **cross-entropy**, a standard mismatch score for shares, between prior and π.']; },
    shot: [5, 12],
+   say: [["Here's game one, with an untrained network."], [["Under each board, the share of visits for the move played.", [10, 30, 380, 200]], ["Watch the cat ignore Pip's diagonal. A random opening draw.", [10, 30, 380, 200]]], [["Each position becomes a lesson. The search's visit shares, and how the game ended.", [30, 290, 340, 87]]]],
    draw(t) { const gm = GAME1(); txt('generation 1, game 1', 200, 22, { s: 15, c: C.soft }); gameStrip(gm, t, { y: 38 });
      if (t > 5) { const r = gm.rec[0], nums = {}; for (let i = 0; i < 9; i++) if (!r.b[i]) nums[i] = pc(r.pi[i]); alpha(clamp(t - 5), () => { G.board(60, 170, 96, r.b, { nums, numS: 14, numC: TEALINK, seed: 5890 }); txt('first position: π, the share of', 176, 196, { s: 15, al: 'left', c: TEALINK }); txt('the search’s visits for each move', 176, 218, { s: 15, al: 'left', c: TEALINK }); }); }
      if (t > 8.5) card(['each position:  π = search’s visit shares', 'z = how the game ended, Pip’s points', { s: 'value learns z, prior learns π', c: C.goldInk }], t - 8.5, { y: 290, gap: 1.1 }); } },
 
  { h: 'Search as a teacher', p: ['Why copy the search? Because search plus network chooses better than the network alone: it looks ahead, and checks the network’s guesses against positions further down. Training the prior toward π makes the network’s **instinct** more like its own careful thinking.', 'The value head learns what a position is worth from how whole games turned out, z: a Monte Carlo target, not a TD one.'],
+   say: [["Why copy the search? Because search plus network chooses better than the network alone. It looks ahead, and checks the guesses."], [["Training the prior toward the visits makes the network's instinct more like its own careful thinking.", [30, 290, 340, 87]]], ["The value just learns how whole games turned out."]],
    draw(t) { L.mouse(110, 120, 1, 1.4, t); txt('instinct', 110, 160, { s: 15, c: C.goldInk }); txt('prior', 110, 178, { s: 13, c: C.soft });
      rrect(230, 80, 130, 90, 6100, { c: TEALINK, fill: '#eaf4f3' }); txt('search', 295, 108, { s: 16, c: TEALINK }); txt('looks ahead', 295, 132, { s: 13, c: C.soft }); txt('visit shares π', 295, 152, { s: 13, c: TEALINK });
      arrow(225, 140, 150, 140, 6101, { c: TEALINK, w: 1.6 }); txt('learn from', 188, 128, { s: 13, c: TEALINK, a: clamp(t - 1) });
      if (t > 4) card(['prior  ←  π  (the search’s choice)', 'value  ←  z  (how the game ended)', { s: 'better network → better search → better lessons', c: C.soft }], t - 4, { y: 290, gap: 1.1 }); } },
 
  { h: 'The loop', p: () => [`One **generation**: play ${CFG.games} self-play games, then train on the lessons of the last ${CFG.keep} generations, shown ${CFG.epochs} times each, each randomly rotated or mirrored. Older games, played by a clumsier network, are dropped.`, `The new network plays the next ${CFG.games} games. We run ${CFG.gens} generations, ${CFG.gens * CFG.games} games in all. Each nudge changes the knobs a little toward the lessons, like earlier reels’ gradient steps.`],
+   get say() { return [["Here's the full loop."], [`Each generation plays ${CFG.games} games against itself, then trains on the lessons.`, ["Older games, played by a clumsier network, get dropped.", [10, 20, 380, 265]]], [`We run ${CFG.gens} generations in all. Each nudge moves the knobs a little toward the lessons.`]]; },
    draw(t) { const P = [[200, 60, 'self-play games'], [310, 170, 'lessons: π and z'], [200, 260, 'train the network'], [90, 170, 'better network']];
      P.forEach(([x, y, s], i) => { const a = clamp((t - i * .9) * 2); alpha(a, () => { rrect(x - 66, y - 18, 132, 36, 6200 + i, { fill: C.card, c: i === 2 ? BLUEINK : C.line }); txt(s, x, y, { s: 15 }); }); });
      [[0, 1], [1, 2], [2, 3], [3, 0]].forEach(([a, b], i) => { if (t > (i + 1) * .9) { const [x1, y1] = P[a], [x2, y2] = P[b]; arrow(lerp(x1, x2, .3), lerp(y1, y2, .3), lerp(x1, x2, .7), lerp(y1, y2, .7), 6210 + i, { c: C.soft }); } });
@@ -305,24 +313,29 @@ const STEPS = [
 
  { h: 'Watching it learn', p: () => [`Our answer key lists the best moves in all ${POS().length.toLocaleString('en-US')} positions where the choice matters. The chart: how often the prior’s favourite is a best move.`, `Untrained: ${pc(GEN(0).acc)}. After generation 4: ${pc(GEN(4).acc)}. It peaks at ${pc(GEN(8).acc)} after generation 8, ending at ${pc(FINAL().acc)}. Nobody showed it a good move. Truth enters through the rules: finished games report real results, in search and as z.`],
    shot: [4, 12],
+   say: [["Is it learning? We check against an answer key of best moves."], [["The chart shows how often the prior's favourite is a best move.", [40, 66, 330, 200]], ["Watch it climb, generation by generation.", [40, 66, 330, 200]]], ["Nobody ever showed it a good move. Truth comes in only through the rules, from how games end."]],
    draw(t) { curve({ a: clamp(t * 2), n: t > 4 ? (t - 4) / 5 : 0, lab: [0, 4, CFG.gens] }); if (t < 4) caption('first the axes: generations across, accuracy up', clamp(t - 1)); } },
 
  { h: 'Its instinct on our puzzle', p: () => { const F = FINAL(); return [`After training, the network looks at Pip’s puzzle. Its prior gives top right ${pc(F.p[2])}, the centre ${pc(F.p[4])} and bottom right ${pc(F.p[8])}. Its value: ${f2(F.v)} of a point for Pip; the truth is 1, a sure win.`, 'So the instinct already leans the right way, but the value is unsure. Next, the search checks it.']; },
+   say: [["After training, the network looks at Pip's puzzle."], [["Its prior already leans toward top right.", [10, 40, 380, 200]], ["But its value is unsure. The truth is a sure win.", [10, 40, 380, 200]]], ["So the instinct points the right way. Next, the search checks it."]],
    draw(t) { const F = FINAL(); netPic({ v: F.v, p: F.p, hiMove: t > 5 ? 2 : null, a: 1 }); if (t > 6) caption('trained network, no search yet', clamp(t - 6)); } },
 
  { h: 'The search checks the instinct', p: () => { const S = STORY(), k = m => S[50].kids.find(x => x.m === m), br = S.br.slice().sort((a, b) => b.P - a.P)[0]; return [`With 50 loops, the first only asks the network about the current board; the board shows where the rest went. Top right gets the most, and its average climbs to ${f2(k(2).q)}. Random playouts needed about 1000 loops.`, `Why so few? The value head judges each new position directly. After bottom right, the prior gives ${pc(br.P)} to the cat’s only non-losing reply, the top right corner.`]; },
    shot: [4, 12],
+   say: [["Now search with just fifty loops."], [["Watch where the loops go. Top right gets the most, and its average climbs.", [10, 20, 380, 265]]], [["Random playouts needed about a thousand loops. Here the value judges each new position directly.", [30, 300, 340, 87]]]],
    draw(t) { const S = STORY(), k = S[50].kids, nums = {}; k.forEach(x => { nums[x.m] = String(x.n); }); const show = t > 1.5;
      G.board(125, 30, 150, B0, { nums: show ? nums : null, numS: 20, numC: TEALINK, hi: t > 4 ? { 2: C.yellow } : null, hiA: .6 }); txt('loops through each move (50 loops, the first at the top)', 200, 196, { s: 14, c: C.soft, a: clamp(t - 1.5) });
      if (t > 5) card([`top right: average ${f2(k.find(x => x.m === 2).q)}`, { s: 'random playouts needed about 1000 loops', c: C.soft }], t - 5, { y: 300 }); } },
 
  { h: 'The teacher stays ahead', p: () => { const T = TEACH(); return [`Take ${T.n} random positions where the choice matters; the bars count best moves found by the trained network, alone and with search.`, `Untrained, the gap was wider: ${TEACH0()[0]} alone, ${TEACH0()[1]} with 40 loops. Visit shares are the better target, and that gap keeps the loop improving. Caveat: only 20 of the 300 have six or more empty squares, so 40 loops often reach the end.`]; },
+   say: [["Does the teacher stay ahead of the student?"], [["The bars count best moves found, by the network alone, and with search.", [20, 30, 360, 250]], ["Search still finds more.", [20, 30, 360, 250]]], [["That gap is what keeps the loop improving.", [30, 310, 340, 64]]]],
    draw(t) { const T = TEACH(), x0 = 80, w = 60; txt(`best move found, out of ${T.n} positions`, 200, 40, { s: 15, c: C.soft });
      T.S.forEach((S, i) => { const x = x0 + i * 80, h = T.ok[i] / T.n * 180, u = clamp((t - .8 - i * .8) * 2); box(x - w / 2, 250 - h * u, w, h * u, i ? TEAL : GOLD, .85); rrect(x - w / 2, 70, w, 180, 6300 + i, { c: C.line, w: 1 });
        txt(i ? `${S} loops` : 'network', x, 266, { s: 14, c: i ? TEALINK : C.goldInk }); if (!i) txt('alone', x, 282, { s: 13, c: C.soft }); if (u >= 1) txt(String(T.ok[i]), x, 264 - h, { s: 16 }); });
      if (t > 5) card(['search + network beats the network alone', { s: 'so the prior learns from the search', c: C.soft }], t - 5, { y: 310 }); } },
 
  { h: 'Against perfect play', p: () => { const V = VS(), v0 = VS0(), pl = (k, w) => `${k} ${w}${k === 1 ? '' : (w === 'loss' ? 'es' : 's')}`, s = r => `${pl(r[0], 'win')}, ${pl(r[1], 'draw')}, ${pl(r[2], 'loss')}`; return [`It plays a perfect player, 30 games on each side. Perfect play draws. Untrained, even with 40 loops, it lost ${v0.cat[2]} of 30 as the cat and ${v0.pip[2]} as Pip.`, `Its search did well on random positions, but here one wrong early move loses. Trained, losses almost vanish. The card’s error rate is overall; in these games it erred in ${VSEEN().wrong} of ${VSEEN().seen} such positions.`]; },
+   say: [["Now a real test. Play against a perfect player, thirty games on each side. Perfect play always draws."], [["Untrained, even with search, it loses games on both sides.", [10, 20, 380, 265]], ["One wrong early move is enough.", [10, 20, 380, 265]]], [["Trained, the losses almost vanish.", [30, 300, 340, 87]]]],
    draw(t) { const V = VS(), v0 = VS0(); const rows = [['untrained + 40 loops', v0], ['trained, network alone', V[0]], ['trained + 40 loops', V[1]], [`trained + ${V[2].S} loops`, V[2]]];
      txt('60 games against a perfect player', 200, 40, { s: 15, c: C.soft }); txt('losses', 300, 70, { s: 14, c: C.roseInk }); txt('draws', 360, 70, { s: 14, c: C.soft });
      rows.forEach(([lab, r], i) => { const a = clamp((t - .8 - i * 1.2) * 2), y = 100 + i * 34; alpha(a, () => { txt(lab, 24, y, { s: 16, al: 'left' }); txt(String(r.pip[2] + r.cat[2]), 300, y, { s: 17, c: C.roseInk }); txt(String(r.pip[1] + r.cat[1]), 360, y, { s: 17, c: C.ink }); }); });
@@ -330,6 +343,7 @@ const STEPS = [
 
  { h: 'Your turn', ctl: { label: 'generation', values: Array.from({ length: CFG.gens + 1 }, (_, i) => i), def: CFG.gens, fmt: v => v }, p: () => ['Drag through the **generations**. The board shows the network’s prior on Pip’s puzzle; the chart marks how often its favourite is a best move overall.', `At generation 0 the prior is close to even. Watch when top right takes the lead, and when the search with ${CFG.sims} loops starts to pick it.`],
    shot: [3, 8],
+   say: [["Your turn. Drag through the generations."], [["The board shows the network's prior on Pip's puzzle.", [60, 20, 280, 170]]], [["The chart marks how often its favourite is a best move. Watch when top right takes the lead.", [40, 180, 330, 100]]]],
    draw(t, st) { const g = st.ci ?? CFG.gens, e = GEN(g); priorBoard(30, 14, 120, B0, e.p, { hi: { [e.top]: e.top === 2 ? C.yellow : C.pink }, hiA: .7 });
      txt(`value ${f2(e.v)}`, 236, 34, { s: 17, c: BLUEINK, al: 'left' }); txt('prior’s favourite:', 172, 68, { s: 14, c: C.soft, al: 'left' }); txt(NAME[e.top], 172, 88, { s: 16, c: e.top === 2 ? C.goldInk : C.roseInk, al: 'left' });
      txt(`search, ${CFG.sims} loops:`, 172, 114, { s: 14, c: C.soft, al: 'left' }); txt(NAME[e.srch], 172, 134, { s: 16, c: e.srch === 2 ? C.goldInk : C.roseInk, al: 'left' });
@@ -337,13 +351,16 @@ const STEPS = [
      caption(`generation ${g}: favourite is a best move in ${pc(e.acc)} of positions`); } },
 
  { h: 'The catch', p: () => [`Even this toy took ${CFG.gens * CFG.games} games with ${CFG.sims} loops per move. Go needs vastly more: AlphaZero played tens of millions of self-play games each for chess, shogi and Go, on thousands of special chips.`, 'Every loop, the search **plays moves by the rules** to reach new positions. AlphaZero needs the rules. Atari games and the real world have no rulebook. That is the next reel.'],
+   get say() { return [[`Even this toy took ${CFG.gens * CFG.games} games of self-play.`, "AlphaZero played tens of millions of games, on thousands of special chips."], [["And there's a deeper catch. Every loop plays moves by the rules.", [30, 290, 340, 87]], "Atari games and the real world come with no rulebook. That's the next reel."]]; },
    draw(t) { G.board(130, 30, 140, G.play(B0, 2), { seed: 6400, hi: { 2: C.yellow }, hiA: .6 }); txt('the rulebook says what a move does', 200, 194, { s: 15, c: C.ink, a: clamp(t - 1) });
      if (t > 3) card([`toy: ${CFG.gens * CFG.games} games,  ${CFG.sims} loops per move`, { s: 'Go: tens of millions of games', c: C.roseInk }, { s: 'and the search needs the rules', c: C.roseInk }], t - 3, { y: 290, gap: 1.2 }); } },
 
  { h: 'AlphaGo to AlphaZero', p: ['In 2016 DeepMind’s **AlphaGo** beat Lee Sedol, a top Go player, 4 games to 1. It learned from human games first and used playouts. In 2017 **AlphaGo Zero** dropped both, learned by self-play alone, and beat that AlphaGo 100 games to 0.', 'Then **AlphaZero**, preprint 2017, journal paper 2018: given only the rules, the same method learned chess, shogi and Go, and beat leading programs.'],
+   say: [["In twenty sixteen, AlphaGo beat Lee Sedol, a top Go player, four games to one. It learned from human games first."], [["A year later, AlphaGo Zero learned by self-play alone, and beat that AlphaGo a hundred to nothing.", [30, 60, 340, 110]], ["Then AlphaZero learned chess, shogi and Go, given only the rules.", [30, 60, 340, 110]]]],
    draw(t) { card(['2016  AlphaGo beats Lee Sedol, 4 to 1', { s: '         human games + playouts + networks', c: C.soft }, '2017  AlphaGo Zero: self-play only', { s: '         one network, no playouts', c: C.soft }, '2018  AlphaZero: chess, shogi, Go', { s: '         from the rules alone', c: C.soft }], t - .5, { y: 60, gap: 1, lh: 26 }); } },
 
  { h: 'Recap', p: ['**AlphaZero** replaces random playouts with a network that gives a **value** and a **prior** for each position. The search uses the value at new nodes, and the prior to decide which moves to try.', 'It learns by self-play: the value learns how games ended, the prior learns the search’s visit shares. Better network, better search, better lessons. It still needs the rules.'],
+   say: [["So, AlphaZero swaps random playouts for a network, with a value and a prior."], [["The search uses the value at new nodes, and the prior to pick which moves to try.", [30, 290, 340, 110]], "It learns by self-play. Better network, better search, better lessons. But it still needs the rules."]],
    draw(t) { const F = FINAL(); priorBoard(130, 20, 140, B0, F.p, { hi: { 2: C.yellow }, hiA: .6 });
      card(['value: Pip’s expected points, no playouts', 'prior: which moves to search first', { s: 'self-play: prior ← π,  value ← z', c: C.soft }, { s: 'still needs the rules to search', c: C.soft }], t - .3, { y: 196, gap: 1, lh: 24 }); } },
 ];

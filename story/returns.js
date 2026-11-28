@@ -89,6 +89,7 @@ function retChart(t) {
 const STEPS = [
  { h: 'One number per step', p: ['Back in Pip’s maze, with the same rules: cheese +1, cat −1, every other step 0. In the last reel Pip walked at random, and its first episode took 14 steps.', 'Here are its rewards, one per step: thirteen zeros, then +1. How good was that episode as a whole?'],
    shot: [4, 10],
+   say: [[["Back in Pip's maze. Watch Pip replay its first random walk.", [40, 16, 320, 256]]], [["Each step drops one reward into the row below.", [28, 298, 350, 50]], ["Zero, zero, zero, and only at the very end, plus one.", [28, 298, 350, 50]]], "So how good was that walk, as a whole?"],
    draw(t) { const m = walkAt(E1, 0, E1.length, t, .6); trail(E1.slice(0, m.k + 1).map(q => [q.c, q.r]), .9); maze({ t }); pip(m.x, m.y, m.face, t);
      chips(E1.map(q => q.rew), 42, 312, m.done ? E1.length : m.k, { gap: 24.5 });
      txt('reward of each step, in order', 30, 338, { s: 14, al: 'left', c: C.soft, a: clamp(t - 1) });
@@ -96,6 +97,7 @@ const STEPS = [
 
  { h: 'Add them up: the return', p: ['Add up all the rewards from a moment until the episode ends. That sum is called the **return**. For episode 1, counted from the start: thirteen zeros plus one, so the return is 1.', 'The return is the score for a whole stretch of the walk, not for one step.'],
    shot: [3, 9],
+   say: [[["Watch the rewards fly into the jar.", [20, 290, 370, 110]], ["Thirteen zeros add nothing. Then the cheese adds one.", [20, 290, 370, 110]]], ["That total is the return. It scores a whole stretch of the walk, not one single step."]],
    draw(t) { maze({ t }); dim(.55); trail(E1.map(q => [q.c, q.r]), .5); pip(cx(4), cy(0), 1, t);
      const vals = E1.map(q => q.rew), fly = i => clamp((t - 1 - i * .3) / .6), jar = { x: 340, y: 332 };
      vals.forEach((v, i) => { const u = ease(fly(i)), x = lerp(42 + i * 24.5, jar.x, u), y = lerp(312, jar.y, u) - Math.sin(u * Math.PI) * 30; if (u >= 1) return; rcircle(x, y, 10, 600 + i, { fill: v > 0 ? C.yellow : C.card, c: v > 0 ? C.goldInk : C.line, j: .5 }); txt(String(v ? '+1' : 0), x, y + 1, { s: 13, c: v > 0 ? C.goldInk : C.soft }); });
@@ -107,6 +109,7 @@ const STEPS = [
 
  { h: 'Writing it down', p: ['The return from time t, **G t**, adds every reward after t: R t+1 plus R t+2 and so on, up to R T. **T**, the end time, is the episode’s number of moves.', 'It starts at t+1 because action A t’s reward arrives one tick later. After the end nothing is left: G T = 0. Episode 1: T = 14, G0 = 1.'],
    shot: [5, 11],
+   say: [[["Here's the return written down. People use the letter G.", [20, 50, 360, 110]], ["It adds every reward after time t, all the way to the end.", [20, 50, 360, 110]]], [["Notice it starts one tick later, because each reward arrives just after its move.", [20, 50, 360, 110]], ["For episode one, the return from the start is one.", [20, 180, 360, 30]]]],
    draw(t) {
      rich([['G', 't'], '  =  ', ['R', 't+1'], ' + ', ['R', 't+2'], ' + … + ', ['R', 'T']], W / 2, 90, { s: 30, al: 'center', a: clamp(t - .4) });
      const lab = (s, x, y, a, c) => txt(s, x, y, { s: 15, c: c || C.soft, a });
@@ -118,6 +121,7 @@ const STEPS = [
 
  { h: 'Why the total counts', p: ['Why not judge a move by its own reward? From cell 16, going up, going right and bumping the wall all pay 0. The next reward cannot tell them apart.', 'What differs comes later, and the return covers the whole rest of the episode. One walk’s return credits all its moves, good or bad alike; averaging many walks sorts them out, as later reels show.'],
    shot: [4, 10],
+   say: [[["Why not judge a move by its own reward?", [40, 16, 320, 256]], ["Look at the four moves from the start.", [40, 16, 320, 256]], ["Every one pays zero next.", [40, 16, 320, 256]]], [["The next reward can't tell them apart.", [30, 302, 340, 87]], ["What differs comes later, and that's what the return counts.", [30, 302, 340, 87]]]],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      [[0, 'up'], [1, 'right'], [2, 'down'], [3, 'left']].forEach(([m, n], i) => { const a = clamp((t - .6 - i * .8) * 2); if (a <= 0) return; const [dx, dy] = G.MOVES[m];
        alpha(a, () => arrow(cx(0) + dx * 20, cy(3) + dy * 20, cx(0) + dx * 40, cy(3) + dy * 40, 660 + m, { c: C.goldInk, w: 1.8 }));
@@ -127,6 +131,7 @@ const STEPS = [
 
  { h: 'Same return, very different walks', p: ['Now compare three random episodes that all ended at the cheese: episode 10 took 10 steps, episode 1 took 14, and episode 5 took 147. Each one’s return is exactly 1.', 'With these rewards, the return ignores how long Pip wandered. A detour of a hundred steps costs nothing, so Pip has no reason to hurry.'],
    shot: [4, 11],
+   say: [[["Three random walks, all ending at the cheese.", [40, 16, 320, 256]], ["Watch how differently they wander.", [40, 16, 320, 256]]], [["Ten steps, fourteen steps, and a hundred and forty seven.", [30, 296, 340, 90]], ["Yet every return is exactly one.", [30, 296, 340, 90]]], "With these rewards, a long detour costs nothing. Pip has no reason to hurry."],
    draw(t) { maze({ t }); const which = clamp(Math.floor(t / 2.6), 0, 2), e = EPS[SAME[which].i], u = clamp((t - which * 2.6) / 2.2);
      trail(e.slice(0, Math.max(1, Math.floor(clamp(u) * e.length))).map(q => [q.c, q.r]), .8); const q = e[Math.min(e.length - 1, Math.floor(clamp(u) * e.length))]; pip(cx(u >= 1 ? q.nc : q.c), cy(u >= 1 ? q.nr : q.r), 1, t);
      SAME.forEach((s, j) => { const a = clamp((t - 2.2 - j * 2.6) * 2), y = 312 + j * 28; if (t < j * 2.6) return;
@@ -136,6 +141,7 @@ const STEPS = [
 
  { h: 'A step cost', p: ['A common fix is a **step cost**: the designer changes the rules so every step that does not land on the cheese or cat pays −0.1, bumps included. Cheese +1 and cat −1 stay, and both still end the walk.', 'Every number from here on uses this new rule. Why 0.1? Just a small choice; we will see that the size matters.'],
    shot: [4, 10],
+   say: [[["A common fix is a step cost.", [40, 16, 320, 256]], ["Watch the cells. Every ordinary step now costs a tenth.", [40, 16, 320, 256]], ["Bumps too.", [40, 16, 320, 256]]], [["The cheese and the cat stay the same, and both still end the walk.", [30, 292, 340, 87]]], "Why a tenth? Just a small choice. Its size will matter."],
    draw(t) { maze({ t }); pip(cx(0), cy(3), 1, t);
      for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { if (G.isRock(c, r)) continue; const v = G.term(c, r), a = clamp((t - .8 - (v ? 1.6 : (r * 5 + c) * .04)) * 2);
        txt(v > 0 ? '+1' : v < 0 ? '−1' : '−0.1', cx(c), cy(r) + (v ? -22 : 24), { s: v ? 20 : 14, c: v > 0 ? C.goldInk : v < 0 ? C.roseInk : C.roseInk, a: v ? a : a * .8 }); }
@@ -143,6 +149,7 @@ const STEPS = [
 
  { h: 'Shorter walks win now', p: ['Recount with the step cost. A cheese walk of n steps has n − 1 ordinary steps, so its return is 1 − 0.1 × (n − 1). A cat walk scores −1 − 0.1 × (n − 1).', `The shortest walk, 7 steps, scores 0.4. Episode 10 scores 0.1, episode 1 −0.3, and episode 5 ${fmt(ret(EPS[4], COST))}. The total now prefers short walks.`],
    shot: [3, 11],
+   say: [[["Recount with the step cost.", [40, 16, 320, 256]], ["The gold path is the shortest way to the cheese, seven steps.", [40, 16, 320, 256]]], [["It now scores zero point four.", [30, 292, 340, 100]], ["The long hundred and forty seven step walk sinks to minus thirteen point six.", [30, 292, 340, 100]]], "Now the total prefers short walks."],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, clamp((t - .3) / 2), 520); const m = walkAt(TS, 0, TS.length, clamp(t - .3, 0, 9) * 3.2, 1); pip(m.x, m.y, m.face || 1, t);
      const rows = [['shortest walk', 7, ret(TS, COST)], ...SAME.map(s => [`episode ${s.i + 1}`, s.n, ret(EPS[s.i], COST)])];
      rows.forEach(([n, l, g], j) => { const a = clamp((t - 2.6 - j * 1.4) * 2), y = 308 + j * 24; if (a <= 0) return;
@@ -150,6 +157,7 @@ const STEPS = [
 
  { h: 'A picture of all 100', p: [`All 100 random episodes. Across: steps. Height: return, with the step cost. Most returns are negative, so zero sits near the top; ${OFF} long episodes fall off the right edge.`, 'Teal ended at the cheese, rose at the cat. Each dot sits on one of two lines, the cat line 2 below. Every extra step costs 0.1, so on each line shorter is better.'],
    shot: [4, 12],
+   say: [[["Here are all hundred random walks.", [30, 20, 350, 270]], ["Further right means longer. Higher means a better return.", [30, 20, 350, 270]]], [["Teal dots ended at the cheese, rose dots at the cat.", [30, 20, 350, 270]], ["They sit on two sloping lines. On each line, shorter is better.", [30, 20, 350, 270]]]],
    draw(t) { retChart(t);
      if (t > 1.5) txt('ended at the cheese', RC.X(70) + 6, RC.Y(1 - .1 * 69) - 14, { s: 14, c: '#2f7f7b', a: clamp(t - 2.5), al: 'left' });
      if (t > 3.5) txt('ended at the cat', RC.X(40) - 4, RC.Y(-1 - .1 * 39) + 16, { s: 14, c: C.roseInk, a: clamp(t - 4.5), al: 'right' });
@@ -157,6 +165,7 @@ const STEPS = [
 
  { h: 'A return from every step', p: ['Returns can start at any time. On the shortest walk, from cell 10, the last before the cheese, only the +1 is left: G6 = 1. One step earlier: −0.1 + 1 = 0.9.', 'Each return is the next reward plus the return after it. Backward: 1, 0.9, 0.8, down to 0.4 at the start. Later reels average such returns into a **value**.'],
    shot: [5, 12],
+   say: [[["Returns can start from any step. Look at the shortest walk.", [40, 16, 320, 256]], ["Next to the cheese, only the plus one is left. Its return is one.", [40, 16, 320, 256]]], [["One step back, pay the step cost first. Zero point nine.", [40, 16, 320, 256]]], [["Each return is the next reward, plus the return after it.", [30, 292, 340, 87]], "All the way back to zero point four at the start."]],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, 1, 520); pip(cx(0), cy(3), 1, t);
      const n = TS.length; for (let k = n - 1; k >= 0; k--) { const a = clamp((t - .8 - (n - 1 - k) * .9) * 2); if (a <= 0) continue; const q = TS[k], g = ret(TS, COST, k);
        box(cx(q.c) - 18, cy(q.r) - 30, 36, 18, C.card, .9 * a); rich([['G', String(k)], ' ' + fmt(g)], cx(q.c), cy(q.r) - 21, { s: 15, al: 'center', a, c: C.goldInk }); }
@@ -164,6 +173,7 @@ const STEPS = [
 
  { h: 'The return is a gamble', p: [`From the same start, random Pip’s returns vary wildly: the best of 100 scored ${fmt(BESTR)}, the worst ${fmt(WORSTR)}.`, `The return depends on every random move, so it is a random number; here it averages ${fmt(MEAN01)}. Averaged over many episodes from a cell, under one way of choosing moves, it is what a later reel calls a value. Choose moves differently and that changes.`],
    shot: [4, 11],
+   say: [[["From the very same start, random Pip's returns are all over the place.", [30, 286, 340, 110]], ["The best scored zero point three. The worst, about minus thirty.", [30, 286, 340, 110]]], [["So the return is a random number. Here it averages minus six point seven.", [30, 286, 340, 110]]], "Average it over many walks from a cell, and you get what a later reel calls a value."],
    draw(t) { maze({ t }); dim(.5); pip(cx(0), cy(3), 1, t);
      const x0 = 40, x1 = 360, lo = -30, hi = 1, X = g => x0 + (Math.max(g, lo) - lo) / (hi - lo) * (x1 - x0), y0 = 380;
      rline(x0, y0, x1, y0, 940, { c: C.line, w: 1 }); [-30, -20, -10, 0].forEach(g => { txt(g ? fmt(g) : '0', X(g), y0 + 11, { s: 12, c: C.soft }); rline(X(g), y0 - 3, X(g), y0 + 3, 941 + g, { c: C.line, w: 1, once: true }); });
@@ -173,11 +183,13 @@ const STEPS = [
 
  { h: 'Careful: the cost changes the goal', p: ['Size matters. With a cost of 1.5 per step, the shortest cheese walk scores 1 − 1.5 × 6 = −8, but running into the cat, 5 steps, scores −1 − 1.5 × 4 = −7.', 'Now rushing to the cat has the highest return, so an agent maximising it would do that. It chases the return you wrote down, not the one you meant.'],
    shot: [4, 11],
+   say: [[["But the size of the cost matters.", [40, 16, 320, 256]], ["Make it one and a half per step.", [40, 16, 320, 256]], ["Compare the gold walk to the cheese with the rose walk into the cat.", [40, 16, 320, 256]]], [["The cheese walk scores minus eight. The cat walk, minus seven.", [30, 292, 340, 87]], ["The cat wins!", [30, 292, 340, 87]]], "The agent chases the return you wrote down, not the one you meant."],
    draw(t) { maze({ t }); route(SHORT, C.gold, -4, clamp((t - .5) / 1.5), 520); route(QCAT, C.rose, 4, clamp((t - 2.5) / 1.5), 540); pip(cx(0), cy(3), 1, t);
      rcard([{ parts: ['cheese, 7 steps:   1 − 1.5 × 6  =  −8'], c: C.goldInk }, { parts: ['cat, 5 steps:   −1 − 1.5 × 4  =  −7    higher!'], c: C.roseInk }, { parts: ['a cost above 1 per step makes the cat the best plan'], c: C.soft }], t - 3.6, { gap: 1.5 }); } },
 
  { h: 'Reward what you want', p: ['This happens with real agents. In 2016, OpenAI trained an agent on the boat racing game CoastRunners, where points come from hitting targets along the course.', 'The agent found a lagoon where three targets kept reappearing. It kept circling there, crashing and catching fire, never finishing the race, and still scored more than finishing would. The reward said points, not winning.'],
    shot: [4, 10],
+   say: ["This happens with real agents.", [["In a boat racing game, points came from hitting targets.", [30, 20, 360, 240]], ["Watch the boat circle the lagoon, where targets keep coming back.", [30, 20, 360, 240]]], [["It crashes, catches fire, never finishes, and still scores more than winning would.", [30, 292, 340, 87]], "The reward said points, not winning."]],
    draw(t) {
      // lagoon + race course
      ctx.save(); ctx.fillStyle = '#d7e8ec'; ctx.beginPath(); ctx.ellipse(150, 150, 110, 80, 0, 0, 7); ctx.fill(); ctx.restore();
@@ -193,6 +205,7 @@ const STEPS = [
 
  { h: 'Tasks that never end', p: ['Pip’s walks always end. Many tasks don’t: a thermostat or a trading program just keeps going. These are **continuing tasks**; their sum has no last term.', 'Earning +1 every step, such an agent’s return would be 1, 2, 3, growing forever. Two very different agents could both have an infinite return, and we could not compare them. The next reel fixes this.'],
    shot: [4, 11],
+   say: [[["Pip's walks always end. Many tasks don't.", [20, 20, 370, 100]], ["Up top, the episode stops, and the sum is one.", [20, 20, 370, 100]]], [["Below, a task that just keeps going, plus one every step.", [20, 120, 370, 110]], ["Watch the sum grow, and grow, forever.", [20, 120, 370, 110]]], ["Two agents with infinite returns can't be compared. The next reel fixes that.", [30, 292, 340, 87]]],
    draw(t) {
      txt('episodic: the sum stops', 30, 40, { s: 16, al: 'left', c: C.soft });
      chips([0, 0, 0, 0, 0, 0, 1], 44, 72, Math.floor(t * 2) + 1, { gap: 28 }); if (t > 3.5) txt('= 1', 250, 72, { s: 18, al: 'left', c: C.goldInk, a: clamp(t - 3.5) }); txt('end', 236, 98, { s: 13, c: C.soft, a: clamp(t - 3.5) });
@@ -204,6 +217,7 @@ const STEPS = [
  { h: 'Your turn', ctl: { label: 'step cost', values: COSTS, def: 3, fmt: v => String(v) },
    p: ['Drag the step cost and watch three walks: the shortest way to the cheese, the 14-step episode 1, and the quickest way into the cat. Bars show each walk’s return.', 'At 0 the two cheese walks tie. Small costs reward hurrying. Just above 0.2 the quick cat walk overtakes episode 1, and above 1 it beats even the shortest cheese walk.'],
    shot: [3],
+   say: [[["Your turn. Drag the step cost.", [20, 286, 370, 110]], ["Three walks, three bars.", [20, 286, 370, 110]], ["The shortest cheese walk, episode one, and the quick dash into the cat.", [40, 16, 320, 256]]], [["At zero, the cheese walks tie.", [20, 286, 370, 110]], ["Push the cost up and watch the cat walk climb, until above one it's the best plan.", [20, 286, 370, 110]]]],
    draw(t, st) { const cost = COSTS[st.ci ?? 3], prev = st.prevCi != null ? COSTS[st.prevCi] : cost, u = ease((t - (st.changed ?? -9)) / .7), cc = lerp(prev, cost, u);
      const W3 = [{ n: 'shortest cheese, 7 steps', tr: TS, col: C.gold, ink: C.goldInk, P: SHORT, off: -5 }, { n: 'episode 1, 14 steps', tr: E1, col: C.teal, ink: '#2f7f7b', off: 0 }, { n: 'quick cat, 5 steps', tr: TQ, col: C.rose, ink: C.roseInk, P: QCAT, off: 5 }];
      maze({ t }); trail(E1.map(q => [q.c, q.r]), .9); route(SHORT, C.gold, -5, 1, 520); route(QCAT, C.rose, 5, 1, 540); pip(cx(0), cy(3), 1, t);
@@ -216,11 +230,13 @@ const STEPS = [
 
  { h: 'The big bet', p: ['RL rests on one idea, the **reward hypothesis**: any goal can be written as getting the largest **expected return**, the total reward averaged over the agent’s own random choices and the environment’s. Richard Sutton, a founder of the field, framed it.', 'It is a working assumption, not a theorem, and still debated. In practice it has carried RL far, given carefully designed rewards.'],
    shot: [5],
+   say: ["All of RL rests on one bet, the reward hypothesis.", [["Any goal can be written as getting the largest expected return.", [30, 292, 340, 87]], "Expected just means averaged over all the luck along the way."], "It's an assumption, not a theorem. But with careful rewards, it has carried RL a long way."],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, 1, 520); pip(cx(0), cy(3), 1, t);
      card(['the reward hypothesis:', 'every goal = the largest expected return', { s: 'expected = averaged over all the luck along the way', c: C.soft }], t - .5, { gap: 1.3 }); } },
 
  { h: 'Recap', p: ['A **reward** scores one step. The **return** adds up all the rewards from a step until the episode ends, and that total is what an agent tries to make large.', 'How you set the rewards decides what “good” means: a step cost makes short walks win, and too big a cost can make the cat win.'],
    shot: [6],
+   say: [[["So, a reward scores one step.", [40, 16, 320, 256]], ["The return adds up every reward from a step until the end, and that's what an agent tries to make big.", [30, 292, 340, 110]]], ["And how you set the rewards decides what good means. Pick them carefully."]],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, 1, 520); pip(cx(0), cy(3), 1, t);
      rcard([[['G', 't'], ' = ', ['R', 't+1'], ' + ', ['R', 't+2'], ' + … + ', ['R', 'T']], [['G', 't'], ' = ', ['R', 't+1'], ' + ', ['G', 't+1'], '   (count backward)'], 'judge moves by the return, not the next reward', { parts: ['the return you write is the goal the agent chases'], c: C.goldInk }], t - .3, { gap: 1 }); } },
 ];

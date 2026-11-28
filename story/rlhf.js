@@ -134,23 +134,27 @@ const STEPS = [
  { h: 'Bot, the answer machine', p: ['Pip asks Bot a question: how do I get to the cheese? Bot is a tiny stand-in for a **language model**. A real one writes word by word; Bot just picks one of eight whole answers, each with a chance.',
    'Bot learned these chances by copying example answers that people wrote, as in the imitation reel. Some are good, many are not.'],
    shot: [4, 11],
+   say: [[["Meet Bot. Pip asks it the way to the cheese.", [10, 15, 380, 145]], ["Bot is a tiny stand in for a language model.", [10, 15, 380, 145]]], [["A real one writes word by word. Bot just picks one of eight whole answers, each with its own chance.", [16, 165, 368, 165]], ["It learned those chances by copying answers people wrote. Some are good. Many aren't.", [16, 165, 368, 165]]]],
    draw(t) { scene(t, { ans: t > 2 ? 0 : null, aa: clamp(t - 2) });
      if (t > 4) table(180, { head: [['Bot’s answers', 22, 'left'], ['chance', 378]], cols: withCh(REF), rowA: (i, k) => clamp((t - 4 - k * .25) * 3) }); } },
  { h: 'What is a good answer?', p: ['From the start, the way is up three, then right four, just above the cat. So some answers help, some do not.',
    'Could a rule in code judge them? Counting words fails: the longest answer repeats itself, and people dislike it. Direction words fail too: Down, then left, has them and is wrong. For real questions, coding helpful and honest is far harder.'],
    shot: [4, 11],
+   say: [[["Watch the route trace out. Up three, then right four, just above the cat.", [90, 15, 220, 175]]], [["So which answers help? Could a simple rule in code decide?", [16, 192, 368, 90]]], [["Counting words fails. The longest answer is wrong.", [30, 296, 340, 87]], ["Direction words fail too.", [30, 296, 340, 87]], "For real questions, writing down helpful and honest is far harder still."]],
    draw(t) { miniMaze(100, 22, 40, t, { route: clamp((t - .8) / 3) });
      card([{ s: 'more words? the longest one is wrong  ✗', c: C.roseInk }, { s: 'direction words? Down, then left, has two  ✗', c: C.roseInk }, 'nobody can write the rule for a good answer'], t - 4.5, { y: 296, gap: 1.6, fs: 16 });
      table(206, { rows: [0, 1, 3, 7], head: [['four of Bot’s answers', 22, 'left']], rowA: (i, k) => clamp((t - 1 - k * .3) * 3), tc: i => i <= 1 ? GREEN : C.ink }); } },
  { h: 'Easy to compare', p: ['But people can easily say which of two answers they **prefer**. Bot answers twice, a person picks one.',
    'Here the people are simulated; Mo, the old mouse with glasses, stands in for them. Each answer has a hidden **taste** score that drives their choices. Bot never sees it, only the comparisons.'],
    shot: [4, 11],
+   say: [[["But comparing is easy.", [10, 15, 380, 120]], ["Bot answers twice, and a person just picks the one they prefer. Here, Mo picks A.", [10, 15, 380, 120]]], [["The people are simulated. Each answer has a hidden taste score that drives their choices.", [16, 162, 368, 165]], "Bot never sees it. Only the comparisons."]],
    draw(t) { say('A: ' + ANS[0], 20, 30, 220, { seed: 530, a: clamp(t - .5), c: t > 3 ? GREEN : C.line, lw: t > 3 ? 2 : 1.2 }); say('B: ' + ANS[2], 20, 70, 220, { seed: 540, a: clamp(t - 1) });
      teacher(325, 78, -1, 1.7, t); if (t > 3) { txt('A ✓', 320, 120, { s: 18, c: GREEN, a: clamp(t - 3) }); }
      if (t > 5) table(176, { head: [['hidden taste (only the simulation knows)', 22, 'left']], cols: [{ v: TASTE, x: 378, fmt: f1, tc: (i, v) => v > 0 ? GREEN : C.roseInk }], rowA: (i, k) => clamp((t - 5 - k * .2) * 3) }); } },
  { h: 'How people choose', p: ['People are noisy. Our simulated person picks answer A with chance 1 ÷ (1 + e to the minus gap), where the gap is A’s taste minus B’s: the **Bradley–Terry** model.',
    `The chart shows this curve: across, the taste gap; up, the chance of picking A. Equal taste gives 0.5. The two answers above differ by 3, so A wins with chance ${f2(sig(3))}, not always.`],
    shot: [4, 11],
+   say: [[["People are noisy, though.", [40, 45, 330, 235]], ["Watch the curve. Across is the taste gap, and up is the chance of picking A.", [40, 45, 330, 235]], ["Equal taste, and it's a coin flip.", [40, 45, 330, 235]]], [["A gap of three gives zero point nine five. Likely, but not certain.", [40, 45, 330, 235]]], ["This is the Bradley Terry model."]],
    draw(t) { const x0 = 60, x1 = 350, y0 = 250, y1 = 60, X = g => x0 + (g + 5) / 10 * (x1 - x0), Y = p => y0 - p * (y0 - y1), u = clamp((t - 1.5) / 2.5);
      rline(x0, y0, x1, y0, 1001, { c: C.line, w: 1, once: true }); rline(X(0), y0, X(0), y1 - 4, 1002, { c: C.line, w: 1, once: true });
      [-4, -2, 0, 2, 4].forEach(g => txt(String(g).replace('-', '−'), X(g), y0 + 12, { s: 12, c: C.soft })); [0, .5, 1].forEach(p => txt(String(p), x0 - 6, Y(p), { s: 12, c: C.soft, al: 'right' }));
@@ -162,6 +166,7 @@ const STEPS = [
  { h: `${NC} comparisons`, p: [`Bot answers twice, ${NC} times over, and the simulated people pick. Most pairs are two of Bot’s common answers.`,
    `Bot’s rare repeated answer, the last row, turns up in only ${SPAMC.length} of the ${NC} pairs. It wins ${SPAMW} and loses ${SPAMC.length - SPAMW}. Keep an eye on it.`],
    shot: [3, 11],
+   say: [[["Now Bot answers twice, four hundred times over, and Mo picks each time.", [10, 15, 380, 110]], ["Watch the counts in the table climb.", [16, 136, 368, 165]]], [["Keep an eye on the last row.", [16, 136, 368, 165]], ["Bot's rare repeated answer turns up in only eleven pairs. Too few to learn much from.", [16, 136, 368, 165]]]],
    draw(t) { const n = Math.min(NC, Math.floor(Math.max(0, t - .5) ** 2 * 18)), win = new Array(NA).fill(0), seen = new Array(NA).fill(0);
      for (let k = 0; k < n; k++) { const [x, y] = CMP[k]; win[x]++; seen[x]++; seen[y]++; }
      const cur = CMP[Math.max(0, n - 1)];
@@ -172,6 +177,7 @@ const STEPS = [
  { h: 'A reward model', p: ['Now we build a **reward model**: a program that scores any answer, trained to agree with the comparisons. Real ones are large networks reading the whole text. Ours counts three things and gives each a weight: every word, every up or right, every down or left.',
    'Score = the sum. Training picks the weights that make the people’s choices most likely under the same curve.'],
    shot: [4, 11],
+   say: ["Next, a reward model. A program that scores any answer, trained to agree with the comparisons.", [["Ours counts just three things. Every word, every up or right, and every down or left.", [20, 25, 360, 175]], ["Watch the weights slide as training goes.", [20, 25, 360, 175]]], [["Each comparison nudges them, so the chosen answer scores above the rejected one.", [30, 230, 340, 87]]]],
    draw(t) { const k = Math.min(WHIST.length - 1, Math.floor(clamp((t - 3) / 6) * (WHIST.length - 1))), w = WHIST[k];
      const lab = ['per word', 'per up or right', 'per down or left'];
      lab.forEach((s, j) => { const y = 50 + j * 46; txt(s, 30, y, { s: 15, al: 'left' }); rline(170, y, 350, y, 1100 + j, { c: C.line, w: 1, once: true }); rline(260, y - 6, 260, y + 6, 1110 + j, { c: C.soft, w: 1, once: true });
@@ -182,6 +188,7 @@ const STEPS = [
  { h: 'Scores for every answer', p: [`Trained weights: ${f3(WFIT[0])} per word, ${f3(WFIT[1])} per up or right, ${f3(WFIT[2])} per down or left. The good answers score ${f2(RMS[0])} and ${f2(RMS[1])}, above the rest. It matches ${pc(AGREE / NC)} of choices: low, but people’s own hidden taste matches only ${pc(CMP.filter(([x, y]) => TASTE[x] > TASTE[y]).length / NC)}, since in ${CMP.filter(([x, y]) => TASTE[x] === TASTE[y]).length} pairs both tasted the same.`,
    `The repeated answer scores highest, ${f2(RMS[SPAM])}: it says up and right four times, and the scorer just counts.`],
    shot: [4, 11],
+   say: [[["Here are the trained scores, next to the hidden taste.", [16, 136, 368, 165]], ["The two good answers score above the rest. So far, so good.", [16, 136, 368, 165]]], [["But look at the last row.", [16, 136, 368, 165]], ["The repeated answer scores highest of all, four point three one.", [30, 316, 340, 64]], "It says up and right four times, and the scorer just counts."]],
    draw(t) { scene(t, { qa: .4 });
      table(150, { head: [['answer', 22, 'left'], ['RM score', 318], ['taste', 378]], cols: [{ v: RMS, x: 318, fmt: f2, tc: (i, v) => i === SPAM && t > 7 ? C.roseInk : C.goldInk }, { v: TASTE, x: 378, fmt: f1, tc: () => C.soft }],
        rowA: (i, k) => clamp((t - .5 - k * .3) * 3), hi: i => i === SPAM && t > 7, hiCol: C.pink });
@@ -190,6 +197,7 @@ const STEPS = [
  { h: 'Practice with PPO', p: ['Now the reward model is the judge, scoring thousands of answers at no cost. Bot improves with **PPO**, from the PPO reel.',
    `Each update Bot answers ${NB} times. An answer’s advantage is its reward minus the batch average. Bot takes ${NPASS} passes over the batch, ratio clipped to 0.8 to 1.2. Answers are one step long, so the batch average serves as the critic.`],
    shot: [4, 11],
+   say: [[["Now the reward model is the judge, and judging costs nothing.", [60, 20, 280, 100]]], [["Bot answers thirty two times. Each answer gets its score.", [20, 110, 360, 155]], ["Above the batch average, its chance goes up. Below, it goes down.", [20, 110, 360, 155]]], [["That's PPO, from the PPO reel, with the usual clipping.", [30, 280, 340, 87]]]],
    draw(t) { bot(200, 70, 2, t); const R = rng(77);
      for (let i = 0; i < 32; i++) { const a = samp(REF, R), u = clamp((t - 1 - i * .12) * 2); if (u <= 0) continue; const x = 30 + (i % 8) * 44, y = 120 + Math.floor(i / 8) * 26;
        alpha(u, () => { box(x, y, 38, 20, C.card); rrect(x, y, 38, 20, 1200 + i, { c: C.line, w: 1 }); txt(f2(RMS[a]), x + 19, y + 11, { s: 12, c: RMS[a] > 1 ? C.goldInk : C.soft }); }); }
@@ -199,24 +207,28 @@ const STEPS = [
  { h: 'Two ways to keep score', p: ['Two charts will track Bot. Top: the average reward-model score of Bot’s answers, what PPO is pushing up.',
    'Bottom: **people’s verdict**, the chance a person prefers the new Bot’s answer over the original Bot’s. 0.5 means no better. We can compute it exactly from the hidden taste. Bot cannot. Both start at the dot.'],
    shot: [3, 9],
+   say: [[["Two charts will track Bot.", [40, 30, 320, 120]], ["On top, the reward model's average score. That's what PPO pushes up.", [40, 30, 320, 120]]], [["Below, people's verdict. How often a person prefers the new Bot over the original.", [40, 175, 320, 120]], ["Zero point five means no better.", [40, 175, 320, 120]], "Only the simulation can compute this. Bot can't."]],
    draw(t) { twoCharts(t, [{ H: OFF, col: C.rose }], { n: 0, a1: clamp(t - .5), a2: clamp(t - 3) });
      txt(`start ${f2(OFF[0].rm)}`, 70, 136 - OFF[0].rm / 5 * 86 - 12, { s: 13, c: C.roseInk, al: 'left', a: clamp(t - 1.5) });
      card(['top: what the reward model thinks', { s: 'bottom: what people think (the truth here)', c: GREEN }], t - 5, { y: 316, gap: 1.2, fs: 16 }); } },
  { h: 'Leash off', p: [`Run PPO with only the reward-model score as reward. At first both lines rise: Bot learns the good answers, and by update ${PEAK} people’s verdict is ${f2(OFF[PEAK].win)}. Rarely, Bot gives its repeated answer, which scores higher still, and PPO piles on.`,
    `By update ${NU} the score is ${f2(FO.rm)}, the repeated answer comes ${(FO.P[SPAM] * 100).toFixed(1)} times in 100, and people’s verdict is ${f2(FO.win)}: worse than the original.`],
    shot: [5, 12],
+   say: ["First, run PPO with the score alone.", [["Watch both lines rise at first. Bot learns the good answers.", [40, 30, 320, 265]], ["Around update thirty four, people's verdict peaks at zero point eight seven.", [40, 175, 320, 120]]], [["Then Bot stumbles on its repeated answer, and PPO piles on.", [40, 30, 320, 265]], ["By the end, Bot says it almost every time, and people like it less than the original.", [30, 312, 340, 64]]]],
    draw(t) { const n = Math.round(clamp((t - .5) / 6) * NU); twoCharts(t, [{ H: OFF, col: C.rose }], { n });
      if (t > 7) { const X = 60 + PEAK / NU * 270, Y = 274 - OFF[PEAK].win * 84; dot(X, Y, 4, C.goldInk, clamp(t - 7)); txt(`update ${PEAK}: ${f2(OFF[PEAK].win)}`, X + 4, Y + 17, { s: 13, c: C.goldInk, al: 'left', a: clamp(t - 7) }); }
      if (t > 8) card([{ s: `Bot: “${ANS[SPAM]}”`, c: C.roseInk }, `${(FO.P[SPAM] * 100).toFixed(1)} times in 100`], t - 8, { y: 312, gap: .8, fs: 15 }); } },
  { h: 'Reward hacking', p: [`The reward model learned that up and right are good, and that is true in Bot’s usual answers. Repeating them is not, but in its ${SPAMC.length} comparisons there was too little to learn from, and three weights cannot say repeating is bad.`,
    'Maximising a learned score finds exactly such gaps. This is **reward hacking**: a high score, a worse answer.'],
    shot: [4, 11],
+   say: [[["Why did that happen?", [10, 15, 380, 145]], ["The scorer learned that up and right are good. In Bot's usual answers, that's true.", [16, 156, 368, 50]]], [["Repeating them isn't. But eleven comparisons were too few, and three weights can't say repeating is bad.", [30, 250, 340, 64]]], ["Push hard on a learned score, and you find exactly such gaps. That's reward hacking."]],
    draw(t) { scene(t, { ans: SPAM, ax: 30, aw: 340, aa: clamp(t - .5), atc: C.roseInk });
      table(170, { rows: [1, SPAM], head: [['answer', 22, 'left'], ['RM score', 318], ['taste', 378]], cols: [{ v: RMS, x: 318, fmt: f2, tc: () => C.goldInk }, { v: TASTE, x: 378, fmt: f1, tc: () => C.soft }], rowA: (i, k) => clamp((t - 2 - k) * 3) });
      card([`scorer: 4 × up or right = 4 × ${f3(WFIT[1])} = ${f2(4 * WFIT[1])}`, { s: 'people: it repeats, the route is wrong', c: C.roseInk }], t - 5, { y: 250, gap: 1.2 }); } },
  { h: 'A leash', p: ['The fix, a **leash** to the original Bot: each reward loses β (beta) × log of new over old chance. Averaged over new answers, that is the **KL divergence**: how far Bot has moved.',
    `Bot settles where leashed rewards tie: original chance × e to the score over β, rescaled to sum to 1. At β 1, the repeated answer grows only from 1 in 100 to ${f2(FN.P[SPAM])}.`],
    shot: [4, 11],
+   say: [[["The fix is a leash, tying the tuned Bot to the original.", [60, 60, 290, 110]], ["Watch it stretch.", [60, 60, 290, 110]]], [["Each reward pays a penalty for drifting from the original's chances.", [30, 200, 340, 110]], ["Beta sets how strong the leash is.", [30, 200, 340, 110]], "On average, that penalty is the KL divergence, a measure of how far Bot has moved."]],
    draw(t) { bot(110, 110, 2, t); alpha(.45, () => bot(290, 110, 2, t)); txt('tuned Bot', 110, 160, { s: 14, c: C.soft }); txt('original Bot', 290, 160, { s: 14, c: C.soft });
      const stretch = 1 + .5 * Math.sin(t * 1.4) * clamp(t - 1); ctx.save(); ctx.strokeStyle = C.goldInk; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(126, 104);
      for (let k = 1; k <= 12; k++) ctx.lineTo(lerp(126, 274, k / 12), 104 + Math.sin(k * 1.6) * 6 / stretch); ctx.stroke(); ctx.restore();
@@ -224,12 +236,14 @@ const STEPS = [
  { h: 'Leash on', p: [`Same run with β = 1. The score rises less, to ${f2(FN.rm)}. People’s verdict rises to ${f2(FN.win)}: people now prefer the tuned Bot’s answer about ${Math.round(FN.win * 100)} times in 100.`,
    `The good answers climb to ${f2(FN.P[0])} and ${f2(FN.P[1])}. The repeated one still grows, from 0.01 to ${f2(FN.P[SPAM])}: the leash holds it back, it does not erase the blind spot.`],
    shot: [5, 12],
+   say: [[["Same run, with beta equal to one.", [40, 30, 320, 265]], ["The blue score rises less.", [40, 30, 320, 120]], ["But people's verdict climbs to zero point six five. People now prefer the tuned Bot about sixty five times in a hundred.", [40, 175, 320, 120]]], ["The repeated answer still grows. The leash holds it back, but doesn't erase the blind spot."]],
    draw(t) { const n = Math.round(clamp((t - .5) / 6) * NU); twoCharts(t, [{ H: OFF, col: '#e9b8b8' }, { H: ON, col: BLUE }], { n });
      card([{ s: 'pale rose: leash off', c: C.roseInk }, { s: 'blue: leash on, β = 1', c: BLUE }], t - 1, { y: 310, gap: .6, fs: 15 }); } },
  { h: 'Your turn', ctl: { label: 'β', values: BETAS, def: 3, fmt: v => String(v) },
    p: ['Drag **β**, the strength of the leash. Each setting reruns PPO for 100 updates. The bars show Bot’s final chances, the card the reward-model score and people’s verdict.',
    `Too loose, and Bot hacks the scorer. Too tight, and Bot barely changes. Of these settings, β = 1 does best with people, ${f2(FN.win)}.`],
    shot: [4, 10],
+   say: ["Your turn. Drag beta, the leash strength. Each setting reruns PPO.", [["The bars show Bot's final chances. Black ticks mark the original's.", [16, 22, 368, 175]], ["Too loose, and Bot hacks the scorer. Too tight, and it barely changes.", [30, 200, 340, 110]]], ["Beta of one does best with people here."]],
    draw(t, st) { const b = BETAS[st.ci ?? 3], H = ppo(b), F = H[NU];
      table(36, { head: [['Bot’s final chances', 22, 'left'], ['chance', 378]], cols: withCh(F.P), hi: i => i === SPAM && F.P[SPAM] > .3, hiCol: C.pink });
      REF.forEach((r, i) => { const x = 290 + r * 64, y = 36 + i * ROWH + 4; rline(x, y - 7, x, y + 7, 1250 + i, { c: C.ink, w: 1.2, once: true, j: .2 }); });
@@ -238,6 +252,7 @@ const STEPS = [
  { h: 'Not a cure', p: [`The best Bot here, always the good answer with the cat warning, would earn ${f2(BEST)}. The leash got ${f2(FN.win)}: safer, not perfect. A reward model is only as good as its comparisons.`,
    'So teams collect fresh comparisons on the tuned model’s answers and retrain the reward model. Unable to see hidden taste, real teams pick β, and when to stop, from people’s ratings.'],
    shot: [4, 11],
+   say: [[["Here's every run on one line of people's verdict.", [40, 60, 320, 120]], ["Leash off, worse than the original. Leash on, zero point six five.", [40, 60, 320, 120]], ["The best possible Bot would reach zero point nine one.", [40, 60, 320, 120]]], [["So the leash is safer, not perfect. A reward model is only as good as its comparisons.", [30, 230, 340, 87]], "Real teams keep collecting fresh comparisons, and retrain the scorer."]],
    draw(t) { const x0 = 60, x1 = 340, y = 120, X = v => x0 + v * (x1 - x0);
      rline(x0, y, x1, y, 1300, { c: C.line }); [0, .5, 1].forEach(v => { rline(X(v), y - 5, X(v), y + 5, 1301 + v * 4, { c: C.line, once: true }); txt(String(v), X(v), y + 16, { s: 12, c: C.soft }); });
      txt('people’s verdict', x0, y - 50, { s: 13, c: C.soft, al: 'left' });
@@ -247,6 +262,7 @@ const STEPS = [
  { h: 'Where it is used', p: ['Christiano and colleagues, in 2017, taught simulated robots and Atari players from people comparing short video clips; a backflip took about 900 comparisons.',
    'In 2022, **InstructGPT** (Ouyang and colleagues) tuned GPT-3 with comparisons, a reward model, and PPO with a KL penalty. People preferred a 1.3 billion parameter InstructGPT to the 175 billion parameter GPT-3. This recipe, **RLHF**, shaped later chat assistants.'],
    shot: [3, 10],
+   say: [[["In 2017, Christiano and colleagues taught simulated robots from people comparing short clips.", [40, 40, 145, 135]], "A backflip took about nine hundred comparisons."], [["In 2022, InstructGPT did the same for a language model. Comparisons, a reward model, then PPO on a leash.", [225, 30, 150, 145]], ["That recipe, RLHF, shaped later chat assistants.", [30, 230, 340, 87]]]],
    draw(t) { alpha(clamp(t - .5), () => { rrect(40, 40, 140, 90, 1401, { fill: '#e8e0d4' }); rrect(52, 52, 52, 66, 1402, { fill: C.card }); rrect(116, 52, 52, 66, 1403, { fill: C.card });
        rcircle(78, 85, 12, 1404, { j: 1.5 }); rcircle(142, 85, 12, 1405, { j: 1.5 }); txt('A or B?', 110, 146, { s: 15 }); txt('2017: clips', 110, 166, { s: 13, c: C.soft }); });
      alpha(clamp(t - 3), () => { say('Q: …', 230, 40, 130, { seed: 1410 }); say('A ✓', 230, 74, 60, { seed: 1411, tc: GREEN }); say('B', 300, 74, 60, { seed: 1412 }); txt('2022: InstructGPT', 295, 146, { s: 15 }); txt('comparisons → RM → PPO + KL', 295, 166, { s: 13, c: C.soft }); });
@@ -254,6 +270,7 @@ const STEPS = [
  { h: 'Recap', p: ['When a good answer is hard to write down, ask people to **compare** two answers. Fit a **reward model** so that bigger score gaps mean more reliable preferences.',
    'Then tune the model with PPO against that score, on a **KL leash** to the original, because a learned scorer has blind spots that an unleashed optimiser will find.'],
    shot: [3, 9],
+   say: [["So that's RLHF.", ["When good is hard to write down, ask people to compare. Fit a reward model to their choices.", [30, 170, 340, 110]]], [["Then tune with PPO, on a leash to the original. A learned scorer has blind spots, and an unleashed optimiser will find them.", [30, 170, 340, 110]]]],
    draw(t) { scene(t, { ans: 1, aa: 1, atc: GREEN });
      card(['1. people compare pairs of answers', '2. reward model: chance A wins grows with gap', '3. PPO raises the reward-model score', { s: '4. KL leash: stay near the original', c: C.goldInk }], t - .3, { y: 170, gap: 1 }); } },
 ];

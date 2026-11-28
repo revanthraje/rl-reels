@@ -151,21 +151,25 @@ function movingCat(u, t) { const x = lerp(cx(3), cx(3), u), y = lerp(cy(1), cy(3
 const STEPS = [
  { h: 'No rulebook', p: ['Pip’s maze again. Stepping **onto** the cheese pays +1, onto the cat −1, and either ends the walk. Other steps pay 0, a bump leaves Pip in place, and γ (gamma) is 0.9.', `Pip has no rulebook: it cannot tell where a move will land. In the Q-learning reel it learned from experience alone; its first four walks took ${QL.W.slice(0, 4).map(w => w.len).join(', ').replace(/, (\d+)$/, ' and $1')} steps.`],
    shot: [4, 10],
+   say: [["Welcome back to Pip's maze. Cheese, cat, and a dry floor."], [["But Pip still has no rulebook. It can't tell where a move will land.", [40, 16, 320, 256]]], ["In the Q-learning reel, it learned from experience alone. Its first walks were long, very long."]],
    draw(t) { G.maze({ draw: t / 1.4, pop: { cheese: ease((t - 1.6) * 3), cat: ease((t - 2) * 3) }, labels: clamp(t - 2.6), t }); if (t > 2.4) pip(cx(0), cy(3), 1, t);
      if (t > 4) card(['onto cheese +1, onto cat −1: the walk ends', 'other steps 0 · bump = stay put · γ = 0.9', { s: 'Pip cannot tell where a move will land', c: C.roseInk }], t - 4, { gap: 1.1 }); } },
  { h: 'One walk, one number', p: [`That first walk again, sped up. Pip keeps four numbers per cell, one per move, all starting at 0, so each update nudges 0 toward 0 + 0.9 × 0 and nothing moves.`, `Only the last step, onto the cheese, changes a number: “up” below the cheese, from 0 to ${f2(LAST1.nw)}. Pip saw ${W1.length} steps of the maze; the other ${W1.length - 1} left no trace.`],
    shot: [4, 11],
+   get say() { return [["Here's that first walk again, sped up."], [["Watch the numbers in each cell. Nothing moves.", [40, 16, 320, 256]], "Every update nudges zero toward zero."], [["Only the very last step, onto the cheese, changes one number.", [40, 16, 320, 256]], `Pip saw ${W1.length} steps of the maze, and almost all of them left no trace.`]]; },
    draw(t) { const dur = .25, tEnd = W1.length * dur, Q = new Array(80).fill(0); if (t > tEnd + .8) Q[qk(LAST1.c, LAST1.r, LAST1.m)] = LAST1.nw * ease(t - tEnd - .8);
      qmaze(Q, { t, hl: t > tEnd + .8 ? { [key(LAST1.c, LAST1.r)]: [LAST1.m, C.teal, .3] } : null }); const k = replay(W1, t, dur);
      if (k < W1.length) caption(`walk 1, step ${k + 1} of ${W1.length} (sped up)`); else bubble('+1', cx(4), cy(0) - 18, t - tEnd);
      if (t > tEnd + 1) card([`${W1.length} steps seen`, 'numbers changed: 1', { s: `“up” below the cheese: 0 → ${f2(LAST1.nw)}`, c: C.goldInk }], t - tEnd - 1, { gap: 1.1 }); } },
  { h: 'Write it down', p: ['What if Pip also noted what each move did? In this cell, this move landed there and paid this much. Bumps count too: pushed up, stayed put.', `After walk 1 the notebook holds ${NE1} entries, from the ${NC1} cells Pip visited, out of 64 cell and move pairs; some moves repeated. The notebook is a **learned model**: Pip’s copy of part of the rulebook.`],
    shot: [5, 12],
+   say: [["What if Pip also wrote down what each move did?"], [["In this cell, this move landed there, and paid this much.", [40, 16, 320, 256]], ["Watch the notes fill the maze. Bumps count too.", [40, 16, 320, 256]]], ["This notebook is a learned model. Pip's own copy of part of the rulebook."]],
    draw(t) { const dur = .25, k = clamp(Math.floor(t / dur), 0, W1.length); G.maze({ t }); notebook(k > 0 ? NB[Math.min(k, W1.length) - 1] : new Map(), 1); replay(W1, t, dur, .25);
      caption(k < W1.length ? `walk 1, step ${k + 1}: entries so far ${NB[Math.max(0, k - 1)].size * (k > 0 ? 1 : 0)}` : `walk 1 done: ${NE1} entries`);
      if (t > W1.length * dur + .6) card(['entry: cell + move  →  where Pip landed, what it paid', { s: 'arrow = landed next door · U-turn = bumped, stayed', c: C.soft }, `after walk 1: ${NE1} of 64 pairs, in ${NC1} cells`], t - W1.length * dur - .6, { gap: 1.1, fs: 16 }); } },
  { h: 'Counting', p: [`Pip’s floor stays dry: one look per move is enough. On the MDP reel’s wet floor, “right” from the start was tried 1000 times: ${WETC[1000][0]} moved right, ${WETC[1000][1]} slid up, ${WETC[1000][2]} stayed.`, `Count divided by tries guesses each chance: ${(WETC[1000][0] / 1000).toFixed(3)}, ${(WETC[1000][1] / 1000).toFixed(3)}, ${(WETC[1000][2] / 1000).toFixed(3)}, near the true 0.8, 0.1, 0.1. Planning would weight landings by these chances; an imagined step would draw one with them.`],
    shot: [3, 12],
+   say: [["Pip's floor is dry, so one look per move is enough. But on a wet floor, moves can slip."], [["Remember the wet floor? Try right from the start, again and again.", [40, 16, 320, 256]], ["Count where Pip lands.", [40, 16, 320, 256]]], [["The counts, divided by the tries, land close to the true chances.", [30, 292, 340, 87]]]],
    draw(t) { wetFloor(); G.maze({ t }); pip(cx(0), cy(3), 1, t); const n = t < 4 ? 10 : Math.round(lerp(10, 1000, ease((t - 4) / 4))), cnt = WETC[n];
      alpha(clamp(t - .5), () => { arrow(cx(0) + 22, cy(3) + 4, cx(1) - 18, cy(3) + 4, 801, { c: C.goldInk, w: 2 }); arrow(cx(0), cy(3) - 18, cx(0), cy(2) + 14, 802, { c: TEAL, w: 1.6 });
        txt(String(cnt[0]), cx(1), cy(3) + 20, { s: 17, c: C.goldInk }); txt(String(cnt[1]), cx(0) + 22, cy(2) + 2, { s: 17, c: TEAL }); txt(`${cnt[2]} stayed`, cx(0), cy(3) + 25, { s: 14, c: '#4f74a0' }); });
@@ -173,26 +177,31 @@ const STEPS = [
      if (t > 8.5) card([`chance guess = count ÷ tries`, `right ${(cnt[0] / n).toFixed(3)} · slid up ${(cnt[1] / n).toFixed(3)} · stayed ${(cnt[2] / n).toFixed(3)}`, { s: 'true chances: 0.8, 0.1, 0.1', c: C.soft }], t - 8.5, { gap: 1.1 }); } },
  { h: 'Planning in the notebook', p: ['Plan with it, as in the value iteration reel: value of a cell = the best, over moves, of reward + 0.9 × value where that move lands. Start from zeros and sweep.', `One difference: Pip uses only moves in its notebook, since it has no idea where untried ones lead. Here ${VS} sweeps change something; sweep ${VSW} changes nothing, so the planning stops.`],
    shot: [4, 11],
+   get say() { return [["Now Pip can plan with its notebook, just like value iteration."], [["Each cell's value is the best noted move, its reward plus zero point nine times the value where it lands.", [40, 16, 320, 256]], "Watch the values spread out, sweep by sweep."], [["Pip only uses moves it has noted. Untried moves are a mystery.", [30, 292, 340, 87]]]]; },
    draw(t) { const D = 1.1, k = clamp(Math.floor((t - 1) / D) + 1, 0, VSW), V = VH[k]; G.maze({ V, t, nums: (c, r) => ([0, 1, 2, 3].some(m => M1.has(qk(c, r, m))) ? 1 : 0) }); notebook(M1, .35);
      pip(cx(0), cy(3), 1, t); caption(k ? `after sweep ${k}${k === VSW ? ': no change, stop' : ''}` : 'all values 0');
      if (t > 2) card(['value = best over NOTED moves of', '          reward + 0.9 × value where it lands', { s: 'cells with no entries stay 0', c: C.soft }], t - 2, { gap: 1.1 }); } },
  { h: 'A route after one walk', p: [`Taking the best noted move in each cell, Pip walks from the start to the cheese in ${ROUTE.length - 1} steps, the shortest possible. Its real experience so far: one walk of ${W1.length} steps.`, 'After that same walk, plain Q-learning knew one move, the one below the cheese. Writing things down got far more out of the same experience: better **sample efficiency**, learning per real step.'],
    shot: [4, 11],
+   get say() { return [[["Now follow the best noted move from each cell.", [40, 16, 320, 256]], `Pip reaches the cheese in ${ROUTE.length - 1} steps, the shortest way.`, "After just one real walk!"], [["Plain Q-learning, after the same walk, knew one single move.", [30, 292, 340, 87]], "Learning more from each real step is called sample efficiency."]]; },
    draw(t) { G.maze({ V: V1, t, nums: (c, r) => ([0, 1, 2, 3].some(m => M1.has(qk(c, r, m))) ? .8 : 0) }); routeArrows(ROUTE, .6); const w = walkPath(ROUTE, t - 1, .6);
      if (w.done) bubble('+1', cx(4), cy(0) - 18, t - 1 - (ROUTE.length - 1) * .6);
      if (t > 5.5) card([`model + planning: a ${ROUTE.length - 1}-step route`, 'Q-learning alone: 1 number, no route', { s: `both from the same ${W1.length} real steps`, c: C.soft }], t - 5.5, { gap: 1.2 }); } },
  { h: 'Planning costs thinking', p: [`Planning is not free. That plan took ${VSW} sweeps over ${NE1} entries: ${VSW * NE1} updates. Each new walk adds entries, and a fresh plan would sweep them all again.`, 'Here that is cheap. In a world with millions of states, sweeping everything after every step is not. Richard Sutton’s **Dyna** spreads the planning thin instead: a little after each real step.'],
    shot: [4, 10],
+   say: [["But planning isn't free. Each plan sweeps the whole notebook, again and again."], [["Here that's cheap.", [30, 292, 340, 87]], ["In a world with millions of states, it's not.", [30, 292, 340, 87]]], ["So Richard Sutton's Dyna spreads the planning thin. A little after each real step."]],
    draw(t) { G.maze({ V: V1, t }); notebook(M1, .7); pip(cx(0), cy(3), 1, t);
      card([`one plan: ${VSW} sweeps × ${NE1} entries = ${VSW * NE1} updates`, 'millions of states: too much after every step', { s: 'Dyna: a few imagined updates per real step', c: TEAL }], t - .8, { gap: 1.3 }); } },
  { h: 'Dyna-Q, part one: a real step', p: ['Dyna-Q runs Q-learning as usual. After each real move, the target is the reward plus 0.9 times the biggest number in the landing cell, and the move’s number goes a fifth of the way toward it: α (alpha) = 0.2.', 'Pip still takes the biggest number, with one move in five random: ε (epsilon) = 0.2. New: it also notes the move in its notebook.'],
    shot: [4, 10],
+   say: [["Here's how Dyna-Q works. Part one is plain Q-learning."], [["Pip makes a real move.", [40, 16, 320, 256]], ["Its number moves a fifth of the way toward the reward, plus zero point nine times the best number where it landed.", [30, 292, 340, 87]]], ["And one new thing. Pip writes the move into its notebook."]],
    draw(t) { const Q = QDS0.slice(); if (t > 3) Q[qk(DS.c, DS.r, DS.m)] = lerp(DS.old, DS.nw, ease(t - 3)); qmaze(Q, { t, hl: { [key(DS.c, DS.r)]: [DS.m, C.teal, .35 * clamp(t - 2)] } });
      replay([DS], t - .5, 1, 0); if (t > 4) entry(DS.c, DS.r, DS.m, [DS.nc, DS.nr, DS.rew], clamp(t - 4), { w: 2.4 });
      caption(`Dyna-Q, walk 3, real step ${DSI + 1}`);
      card([`target = ${DS.rew} + 0.9 × ${f3((DS.tg - DS.rew) / GAM)} = ${f3(DS.tg)}`, `new = ${f3(DS.old)} + 0.2 × (${f3(DS.tg)} − ${f3(DS.old)}) = ${f3(DS.nw)}`, { s: 'and: write “this move landed there, paid 0”', c: TEAL }], t - 2, { gap: 1.3 }); } },
  { h: 'Part two: imagined steps', p: [`Before its next real move, Pip practises in its head ${NIM} times: pick a random entry, read its landing and reward, and apply the same update as if it were real.`, 'Imagination takes no real step and replays only tried moves. Unlike a replay memory of every move made, the notebook keeps one entry per cell and move: a rulebook Pip could also plan with.'],
    shot: [3, 10],
+   get say() { return [[`Part two. Before its next real move, Pip practises in its head, ${NIM} times.`], [["It picks a random note, reads where the move landed and what it paid, and updates, as if it were real.", [30, 292, 340, 87]]], ["Imagination takes no real step. And it only replays moves Pip has really tried."]]; },
    draw(t) { const D = .95, k = clamp(Math.floor((t - .8) / D), -1, NIM - 1), Q = QDS0.slice(); Q[qk(DS.c, DS.r, DS.m)] = DS.nw;
      for (let i = 0; i <= k; i++) { const v = DS.im[i]; Q[qk(v.c, v.r, v.m)] = v.nw; }
      const v = k >= 0 ? DS.im[k] : null; qmaze(Q, { t, hl: v ? { [key(v.c, v.r)]: [v.m, C.teal, .35] } : null }); notebook(MDS, .3);
@@ -203,6 +212,7 @@ const STEPS = [
      if (t > 1) card(['pick a random notebook entry', 'landing + reward from the notebook', `same update as a real step  (changed so far: ${ch})`], t - 1, { gap: 1.1 }); } },
  { h: 'The first walks', p: [`Walk 1 is the same ${W1.length} steps for both methods: every number is 0, so imagining changes nothing until the cheese is found. Walk 2 also takes ${DY.W[1].len} steps for both.`, `But by its end Q-learning has ${NZQ2} nonzero numbers and Dyna-Q has ${NZD2}. On walk 3, Q-learning wanders ${QL.W[2].len} steps; Dyna-Q walks ${DY.W[2].len}.`],
    shot: [4, 10],
+   get say() { return [["How do the first walks compare?"], [["Walk one is identical for both. Every number is zero, so imagining changes nothing.", [8, 30, 384, 180]]], [["But by the end of walk two, Dyna-Q has far more nonzero numbers.", [8, 30, 384, 180]], `On walk three, Q-learning wanders ${QL.W[2].len} steps. Dyna-Q walks ${DY.W[2].len}.`]]; },
    draw(t) { const a = clamp(t - .3), b = clamp(t - 1.5);
      alpha(a, () => { qmaze(QL.Qs[1], { Gx: GA, t }); txt('Q-learning', GA.ox + 95, 30, { s: 16, c: GREY }); });
      alpha(b, () => { qmaze(DY.Qs[1], { Gx: GB, t }); txt(`Dyna-Q, ${NIM} imagined per step`, GB.ox + 95, 30, { s: 16, c: TEAL }); });
@@ -210,45 +220,53 @@ const STEPS = [
      if (t > 3) card([`nonzero numbers:  Q-learning ${NZQ2},  Dyna-Q ${NZD2}`, `walk 3:  Q-learning ${QL.W[2].len} steps,  Dyna-Q ${DY.W[2].len}`, { s: `walks 1 and 2: same lengths (${W1.length}, ${DY.W[1].len})`, c: C.soft }], t - 3, { y: 250, gap: 1.3 }); } },
  { h: 'The race', p: ['One run can be lucky, so race on 20 runs with different dice, seeds 1 to 20; both methods get the same 20.', 'In the chart, across is the walk number, 1 to 30. Up is the number of steps that walk took, averaged over the 20 runs. Grey is Q-learning, teal is Dyna-Q with 10 imagined steps per real one.'],
    shot: [3, 12],
+   say: [["One run could be lucky. So let's race twenty runs, with the same dice for both."], [["Across is the walk number. Up is how many steps it took.", [40, 290, 330, 110]], ["Grey is Q-learning. Teal is Dyna-Q.", [40, 290, 330, 110]], ["Watch which line falls faster.", [40, 290, 330, 110]]]],
    draw(t) { const A = race(0), B = race(NIM), n = Math.floor(clamp((t - 2.5) / 5) * 30);
      G.maze({ t }); pip(cx(0), cy(3), 1, t);
      raceChart([{ v: A.cur, col: GREY }, { v: B.cur, col: TEAL }], n, { axA: clamp(t) });
      legend('Dyna-Q', clamp(t - 1.5)); } },
  { h: 'Real steps saved', p: (() => { const A = race(0), B = race(NIM); return [`Over the first 10 walks, Q-learning used ${Math.round(A.t10)} real steps on average and Dyna-Q ${Math.round(B.t10)}, about half. In walks 21 to 30 both average about ${A.late.toFixed(0)} steps a walk, not 7, because one move in five is still random.`, `The price is thinking: Dyna-Q made ${NIM} imagined updates for every real one, about ${hund(B.ups)} updates per run against about ${hund(A.ups)}.`]; })(),
    shot: [3, 10],
+   say: [[["Over the first ten walks, Dyna-Q used about half the real steps.", [30, 150, 340, 87]]], [["Later, both settle at the same level, above the shortest route, because one move in five is still random.", [40, 290, 330, 110]]], ["The price is thinking. Ten imagined updates for every real one."]],
    draw(t) { const A = race(0), B = race(NIM); G.maze({ t }); dim(.7); raceChart([{ v: A.cur, col: GREY }, { v: B.cur, col: TEAL }], 30);
      legend('Dyna-Q', 1);
      card([`first 10 walks: ${Math.round(A.t10)} vs ${Math.round(B.t10)} real steps`, `walks 21 to 30: ${A.late.toFixed(1)} vs ${B.late.toFixed(1)} steps a walk`, { s: `updates per run: about ${hund(A.ups)} vs ${hund(B.ups)}`, c: C.soft }], t - 1, { y: 150, gap: 1.2 }); } },
  { h: 'The catch: the world changes', p: [`After 50 walks with Dyna-Q, Pip’s arrows take the bottom route and the start’s best number is ${f2(Q50S)}. Then the cat wakes up and moves to the bottom row, right onto that route.`, `The notebook does not know. It still says the bottom row is safe, and the numbers built from it agree. Pip follows its confident plan and meets the cat after ${CW1.length} steps.`],
    shot: [4, 11],
+   get say() { return [["Now the catch. What if the world changes?"], [["After fifty walks, Pip's arrows take the bottom route.", [40, 16, 320, 256]], ["Then the cat wakes up, and moves right onto it.", [40, 16, 320, 256]]], [["The notebook doesn't know. Pip follows its confident plan, and meets the cat.", [30, 318, 340, 64]]]]; },
    draw(t) { const u = clamp((t - 1.5) / 1.5); qmaze(DQ50, { t, pop: { cat: 0 } }); routeArrows(R50, .7 * (1 - clamp(t - 4))); movingCat(u, t);
      if (t < 4) pip(cx(0), cy(3), 1, t); else { const k = replay(CW1, t - 4, .7); if (k >= CW1.length) bubble('−1', cx(3), cy(3) - 18, t - 4 - CW1.length * .7); }
      txt(`start: best number ${f2(Q50S)}`, W / 2, 304, { s: 17, c: C.goldInk, a: clamp(t - .5) });
      if (t > 4 + CW1.length * .7 + .5) card([`the notebook: bottom row safe (it was)`, `reality: cat after ${CW1.length} steps, −1`, { s: 'confident plan, wrong model', c: C.roseInk }], t - 4.5 - CW1.length * .7, { y: 318, gap: 1.1 }); } },
  { h: 'Real steps fix it, slowly', p: [`Its entry is overwritten: “right here lands on the cat, −1”. On walk 2, Pip bumps up and down in that cell ${NBUMP} times: their numbers, ${f2(BQ0[0])} and ${f2(BQ0[2])}, date from the old cheese route.`, `A bump’s target is 0.9 times the cell’s best number, so they shrink slowly. Once below “left”, a random move hits the cat again. After walk ${FIXW}, the arrows go over the top.`],
    shot: [3, 12],
+   get say() { return [["The note for that move gets overwritten. Right here, lands on the cat."], [["On walk two, Pip bumps up and down in that cell, again and again.", [40, 16, 320, 256]], ["Those numbers come from the old route, and shrink only slowly.", [40, 16, 320, 256]]], [`Only after walk ${FIXW} do the arrows go over the top.`]]; },
    draw(t) { const T2 = CH.W[1].len * .45 + 1, k = replay(CH.W[1].tr, Math.min(t, T2) - .3, .45), i = Math.min(k, CH.W[1].len), Q = Qbefore(CH, 1, i);
      qmaze(Q, { t, Gx: G1, nums: (c, r) => (c === 2 && r === 3 ? 1 : 0) });
      caption(k < CH.W[1].len ? `walk 2, step ${k + 1}${CH.W[1].tr[k].rnd ? ' (random move)' : ''}` : 'walk 2: the cat again');
      if (t > T2 + .5) card([`up and down (bumps): ${f2(BQ0[0])}, ${f2(BQ0[2])} → ${f2(BQ1[0])}, ${f2(BQ1[2])}`, `left: ${f2(BQ1[3])} · right (cat): ${f2(BQ1[1])}`, { s: 'bump target = 0.9 × this cell’s best number', c: C.soft }], t - T2 - .5, { gap: 1.2, fs: 16 }); } },
  { h: 'A belief nobody checks', p: [`${STALE} notebook entries, the rose −1 tags, still say stepping into the old cat cell costs −1. The plan keeps away, so only a random move could check, and imagination keeps replaying those entries, reinforcing the mistake.`, 'A known fix, Dyna-Q+ in Sutton and Barto’s textbook, adds a small bonus to moves not tried for a long time, so Pip goes back to check.'],
    shot: [3, 9],
+   say: [[["Look at the rose tags. These notes still say the old cat cell costs minus one.", [40, 16, 320, 256]]], ["The plan stays away, so nothing checks them. And imagination keeps replaying them, making the mistake stronger."], ["One fix, Dyna-Q plus, adds a small bonus for moves not tried in a while. So Pip goes back to check."]],
    draw(t) { const Q = CH.Qs[FIXW - 1]; qmaze(Q, { t, Gx: G1 }); routeArrows(RFIX, clamp(t - .3)); pip(cx(0), cy(3), 1, t);
      if (t > 1.5) { const a = clamp(t - 1.5); STALEK.forEach(k => { const cell = k >> 2, c = cell % 5, r = Math.floor(cell / 5), x = (cx(c) + cx(3)) / 2, y = (cy(r) + cy(1)) / 2 + 4; box(x - 13, y - 9, 26, 18, C.card, .95 * a); rrect(x - 13, y - 9, 26, 18, 7800 + k, { c: C.rose, w: 1.4 }); txt('−1', x, y, { s: 14, c: C.roseInk, a }); }); txt('?', cx(3), cy(1) + 4, { s: 22, c: C.roseInk, a: clamp(t - 2) }); }
      if (t > 3) card([{ s: 'gold arrows: the new plan, over the top', c: C.goldInk }, { s: `rose −1 tags: ${STALE} stale notebook entries`, c: C.roseInk }, { s: 'fix: bonus for long-untried moves (Dyna-Q+)', c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'Your turn', ctl: { label: 'imagined', values: NV, def: 3, fmt: v => String(v) },
    p: ['Drag the number of **imagined steps** per real step. 0 is plain Q-learning. The chart reruns the same 20 runs and compares with Q-learning in grey.', 'Watch the first walks shrink as Pip imagines more, then stop shrinking: once the notebook is mostly learned, extra imagining adds little, and the random moves remain.'],
    shot: [3],
+   say: [["Your turn. Drag how many imagined steps Pip takes per real step. Zero is plain Q-learning."], [["Watch the teal line against grey.", [40, 290, 330, 110]], ["The first walks shrink as Pip imagines more, then stop shrinking.", [40, 290, 330, 110]]], ["Once the notebook is mostly learned, extra imagining adds little."]],
    draw(t, st) { const n = NV[st.ci ?? 3], A = race(0), B = race(n); G.maze({ t }); dim(.7);
      raceChart([{ v: A.cur, col: GREY }, { v: B.cur, col: TEAL }], 30);
      legend(`${n} imagined`, 1);
      card([`${n} imagined per real step`, `real steps, first 10 walks: ${Math.round(B.t10)}`, { s: `Q-learning: ${Math.round(A.t10)} · updates per run: about ${hund(B.ups)}`, c: C.soft }], 10, { y: 150, gap: 0, fs: 17 }); } },
  { h: 'Where it came from', p: ['Richard Sutton introduced **Dyna** in 1990: learn a model, and mix real updates with imagined ones. Learned models matter most where real experience is slow or costly, like robots. PILCO, in 2011, learned to swing up a real cart-pole within a handful of trials.', 'The next reels search ahead with a model (tree search, AlphaZero, MuZero) or learn a model from pictures (World Models, Dreamer).'],
    shot: [4, 10],
+   say: [["Richard Sutton introduced Dyna in nineteen ninety."], [["Learned models matter most where real experience is slow or costly, like robots.", [30, 292, 340, 87]], ["In twenty eleven, PILCO learned to swing up a real cart-pole in a handful of trials.", [30, 292, 340, 87]]], ["Next, searching ahead with a model, and learning models from pictures."]],
    draw(t) { qmaze(DY.Q, { t }); notebook(DY.M, .25); pip(cx(0), cy(3), 1, t); dim(.3);
      card(['1990  Sutton: Dyna', '2011  PILCO: a real robot in a few trials', { s: 'next: tree search, AlphaZero, MuZero, Dreamer', c: C.soft }], t - .5, { gap: 1.2 }); } },
  { h: 'Recap', p: ['A **model** says, for each state and action, where you land and what it pays. If nobody hands you one, learn it by writing down, and counting, what really happened.', 'Then plan with it, or use it for imagined practice between real steps, as Dyna does. In Pip’s maze that halved the real steps. But a wrong model gives confident wrong plans.'],
    shot: [3, 9],
+   say: [["So, a model says where each move lands, and what it pays. If no one hands you one, write down what really happened."], [["Then plan with it, or practise in your head between real steps.", [30, 292, 340, 110]], "That halved Pip's real steps. But a wrong model gives confident, wrong plans."]],
    draw(t) { qmaze(DY.Q, { t }); routeArrows(R50, .8); pip(cx(0), cy(3), 1, t);
      card(['model: state + action → landing, reward', 'learn it from experience: write down, count', 'plan with it, or imagine practice (Dyna)', { s: 'wrong model → confident wrong plans', c: C.roseInk }], t - .3, { gap: 1 }); } },
 ];

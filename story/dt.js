@@ -78,23 +78,27 @@ const STEPS = [
  { h: 'A box of old diaries', p: [`Pip finds a box of ${NW} diaries. Each records one walk by the **Wanderer**, the mouse from earlier reels who moves at random, bumping into walls. Pip may not walk itself; it can only learn from these pages, as in the offline RL reel.`,
    `In this box, ${B1.cheese} walks reached the cheese, ${B1.cat} met the cat, and the other ${NW - B1.cheese - B1.cat} were stopped after 30 moves.`],
    shot: [4, 11],
+   say: [[["Pip finds a box of forty old diaries.", [40, 16, 320, 256]], ["Each one records a walk by the Wanderer, who moves at random.", [40, 16, 320, 256]]], [["Pip may not walk itself. It can only learn from these pages.", [30, 296, 340, 87]], ["Only two of the walks reached the cheese.", [30, 296, 340, 87]]]],
    draw(t) { maze({ t }); diaryTrails(B1, .55 * clamp(t - 1.5)); pip(cx(0), cy(3), 1, t);
      card([`${NW} diaries of random walks`, `cheese ${B1.cheese},  cat ${B1.cat},  stopped ${NW - B1.cheese - B1.cat}`, { s: 'no new walks allowed', c: C.soft }], t - 3.5, { y: 296, gap: 1.1 }); notebook(330, 330, 1); } },
  { h: 'Rules for this reel', p: ['Same maze, dry floor, new scoring: each move costs 0.05; the cheese pays +1, the cat −1, either ends the walk. Rewards are summed, undiscounted: a Decision Transformer works with plain totals, so the total still wanted drops by each reward.',
    `So shorter is better. The best walk takes 7 moves: 1 − 7 × 0.05 = 0.65. The box’s best diary scores only ${f2(B1.best)}.`],
    shot: [4, 11],
+   say: [[["New scoring for this reel. Every move costs a little, zero point zero five.", [30, 290, 340, 110]], ["The cheese pays one, the cat minus one, and rewards just add up.", [30, 290, 340, 110]]], [["So shorter is better.", [40, 16, 320, 256]], ["Watch the green route. Seven moves, for a total of zero point six five.", [40, 16, 320, 256]], ["The best diary in the box only scored minus zero point one.", [30, 290, 340, 110]]]],
    draw(t) { maze({ t, labels: 1 }); const route = [[0, 3, 0, 2], [0, 2, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 2, 0], [2, 0, 3, 0], [3, 0, 4, 0]].map(([c, r, nc, nr]) => ({ c, r, nc, nr }));
      if (t > 4) alpha(clamp(t - 4), () => pathLine(route, GREEN, 2.4, Math.min(7, Math.floor((t - 4) * 3))));
      card(['each move: −0.05', 'onto the cheese: +1,  onto the cat: −1', { s: 'total = all rewards added, no discount', c: C.goldInk }, { s: `best possible 0.65 (7 moves), best diary ${f2(B1.best)}`, c: GREEN }], t - 1.5, { y: 290, gap: 1.2, fs: 16, lh: 22 }); } },
  { h: 'Return-to-go', p: [`The key number is the **return-to-go**: the total still to come. Here is the box’s best diary: ${BW.length} moves, ${BWB} of them bumps into walls or rocks. At the start it is ${f2(BW[0].rtg)}, the whole total.`,
    'Each paid move cost is no longer to come, so it creeps up by 0.05. On the last move the cheese arrives, leaving 0.'],
    shot: [6, 13],
+   say: [["The key number is the return to go. The total still to come.", [40, 16, 320, 256]], [["Here's the box's best diary. Twenty two moves, with lots of bumps into walls.", [40, 16, 320, 256]], ["Watch the number on the card. Each move's cost is paid, so it creeps up a little.", [30, 296, 340, 87]]], "On the last move, the cheese arrives, and nothing is left to come."],
    draw(t) { maze({ t }); const dur = .45, m = walkPos(BW, 0, BW.length, Math.max(0, t - .5), dur), k = m.done ? BW.length : m.k;
      pathLine(BW, C.teal, 2, k); pip(m.x, m.y, m.face, t); if (!m.done && m.s && m.s.c === m.s.nc && m.s.r === m.s.nr) bumps([m.s], 1); const cur = m.done ? 0 : BW[Math.min(k, BW.length - 1)].rtg;
      card([`move ${Math.min(k + 1, BW.length)} of ${BW.length}`, { s: `return-to-go here: ${f2(cur)}`, c: C.goldInk }, { s: m.done ? 'walk over: nothing left to come' : 'each move adds 0.05 to it', c: C.soft }], 1, { y: 296, gap: 0 }); } },
  { h: 'A walk as a sentence', p: ['Write each diary step as three tokens: the return-to-go, the cell, the move. The return-to-go enters as a plain number; each token becomes numbers the network reads. A walk becomes a sentence. Cells run 1 to 20, as in the loop reel; the start is 16.',
    'A **transformer**, the network behind chatbots, predicts the next move token, as a chatbot predicts the next word.'],
    shot: [4, 11],
+   say: [[["Now write each diary step as three tokens.", [15, 290, 370, 90]], ["The return to go, the cell, and the move.", [15, 290, 370, 90]]], [["A whole walk becomes a sentence.", [15, 290, 370, 90]], "A transformer, the network behind chatbots, learns to predict the next move, the way a chatbot predicts the next word."]],
    draw(t) { maze({ t }); cellNums(clamp(t - .5)); pathLine(BW, C.teal, 2, 4);
      const toks = BW.slice(0, 4).flatMap(s => [[f2(s.rtg), C.goldInk], [String(no(s.c, s.r)), C.ink], [MV[s.m], BLUE]]);
      toks.forEach(([s, col], i) => { const u = clamp((t - 2 - i * .35) * 3); if (u <= 0) return; const x = 22 + (i % 6) * 60, y = 296 + Math.floor(i / 6) * 34;
@@ -103,6 +107,7 @@ const STEPS = [
  { h: 'Training is plain prediction', p: ['Training needs no values or Bellman updates: the model just predicts the logged move from what came before. Simple and stable: no values feeding on their own guesses, which inflated numbers in the offline RL reel.',
    'Ours is a stand-in **lookup**: in this cell, copy the most common move of diary steps whose return-to-go is closest to the total still wanted, up on ties. A real network also reads recent steps and generalises.'],
    shot: [4, 11],
+   say: [["Training is just prediction. No values, no Bellman updates.", "So nothing feeds on its own guesses, which caused trouble in the offline RL reel."], [["Our stand in is a simple lookup.", [30, 286, 340, 123]], ["In this cell, copy the move whose return to go is closest to the total still wanted.", [30, 286, 340, 123]]]],
    draw(t) { maze({ t, hi: [[0, 3, C.yellow, .4]] }); diaryTrails(B1, .25); pip(cx(0), cy(3), 1, t);
      const ex = B1.by[no(0, 3) - 1].slice().sort((a, b) => b.rtg - a.rtg), seen = new Set(), rows = [];
      for (const s of ex) { const k = f2(s.rtg) + s.m; if (seen.has(k)) continue; seen.add(k); rows.push(s); if (rows.length >= 4) break; }
@@ -110,12 +115,14 @@ const STEPS = [
  { h: 'Ask for 0.65', p: [`Now ask for the best total, 0.65. In cell 16 the closest return-to-go is ${f2(D65.tr[0].ex.rtg)}, from a diary back in cell 16 late in its walk, so Pip copies ${MV[D65.tr[0].m]}. After each move Pip subtracts its reward from the total still wanted, and looks again.`,
    `Pip reaches the cheese in ${D65.tr.length} moves: ${f2(D65.tot)}, beating every diary in the box, whose best scored ${f2(B1.best)}.`],
    shot: [5, 12],
+   say: [["Now ask for the best total, zero point six five.", [40, 16, 320, 256]], ["Watch Pip. At each cell, it copies the closest diary step, then subtracts its reward from the total still wanted.", [40, 16, 320, 256]], [["Seven moves, straight to the cheese.", [30, 300, 340, 64]], ["It beats every single diary in the box.", [30, 300, 340, 64]]]],
    draw(t) { maze({ t }); diaryTrails(B1, .2); const dur = .9, { k, m } = play(D65.tr, t - .8, dur, BLUE);
      const s = D65.tr[Math.min(k, D65.tr.length - 1)];
      card(m.done ? [{ s: `reached the cheese: total ${f2(D65.tot)}`, c: BLUE }, `best single diary: ${f2(B1.best)}`] : [`wanted from here: ${f2(s.want)}`, `cell ${no(s.c, s.r)}: closest diary to-go ${f2(s.ex.rtg)} → ${MV[s.m]}`], 1, { y: 300, gap: 0 }); } },
  { h: 'Pieces of different walks', p: [`How can it beat every diary? At each cell it copies a step from whichever diary fits the total still wanted, and those steps came from ${SRC.length} different diaries, the box’s only ${B1.cheese} that reached the cheese. Pieces of different walks make a better one: **stitching**.`,
    'The Decision Transformer paper saw this too: trained only on random walks, asking a high return gave short paths.'],
    shot: [4, 11],
+   say: [[["How can it beat every diary?", [40, 16, 320, 256]], ["Watch the colours. Its moves come from two different diaries, the only two that reached the cheese.", [40, 16, 320, 256]]], ["Pieces of different walks make a better one. That's called stitching.", [30, 292, 340, 60]]],
    draw(t) { maze({ t }); const cols = [BLUE, C.orange, PLUM, GREEN, C.rose, C.teal];
      D65.tr.forEach((s, i) => { const u = clamp((t - .5 - i * .6) * 2); if (u <= 0) return; const col = cols[SRC.indexOf(s.ex.w) % cols.length]; alpha(u, () => { pathLine([s], col, 3.2); }); });
      pip(cx(0), cy(3), 1, t);
@@ -123,11 +130,13 @@ const STEPS = [
  { h: 'Ask for less', p: [`The number is a dial. Ask for 0, and Pip reaches the cheese the long way, in ${D0.tr.length} moves: ${f2(D0.tot)}. Ask for −1.5, and it wanders until it is stopped after 30 moves: ${f2(DLO.tot)}.`,
    'Nobody wants a bad walk, but it shows the model really listens to the total it is given.'],
    shot: [6, 13],
+   say: [["The number you ask for is a dial.", [40, 16, 320, 256]], [["Ask for zero, and Pip reaches the cheese the long way, in twenty moves.", [40, 16, 320, 256]], ["Ask for minus one and a half, and it wanders until it's stopped.", [40, 16, 320, 256]]], "Nobody wants a bad walk. But it shows the model really listens."],
    draw(t) { maze({ t }); const tr = t < 7.5 ? D0.tr : DLO.tr, t0 = t < 7.5 ? .5 : 7.5; play(tr, t - t0, .3, t < 7.5 ? GREEN : C.rose);
      card([{ s: `asked 0 → got ${f2(D0.tot)} (${D0.tr.length} moves)`, c: GREEN }, { s: `asked −1.5 → got ${f2(DLO.tot)} (${endWord(DLO.end)})`, c: C.roseInk, a: 1 }], t - 1, { y: 300, gap: 6.5 }); } },
  { h: 'Asked versus got', p: [`Requests run from −1.5 to 1 in 0.05 steps. Across: the total asked. Up: the total got; on the dashed diagonal they match. Below −0.5 Pip always wanders until stopped, −1.50. No diary made a quick trip to the cat: the quickest of ${B1.cat} cat walks took ${Math.min(...B1.D.filter(tr => { const l = tr[tr.length - 1]; return G.term(l.nc, l.nr) < 0; }).map(tr => tr.length))} moves.`,
    `From −0.5 to 0.65 the dots sit on the diagonal. Above, they stay flat: asking 1 still gives ${f2(GOT[ASKS.indexOf(1)])}. No better walk exists to copy.`],
    shot: [4, 11],
+   say: [[["Here's every request, played from the start.", [40, 25, 340, 270]], ["Across is the total asked for. Up is the total got.", [40, 25, 340, 270]]], [["In the middle, the dots sit right on the diagonal. Pip gets what it asks for.", [40, 25, 340, 270]], ["At the top, they go flat. Ask for one, and you still get zero point six five. There's no better walk to copy.", [40, 25, 340, 270]]]],
    draw(t) { const x0 = 70, x1 = 360, y0 = 260, y1 = 40, lo = -1.6, hi = 1.05, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0), Y = v => y0 - (v - lo) / (hi - lo) * (y0 - y1);
      rline(x0, y0, x1, y0, 1900, { c: C.line, w: 1, once: true }); rline(x0, y0, x0, y1, 1901, { c: C.line, w: 1, once: true });
      [-1.5, -1, -0.5, 0, 0.5, 1].forEach(v => { txt(String(v).replace('-', '−'), X(v), y0 + 12, { s: 12, c: C.soft }); txt(String(v).replace('-', '−'), x0 - 8, Y(v), { s: 12, c: C.soft, al: 'right' }); });
@@ -140,16 +149,19 @@ const STEPS = [
  { h: 'Only what is in the box', p: [`Another box, ${B0.cheese === 0 ? 'where no diary ever reached the cheese' : ''}. Ask for 0.65 and Pip wanders until stopped: ${f2(E0.tot)}. No total, however high, can produce cheese steps never written down.`,
    `A copier is limited by its data’s pieces. Value learning on that box reaches no cheese either: it heads for the cat in ${Q0.tr.length} moves, ${f2(Q0.tot)}, the least bad ending it has seen.`],
    shot: [4, 11],
+   say: [["Here's another box. In this one, no diary ever reached the cheese.", [40, 16, 320, 256]], [["Ask for zero point six five, and Pip just wanders until it's stopped.", [40, 16, 320, 256]], ["No total, however high, can produce cheese steps that were never written down.", [30, 296, 340, 87]]]],
    draw(t) { maze({ t }); diaryTrails(B0, .4); play(E0.tr, t - 1, .2, C.rose);
      card([`this box: cheese ${B0.cheese}, cat ${B0.cat}`, { s: `asked 0.65 → got ${f2(E0.tot)} (${endWord(E0.end)})`, c: C.roseInk }, { s: `value learning: ${f2(Q0.tot)} (${endWord(G.term(Q0.tr[Q0.tr.length - 1].nc, Q0.tr[Q0.tr.length - 1].nr))})`, c: C.soft }], t - 4, { y: 296, gap: 1.2 }); } },
  { h: 'When pieces do not join', p: [`A third box holds every piece of the 7-move route. Asked for 0.65, Pip still takes ${E2.tr.length} moves: ${f2(E2.tot)}. In cell ${no(E2.tr[DIV2].c, E2.tr[DIV2].r)} the closest return-to-go came from a diary going ${MV[E2.tr[DIV2].m]}, the long way.`,
    `Value learning, here a table over logged moves only, so nothing is invented, finds ${f2(Q2.tot)}: a move’s value is its reward plus the best value where it lands, so good endings flow back through shared cells. The lookup joins pieces only when the countdown lines up.`],
    shot: [5, 12],
+   say: [["A third box holds every piece of the seven move route.", [40, 16, 320, 256]], [["But watch. Asked for zero point six five, Pip takes nine moves.", [40, 16, 320, 256]], ["In one cell, the closest return to go came from a diary going the long way.", [40, 16, 320, 256]]], ["Value learning finds the seven move route. Good endings flow back through shared cells.", [30, 300, 340, 64]]],
    draw(t) { maze({ t }); diaryTrails(B2, .2); alpha(clamp(t - 6), () => pathLine(Q2.tr, GREEN, 2.4, Q2.tr.length, -4)); play(E2.tr, t - .5, .6, BLUE);
      card([{ s: `lookup, asked 0.65: ${f2(E2.tot)} in ${E2.tr.length} moves`, c: BLUE }, { s: `value learning: ${f2(Q2.tot)} in ${Q2.tr.length} moves`, c: GREEN }], t - 6, { y: 300, gap: 1 }); } },
  { h: 'A hundred boxes', p: ['Now 100 boxes per size: 5, 10, 20, 40 and 80 diaries. Across: diaries per box. Up: boxes of 100 giving the 7-move walk. Grey: a single diary already was it. Blue: the lookup asked for 0.65. Green: value learning.',
    'Both join pieces far beyond any single diary. The lookup is less reliable: with 40 diaries, 78 boxes against 85.'],
    shot: [5, 12],
+   say: [[["Now a hundred boxes of each size.", [40, 40, 330, 245]], ["Up is how many boxes give the seven move walk.", [40, 40, 330, 245]]], [["Grey is a single diary that already was the best walk. Rare.", [40, 40, 330, 245]], ["Blue is the lookup. Green is value learning.", [40, 40, 330, 245]], ["Both stitch far beyond any single diary. But the lookup is less reliable.", [30, 300, 340, 64]]]],
    draw(t) { const done = manyStep(t > .3 ? 12 : 0), x0 = 70, x1 = 350, y0 = 250, y1 = 60, X = i => x0 + i / (SIZES.length - 1) * (x1 - x0), Y = v => y0 - v / NBOX * (y0 - y1);
      rline(x0, y0, x1, y0, 2000, { c: C.line, w: 1, once: true }); rline(x0, y0, x0, y1, 2001, { c: C.line, w: 1, once: true });
      SIZES.forEach((s, i) => txt(String(s), X(i), y0 + 12, { s: 12, c: C.soft })); [0, 50, 100].forEach(v => txt(String(v), x0 - 8, Y(v), { s: 12, c: C.soft, al: 'right' }));
@@ -164,18 +176,21 @@ const STEPS = [
    'Watch where it lands below 0.65, and what happens when you ask for more than the maze allows.'],
    shot: [4, 10],
    tap(x, y, st) { st.b = st.b ? 0 : 1; st.changed = performance.now() / 1000; st.t0 = null; },
+   say: [["Your turn. Drag the total to ask for, and Pip plays it from the start.", [40, 16, 320, 256]], [["Tap the maze to switch to the third box, where the pieces don't line up.", [40, 16, 320, 256]], "Watch what happens when you ask for more than the maze allows."]],
    draw(t, st) { const a = SL[st.ci ?? 5], B = st.b ? B2 : B1, R = dtOf(B, st.b ? 2 : 1, a); if (st.key !== a + ':' + (st.b | 0)) { st.key = a + ':' + (st.b | 0); st.t0 = t; }
      maze({ t }); diaryTrails(B, .2); play(R.tr, t - st.t0 - .3, R.tr.length > 14 ? .22 : .45, BLUE);
      card([`${st.b ? 'third' : 'first'} box, asked ${String(a).replace('-', '−')}`, { s: `got ${f2(R.tot)} in ${R.tr.length} moves (${endWord(R.end)})`, c: BLUE }, { s: 'tap the maze to switch box', c: C.soft }], 1, { y: 296, gap: 0 }); } },
  { h: 'Where it came from', p: ['Lili Chen and colleagues introduced the **Decision Transformer** in 2021, alongside the similar Trajectory Transformer. On offline Atari and robot benchmarks, it matched that era’s offline RL methods.',
    'Later studies found stitching unreliable, as here, and that in worlds with chance it copies merely lucky moves: on a wet floor, a lucky slide carries a high return-to-go, so a high request copies it. Its appeal: training is plain, stable prediction.'],
    shot: [3, 10],
+   say: [[["The Decision Transformer came from Lili Chen and colleagues, in 2021.", [40, 40, 330, 90]], "It matched the offline RL methods of its time."], [["Later studies found stitching unreliable, as you saw.", [30, 200, 340, 87]], "And in worlds with chance, it can copy moves that were merely lucky."]],
    draw(t) { notebook(60, 80, 1.6); txt('logged games', 90, 140, { s: 14, c: C.soft });
      alpha(clamp(t - 1.5), () => { arrow(150, 80, 220, 80, 2100, { c: C.ink }); rrect(230, 50, 120, 60, 2101, { fill: '#e3eef8' }); txt('transformer', 290, 74, { s: 16 }); txt('predicts the move', 290, 94, { s: 13, c: C.soft }); });
      card(['2021: Decision Transformer (Chen et al.)', '2021: Trajectory Transformer (Janner et al.)', { s: 'later: stitching and luck found to be weak spots', c: C.soft }], t - 4, { y: 200, gap: 1.1 }); } },
  { h: 'Recap', p: ['A **Decision Transformer** treats RL as sequence prediction: write each logged step as return-to-go, state and action, and learn to predict the action.',
    'At play time, ask for a high return and subtract rewards as they arrive. It can join pieces of walks, but less reliably than value learning, and it cannot use pieces the data never had.'],
    shot: [3, 9],
+   say: ["So that's the Decision Transformer. RL as sequence prediction.", [["Write each step as return to go, state and move, and learn to predict the move.", [30, 290, 340, 110]], ["At play time, ask for a high total, and subtract rewards as they come.", [30, 290, 340, 110]]], "It stitches less reliably than value learning, and it can't use pieces the data never had."],
    draw(t) { maze({ t }); pathLine(D65.tr, BLUE, 2.6); pip(cx(4) - 18, cy(0) + 4, 1, t);
      card(['tokens: return-to-go, cell, move', 'train: predict the logged move', 'play: ask for a total, subtract rewards', { s: 'weak at stitching; limited by its data', c: C.goldInk }], t - .3, { y: 290, gap: 1 }); } },
 ];

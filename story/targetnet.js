@@ -260,45 +260,53 @@ function twoNets(t, o = {}) { const net = need('n0_0') ? force('n0_0').snaps[S0]
 const STEPS = [
  { h: 'Where replay left off', p: ['The DQN reel spotted the problem: the target is computed by the same network being nudged, so it moves with the guess. Pip keeps the replay memory from the last reel; now we look at that chase up close.', 'A card’s target is the reward plus 0.9 × the largest Q-value where Pip landed. Who supplies that Q-value? The very network being trained.'],
    shot: [3, 9],
+   say: [["Pip keeps its replay memory from last time. Now we zoom in on the other problem."], [["Here's Pip's network.", [40, 284, 135, 104]], ["To build a target, it needs the best value where Pip landed.", [30, 110, 340, 64]], ["And who supplies that value? The very network being trained.", [30, 110, 340, 64]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); twoNets(t);
      if (t > 3) dimScene(.6 * clamp(t - 3)); card(['target = reward + 0.9 × largest Q where it landed', { s: '          ↑ read off the same network', c: C.roseInk }], t - 3, { y: 110, gap: 1.6, fs: 16 }); } },
  { h: 'One card, many steps', get p() { const N = nums(); return [`An experiment: take Pip’s network after 3000 moves of training, and one card. From (0.50, 0.20) Pip moved right to (0.65, 0.20), reward 0.`,
      `The network values this move at ${f2(N.live.q[0])}; its target is 0 + 0.9 × the best Q-value at the landing spot = ${f2(N.live.g[0])}. Now take ${NSTEP} small gradient steps on this one card and watch both.`]; },
    shot: [3, 9],
+   get say() { const N = nums(); return [["Let's run a small experiment, with one single card."], [["Watch Pip step right, from here to the landed spot. No reward.", [64, 8, 272, 268]]], [`The network values that move at ${f2(N.live.q[0])}.`, ["Its target is zero point nine times the best value where Pip landed.", [30, 292, 340, 87]], "Now we train on this card alone, and watch both numbers."]]; },
    draw(t) { cardScene(t, clamp(t - .5)); D.pipAt(lerp(A[0], B[0], ease((t - 1) / 1.2)), A[1] + .05, 1, t); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums();
      card([`this move’s Q-value:  ${f2(N.live.q[0])}`, `target:  0 + 0.9 × ${f2(N.live.g[0] / D.GAM)}  =  ${f2(N.live.g[0])}`, { s: 'experiment: learn from this one card only', c: C.soft }], t - 2, { gap: 1.3 }); } },
  { h: 'Chasing your own shadow', get p() { const N = nums(); return [`Each step pulls gold toward teal, but teal moves too. After ${NSTEP} steps gold is ${f2(last(N.live.q))} and the target ${f2(last(N.live.g))}, levelling off. No new information came in; whatever the true value, this climb came from the chase alone.`,
      'Why? The nearby landing spot shares the same 76 knobs. Raising the value here raises it there, so the target runs ahead: **chasing your own shadow**.']; },
    shot: [4, 12],
+   get say() { const N = nums(); return [[["Watch the two lines.", [40, 300, 330, 115]], ["Gold is the move's value. Teal is its target.", [40, 300, 330, 115]], ["Gold climbs toward teal, but teal climbs too.", [40, 300, 330, 115]]], [`Gold ends near ${f2(last(N.live.q))}, and nothing new was learned at all.`, "The landing spot is close by, and shares the same knobs. Raise one, and the other rises too. Pip is chasing its own shadow."]]; },
    draw(t) { cardScene(t, .8); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums(), n = clamp(Math.floor((t - .8) * 25), 0, NSTEP + 1);
      const c = expChart({ title: 'one card, step by step', series: [{ v: N.live.g, col: gcol, w: 2, n }, { v: N.live.q, col: qcol, w: 2, n }] });
      if (n > 1) { const i = n - 1; txt(f2(N.live.q[i]), c.X(i) + 4, c.Y(N.live.q[i]) + 10, { s: 13, c: C.goldInk, al: 'left' }); txt(f2(N.live.g[i]), c.X(i) + 4, c.Y(N.live.g[i]) - 10, { s: 13, c: gcol, al: 'left' }); }
      txt('gold: Q-value of the move', 120, 411, { s: 13, c: C.goldInk }); txt('teal: its target', 290, 411, { s: 13, c: gcol }); } },
  { h: 'Freeze a copy', p: ['The fix: keep a second network, a **frozen copy** of Pip’s network, used only to compute targets. It is called the **target network**. Training changes the live network; the copy stays as it was.', 'Now the target is reward + 0.9 × the largest Q-value **the copy** gives at the landing spot.'],
    shot: [3, 9],
+   say: [["The fix is simple. Keep a second network, a frozen copy, just for targets."], [["The live network on the left learns and acts.", [40, 284, 135, 104]], ["The copy on the right stays still.", [230, 284, 135, 104]]], [["Now the target reads the copy's best value instead.", [30, 100, 340, 87]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); if (t > 3.2) dimScene(.6 * clamp(t - 3.2)); twoNets(t, { copy: 1.2, arrowA: 2 });
      card(['live network: what Pip trains and acts with', 'frozen copy: only supplies the targets', { s: 'target = reward + 0.9 × copy’s best Q there', c: C.goldInk }], t - 3.2, { y: 100, gap: 1.3, fs: 16 }); } },
  { h: 'The chase stops', get p() { const N = nums(); return [`Same card, same ${NSTEP} steps, but the target comes from the frozen copy. Teal stays at ${f2(N.frozen.g[0])}, and gold reaches it, to within 0.01, after ${N.frozen.q.findIndex((v, i) => Math.abs(v - N.frozen.g[i]) < .01)} steps, then stays there.`,
      'With the target held still, each update solves an ordinary fitting problem: hit a fixed number.']; },
    shot: [4, 11],
+   get say() { const N = nums(); return [[["Same card, same steps, but now the target comes from the frozen copy.", [40, 300, 330, 115]], ["Watch teal. It stays flat.", [40, 300, 330, 115]], `Gold reaches it in ${N.frozen.q.findIndex((v, i) => Math.abs(v - N.frozen.g[i]) < .01)} steps, and stops.`], ["With the target held still, it's just ordinary fitting. Hit a fixed number."]]; },
    draw(t) { cardScene(t, .8); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums(), n = clamp(Math.floor((t - .8) * 25), 0, NSTEP + 1);
      expChart({ title: 'one card, target from the frozen copy', series: [{ v: N.live.g, col: gcol, w: 1, a: .25 }, { v: N.live.q, col: qcol, w: 1, a: .25 }, { v: N.frozen.g, col: gcol, w: 2, n }, { v: N.frozen.q, col: qcol, w: 2, n }] });
      txt('faint: the chase from before', W / 2, 411, { s: 13, c: C.soft, a: clamp(t - 2) }); } },
  { h: 'Refresh every N updates', get p() { const N = nums(); return [`A copy frozen forever would never learn, so every **N** updates the live knobs are copied into it. Here N = ${REF}: the target holds, gold catches up, the target jumps.`,
      `One card anchors nothing, so the drift remains, slower: ${f2(last(N.stairs.q))} after ${NSTEP} steps instead of ${f2(last(N.live.q))}. The copy slows the loop but does not remove it. In real training, other cards bring real information.`]; },
    shot: [4, 11],
+   get say() { const N = nums(); return ["A copy frozen forever would never learn. So every so often, we refresh it with the live knobs.", [["Watch the staircase.", [40, 300, 330, 115]], ["The target holds, gold catches up, then the target jumps.", [40, 300, 330, 115]]], [`The drift is still there, just slower. Gold ends at ${f2(last(N.stairs.q))}.`, "In real training, other cards bring real information to anchor it."]]; },
    draw(t) { cardScene(t, .8); if (!need('n0_0')) { busy(progress(['n0_0'])); return; } const N = nums(), n = clamp(Math.floor((t - .8) * 25), 0, NSTEP + 1);
      const c = expChart({ title: `one card, copy refreshed every ${REF} steps`, series: [{ v: N.stairs.g, col: gcol, w: 2, n, step: 1 }, { v: N.stairs.q, col: qcol, w: 2, n }] });
      for (let i = REF; i < Math.min(n, NSTEP); i += REF) txt('copy', c.X(i), 411, { s: 12, c: C.soft });
      if (n < 2) return; } },
  { h: 'Back to real training', p: ['Now full training: 8000 moves with replay, once with live targets and once with a copy refreshed every 100 updates. Same seeds.', 'The chart tracks the largest Q-value at Pip’s start spot, bottom left, over 8000 moves of experience. Orange: live targets. Teal: with the copy. At move 0 the number comes from random knobs.'],
    shot: [4, 12],
+   say: [["Now back to full training, with replay, and the same seeds. Once with live targets, once with a copy."], [["We'll track one number, the best value at Pip's start spot.", [64, 8, 272, 268]]], [["Watch the lines draw.", [40, 300, 330, 100]], ["Orange uses live targets. Teal uses the copy.", [40, 300, 330, 100]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); spotDot(.1, .1, C.ink, 'start', clamp(t - 1), -22); if (busyKeys(['n0_0', 'n100_0'])) return; const N = nums(), n = clamp(Math.floor((t - 3) * 1100), 0, 8000), samp = r => Array.from(r.probe).filter((_, i) => i % 50 === 0);
      chart({ x0: 64, x1: 356, y0: 388, y1: 316, lo: -.2, hi: .8, xmax: 160, yt: [0, .4, .8], xl: ['move 0', '8000'], title: 'largest Q-value at the start (run 1)',
        series: [{ v: samp(N.r0), col: C.orange, w: 1.3, n: n / 50 }, { v: samp(N.r100), col: '#3f8582', w: 1.6, n: n / 50 }] }); } },
  { h: 'Calmer numbers', get p() { const N = nums(), a = N.per[0], b = N.per[2]; return [`Live targets jitter. Measure the **jumps**: the average size of the change between readings 100 moves apart, over moves 4000 to 8000, four runs each: ${f2(a.jit)} with live targets, ${f2(b.jit)} with the copy.`,
      `Cheese from 30 test spots after 8000 moves: ${f1(last(a.ev))} against ${f1(last(b.ev))}. So in this meadow replay did most of the work; the copy mainly steadies the numbers and adds a little.`]; },
    shot: [4, 12],
+   get say() { const N = nums(), a = N.per[0], b = N.per[2]; return [[["Here's the second half of training, four runs each.", [40, 28, 330, 236]], ["Orange jitters. Teal is calmer.", [40, 28, 330, 236]]], [`On average, live targets jump about ${f2(a.jit)} between readings, the copy only ${f2(b.jit)}.`, ["Reaching the cheese, they're close. Replay did most of the work here. The copy mainly steadies things.", [30, 296, 340, 87]]]]; },
    draw(t) { if (busyKeys(keysN(0).concat(keysN(100)))) return; const N = nums(), samp = r => Array.from(r.probe).filter((_, i) => i % 50 === 0).slice(80), n = clamp(Math.floor((t - .5) * 30), 0, 80);
      const ser = []; K.forEach(k => { ser.push({ v: samp(force('n0_' + k)), col: C.orange, w: 1.1, n, a: .7 }); ser.push({ v: samp(force('n100_' + k)), col: '#3f8582', w: 1.4, n, a: .9 }); });
      chart({ x0: 64, x1: 356, y0: 250, y1: 40, lo: -.1, hi: .8, xmax: 80, yt: [0, .4, .8], xl: ['move 4000', '8000'], title: 'largest Q-value at the start, 4 runs each', series: ser });
@@ -306,16 +314,19 @@ const STEPS = [
  { h: 'Your turn', get p() { const N = nums(); return ['Drag **N**, the number of updates between refreshes of the copy (four runs each; “none” means live targets).',
      `Too often, and the chase is back. Too rarely, and the targets go stale: N = 1000 gives only ${force('n1000_0').copies.length} refreshes in the run, the calmest numbers (jumps ${f2(N.per[3].jit)}), but only ${f1(last(N.per[3].ev))} of 30 spots reach the cheese. N = 100 balances the two here.`]; },
    ctl: { label: 'N', values: NS, def: 2, fmt: v => v ? v : 'none', onChange: st => {} }, shot: [3, 9],
+   get say() { const N = nums(); return ["Your turn. Drag N, how many updates pass before the copy is refreshed.", [["Watch the start value as you change it.", [40, 28, 330, 236]], "Refresh too often, and the chase comes back."], [["Refresh too rarely, and the targets go stale.", [30, 292, 340, 106]], `At a thousand, the numbers are calmest, but only ${f1(last(N.per[3].ev))} spots out of thirty reach the cheese.`]]; },
    draw(t, st) { const N0 = NS[st.ci ?? 2], keys = keysN(N0); if (busyKeys(keys)) return; const r = force(keys[0]), ev = avgEv(keys), n = clamp(Math.floor((t - (st.changed ?? 0) - .2) * 40), 0, 160), js = keys.map(k => jit(force(k)));
      const samp = Array.from(r.probe).filter((_, i) => i % 50 === 0);
      chart({ x0: 64, x1: 356, y0: 250, y1: 40, lo: -.2, hi: .8, xmax: 160, yt: [0, .4, .8], xl: ['move 0', '8000'], title: 'largest Q-value at the start (run 1)', series: [{ v: samp, col: '#3f8582', w: 1.5, n }] });
      card([N0 ? `copy refreshed every ${N0} updates` : 'no copy: targets from the live network', `jumps per 100 moves: ${f2(js.reduce((a, b) => a + b, 0) / 4)}`, `cheese from 30 spots after 8000 moves: ${f1(last(ev))}`, { s: 'averages over 4 runs', c: C.soft }], 10, { y: 292, lh: 22, fs: 16 }); } },
  { h: 'Where it’s used', p: ['DQN (2015) used a target network refreshed every 10,000 updates. Without it, still with replay, its Breakout score fell from about 317 to about 241.', 'Many later methods, like DDPG and SAC, use **soft updates** instead: after every update the copy moves a tiny fraction, such as half a percent, toward the live network, so the target drifts smoothly.'],
    shot: [3, 9],
+   say: [[["DQN, in twenty fifteen, refreshed its copy every ten thousand updates.", [30, 100, 340, 110]], ["Without it, its Breakout score fell from about three hundred and seventeen to about two hundred and forty one.", [30, 100, 340, 110]]], [["Later methods, like DDPG and SAC, blend instead. The copy slides a tiny bit toward the live network after every update.", [30, 100, 340, 110]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); dimScene(.6);
      card(['2015  DQN: copy every 10,000 updates', '        Breakout: about 317 with it, 241 without', 'soft updates: copy = 99.5% copy + 0.5% live', { s: '        every update; used by DDPG and SAC', c: C.soft }], t - .5, { y: 100, gap: 1.2, fs: 16 }); } },
  { h: 'Recap', p: ['When a network computes its own targets, every update moves the target it chases: the numbers can drift and wobble.', 'A **target network**, a frozen copy refreshed every N updates, holds the targets still, so each stretch of training is a fixed fitting problem. Refresh too rarely and learning slows.'],
    shot: [3, 9],
+   say: [["When a network builds its own targets, every update moves the thing it's chasing."], [["A frozen copy, refreshed every so often, holds the target still.", [30, 90, 340, 110]], "Refresh too often, and the chase returns. Too rarely, and learning goes stale."]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); dimScene(.6); twoNets(t, { copy: .3, arrowA: .5, arrowLab: 'every N' });
      card(['target = r + 0.9 × best Q of the frozen copy', 'every N updates: copy ← live network', 'N too small: chase · N too big: stale', { s: 'soft version: blend a little every update', c: C.soft }], t - .3, { y: 90, gap: 1 }); } },
 ];

@@ -226,31 +226,37 @@ function tv(x, y, s, t, k = 0) { const w = 92 * s, h = 70 * s; rrect(x, y, w, h,
 const STEPS = [
  { h: 'From values to choices', get p() { return ['In the last reel a tiny network learned the **values** of Pip’s meadow habit. But a fixed habit’s values don’t say how to do better.', 'The maze had **Q-learning**: a number Q per spot and move, “how good is this move here, if I play well afterwards”. On the meadow, where spots never repeat, a Q table is as impossible as a value table.']; },
    shot: [3, 9],
+   say: [[["Back on the meadow.", [60, 8, 280, 270]], ["Last reel, a network learned how good each spot was, under Pip's habit.", [60, 8, 280, 270]]], [["But to do better, Pip needs a number for each move. Watch the four arrows.", [60, 8, 280, 270]], ["That's Q-learning. And spots never repeat, so a table won't work.", [30, 292, 340, 87]]]],
    draw(t) { D.meadow({ t, labels: 1 }); axes(.7); D.pipAt(S0[0], S0[1], 1, t);
      [0, 1, 2, 3].forEach(m => { const u = clamp(t - 1.5 - m * .4); if (u <= 0) return; const [dx, dy] = D.MOVES[m]; alpha(u, () => arrow(px(S0[0]) + dx * 10, py(S0[1]) - dy * 10, px(S0[0]) + dx * 30, py(S0[1]) - dy * 30, 1500 + m, { c: C.goldInk, w: 1.6, head: 5 })); });
      card(['values of a habit: how good is this spot', { s: 'Q-values: how good is each move from here', c: C.goldInk }, { s: 'a table? no spot ever repeats', c: C.roseInk }], t - 3, { gap: 1.3 }); } },
  { h: 'Q-learning, remembered', get p() { return ['After each move, Q-learning nudges that move’s number toward a **target**: the reward + 0.9 × the **largest** Q at the landing spot, or just the reward if the walk ended. Taking the largest means: assume Pip plays its best from there.', 'And Pip acts **ε-greedy**, said epsilon-greedy: one move in five at random, to keep exploring; otherwise the largest-Q move.']; },
    shot: [3, 9],
+   say: [[["Quick reminder of Q-learning.", [30, 292, 340, 110]], ["After each move, nudge its number toward the reward, plus zero point nine times the best Q where Pip landed.", [30, 292, 340, 110]]], [["And Pip acts epsilon greedy. One move in five at random.", [30, 292, 340, 110]]]],
    draw(t) { D.meadow({ t, heatA: 0 }); D.pipAt(S0[0], S0[1], 1, t);
      card(['target = reward + 0.9 × largest Q at landing', '               (just the reward if the walk ended)', 'nudge Q(spot, move) toward the target', { s: 'act: 1 in 5 random, else the largest Q', c: C.soft }], t - .5, { gap: 1.3, y: 290 }); } },
  { h: 'One output per move', get p() { return ['The fix, as in the last reel: a network. This one has **four outputs**, one Q-value per move: up, right, down, left. Feed in Pip’s four measurements, and one pass gives all four. That is a **Deep Q-Network**, or DQN.', `Its 76 knobs start random. At the start spot it says: up ${f2(Q0[0])}, right ${f2(Q0[1])}, down ${f2(Q0[2])}, left ${f2(Q0[3])}. Pure noise, for now.`]; },
    shot: [3, 10],
+   say: [[["The fix is a network, as in the last reel. Watch it build.", [90, 20, 230, 260]], ["This one has four outputs, one Q value per move.", [90, 20, 230, 260]]], [["One pass gives all four. That's a Deep Q Network, DQN.", [30, 292, 340, 87]], "Its knobs start random, so for now its numbers are pure noise."]],
    draw(t) { D.drawNet(NET0, { x: 110, y: 30, w: 170, h: 220 }, { inL: ['x', 'y', 'to cheese', 'to cat'], outL: MN, outFmt: f2, f: t > 2.5 ? D.feats(S0[0], S0[1]) : null, build: clamp((t - .3) / 2.5), hl: t > 5 ? D.argmax(Q0) : null });
      txt('measurements', 82, 268, { s: 13, c: C.soft }); txt('8 hidden units', 195, 268, { s: 13, c: C.soft }); txt('Q per move', 300, 268, { s: 13, c: C.soft });
      card(['4 inputs → 8 hidden → 4 outputs', `4 × 8 + 8 + 8 × 4 + 4 = 76 knobs`, { s: 'highest output = the move Pip would pick', c: C.soft }], t - 4); } },
  { h: 'The simple way: learn as you go', get p() { const F = ONLINE().first, q = F.q0, m = F.m, o = q.map((v, k) => k).filter(k => k !== m).sort((a, b) => q[b] - q[a])[0]; return [`First try: after each move, one nudge on its output. Move ${F.s + 1} was ${F.rnd ? 'a random step ' + MN[m] : 'a step ' + MN[m] + ', its untrained numbers’ favourite, by a hair: ' + f3(q[m]) + ' against ' + f3(q[o]) + ' for ' + MN[o]}. It went from (${fx(F.x)}, ${fx(F.y)}) into the cat: target −1.`, `One nudge took “${MN[m]}” from ${f3(q[m])} to ${f3(F.q1[m])}. Every knob moves only about 0.003 per nudge, so one bad moment can’t wipe out everything; the other outputs, sharing knobs, moved a little too.`]; },
    shot: [3, 10],
+   say: [[["First, the simple way. One nudge after each move.", [60, 8, 280, 270]], ["Watch move thirty seven. A step left, straight into the cat.", [60, 8, 280, 270]]], [["One nudge lowers left a little.", [70, 290, 260, 108]], ["Each nudge is small, so one bad moment can't wipe out everything.", [70, 290, 260, 108]]]],
    draw(t) { const F = ONLINE().first, aft = t > 6; D.meadow({ t }); ring(F.x, F.y, C.ink, clamp(t - .5)); const u = ease(clamp((t - 1.5) / 1)); D.pipAt(lerp(F.x, F.nx, u), lerp(F.y, F.ny, u), 1, t);
      if (t > 2.4) bubble('−1', px(CAT[0]), py(CAT[1]) - 22, t - 2.4, C.roseInk);
      if (t > 3) { box(70, 290, 260, 108, C.card, .95); rrect(70, 290, 260, 108, 211, { c: C.line, w: 1.1 }); qBars(aft ? F.q1 : F.q0, 96, 318, { w: 210, h: 48, lo: -.7, hi: .7, hl: F.m }); txt(aft ? 'after one nudge' : `Q-values at (${fx(F.x)}, ${fx(F.y)}), before`, 200, 300, { s: 13, c: C.soft }); } } },
  { h: 'It flounders', get p() { return [`Pip learns this way for ${n0(STEPS_N)} moves, from random starts. Black dots: 30 fixed test spots, tried every 250 moves by largest Q, no random moves. The chart counts walks reaching the cheese.`, `It hardly learns: ${ONLINE().ev.filter(v => v <= 1).length} of ${ONLINE().ev.length} tests reach the cheese at most once. ${lastJump(ONLINE().ev)}`]; },
    shot: [4, 12],
+   say: [[["Pip learns this way for eight thousand moves.", [60, 8, 280, 270]], ["Every so often, thirty test walks check how it's doing.", [60, 8, 280, 270]]], [["The chart counts walks that reach the cheese.", [20, 285, 360, 115]], ["It hardly learns. Mostly near zero.", [20, 285, 360, 115]]], "Only the very last test scores well. Nothing to rely on."],
    draw(t) { const R = ONLINE(), n = clamp(Math.floor((t - 1) * 3), 0, R.ev.length), net = tagNet(R.run.snaps[Math.max(0, n - 1)].net);
      D.meadow({ t, heat: maxQ(net), heatA: .7 }); if (t > 1) testWalks(net, 3, .9);
      evChart([{ v: R.ev, col: C.rose, n, label: String(R.ev[R.ev.length - 1]) }], n, { now: n ? `after ${n0(n * SNAP)} moves` : '' });
      txt('walks: teal = cheese, rose = cat, grey = neither', W / 2, 280, { s: 13, c: C.soft, a: clamp(t - 1) }); } },
  { h: 'Problem 1: a target that runs away', get p() { const E = ONLINE().ex; return ['Unlike a table, the target comes from the **same network**, at a spot only 0.15 away: nudge the guess up and the target rises too.', `Here the target moved a median ${f2(ONLINE().med)} times as far as the guess, the same way ${Math.round(ONLINE().same * 100)} percent of the time, so a nudge closes only a sliver of the gap: ${f3(E.t0 - E.q0)} to ${f3(E.t1 - E.q1)}. Frozen targets, the **target network** reel, mostly steady the numbers here; the next problem matters more.`]; },
    shot: [4, 11],
+   say: [[["Problem one. The target comes from the same network.", [60, 8, 280, 270]], ["At a spot only a step away.", [60, 8, 280, 270]]], [["Watch the bars. Nudge the guess up, and the target rises too.", [40, 290, 320, 110]], ["So the gap barely closes.", [40, 290, 320, 110]]]],
    draw(t) { const E = ONLINE().ex, u = clamp((t - 3) / 1.2); D.meadow({ t }); D.pipAt(E.x, E.y, D.MOVES[E.m][0] || 1, t); ring(E.nx, E.ny, C.goldInk, clamp(t - 1));
      const [dx, dy] = D.MOVES[E.m]; alpha(clamp(t - .5), () => arrow(px(E.x) + dx * 12, py(E.y) - dy * 12, px(E.nx) - dx * 10, py(E.ny) + dy * 10, 1700, { c: C.goldInk, w: 1.6, head: 5 }));
      box(40, 290, 320, 110, C.card, .95); rrect(40, 290, 320, 110, 212, { c: C.line, w: 1.1 });
@@ -262,12 +268,14 @@ const STEPS = [
      txt(`before: guess ${f3(E.q0)}, target ${f3(E.t0)}`, 200, 318, { s: 13, c: C.soft }); if (t > 4.4) txt(`one nudge: both went up · gap ${f3(E.t0 - E.q0)} → ${f3(E.t1 - E.q1)}`, 200, 394, { s: 13, c: C.soft }); } },
  { h: 'Problem 2: one moment at a time', get p() { return ['Second problem: moves arrive in order. The rose dots: 60 consecutive moves early in the next run, a few walks each hugging one patch or fence. The network bends toward each patch in turn, drifting elsewhere.', 'Random old moves from a memory, the blue dots, would mix the whole meadow into each lesson. That is **experience replay**, its own reel.']; },
    shot: [4, 11],
+   say: [[["Problem two. Moves arrive in order.", [60, 8, 280, 270]], ["Watch the rose dots. Sixty moves in a row, hugging one patch.", [60, 8, 280, 270]]], [["The network bends toward each patch in turn.", [30, 312, 340, 64]], ["Random old moves, the blue dots, would mix the whole meadow into each lesson.", [60, 8, 280, 270]]]],
    draw(t) { const P = FULL().pos, a0 = A0W, n = clamp(Math.floor((t - .5) * 12), 0, 60); D.meadow({ t }); D.path(P.slice(a0, a0 + n), n, { c: C.rose, r: 2.6 });
      if (n > 0) caption(`moves ${a0 + 1} to ${a0 + 60}, in order`, clamp(t - .5));
      if (t > 6.5) { const R = rng(77), u = clamp(Math.floor((t - 6.5) * 10), 0, 32); for (let i = 0; i < u; i++) { const p = P[Math.floor(R() * (a0 + 60))]; dot(px(p[0]), py(p[1]), 3, C.blue, .9); } }
      card([{ s: 'in order: one patch at a time', c: C.roseInk }, { s: '32 random picks from all moves so far', c: '#4f74a0' }], t - 3, { y: 312, gap: 3.5 }); } },
  { h: 'DQN’s two fixes', get p() { return ['DeepMind’s DQN adds two things. A **replay memory** keeps the last 2000 moves; each move, Pip draws 32 at random, a **batch** that may include the newest, and makes one nudge from their average error.', 'A **target network**, a frozen copy refreshed every 100 nudges, so every 100 moves, computes targets. Each fix has its own reel; here both are on.']; },
    shot: [3, 10],
+   say: [[["DQN adds two fixes.", [20, 30, 360, 130]], ["First, a replay memory. Pip learns from thirty two random old moves at a time.", [30, 40, 160, 110]]], [["Second, a target network. A frozen copy, refreshed now and then, sets the targets.", [210, 40, 160, 110]]], [["Same network, same knobs, same meadow.", [30, 300, 340, 64]]]],
    draw(t) { D.meadow({ t, heatA: 0, tufts: .5 }); box(0, 0, W, 285, C.bg, .55);
      const a = clamp(t - .6), b = clamp(t - 3);
      alpha(a, () => { rrect(30, 40, 160, 110, 1201, { fill: C.card }); txt('replay memory', 110, 56, { s: 16, c: '#4f74a0' }); for (let i = 0; i < 40; i++) box(42 + (i % 10) * 14, 70 + Math.floor(i / 10) * 16, 11, 12, C.blue, .25 + .5 * ((i * 37) % 11) / 11); txt('nudge with 32 random picks', 110, 140, { s: 13, c: C.soft }); });
@@ -275,17 +283,20 @@ const STEPS = [
      card(['memory 2000 · batch 32 · copy every 100 moves', { s: 'same network, same 76 knobs, same meadow', c: C.soft }], t - 5.5, { y: 300 }); } },
  { h: 'Now it learns', get p() { return [`Same ${n0(STEPS_N)} moves, same dice: blue DQN, rose the simple version. DQN first scores 28 of 30 or better after ${n0((firstAt(FULL().ev, 28) + 1) * SNAP)} moves, and after ${n0(STEPS_N)} gets all ${FULL().ev[FULL().ev.length - 1]}.`, 'Effort was unequal: each DQN nudge averages 32 moves, a simple nudge one. The replay reel’s fair race still has memory winning clearly. Over 12 seeds DQN usually ended near 30, the simple one mostly far lower.']; },
    shot: [5, 12],
+   say: [[["Now run it again, with both fixes. Blue is DQN.", [20, 285, 360, 115]], ["Watch the test walks turn teal.", [60, 8, 280, 270]]], [["By the end, all thirty reach the cheese.", [20, 285, 360, 115]], ["The faint rose line is the simple version, far behind.", [20, 285, 360, 115]]]],
    draw(t) { const R = FULL(), n = clamp(Math.floor((t - 1) * 3), 0, R.ev.length), net = tagNet(R.snaps[Math.max(0, n - 1)].net);
      D.meadow({ t, heat: maxQ(net), heatA: .7 }); if (t > 1) testWalks(net, 3, .9);
      evChart([{ v: ONLINE().ev, col: '#e7a9a9', w: 1.1, label: String(ONLINE().ev[ONLINE().ev.length - 1]), dy: 6 }, { v: R.ev, col: '#4f7fb0', n, label: String(R.ev[R.ev.length - 1]), dy: -6 }], n, { now: n ? `DQN after ${n0(n * SNAP)} moves` : '' });
      txt('walks: teal = cheese, rose = cat, grey = neither', W / 2, 280, { s: 13, c: C.soft, a: clamp(t - 1) }); } },
  { h: 'What the network learned', get p() { return [`Best move per grid spot; colour is the largest Q. From the bottom left: up the side, along the top; from the right: straight up. Mostly it rounds the cat, but ${BELOWUP().up} of ${BELOWUP().n} spots right below it still point up, into it.`, `From the start: ${M('gwS', () => D.greedyWalk(FULL().net, S0[0], S0[1], 9100)).P.length - 1} moves; over 200 wobbles, ${AVG12().toFixed(1)} on average. Five up and five right take about 10: good, not best. It learned this from moves and rewards alone.`]; },
    shot: [4, 11],
+   say: [[["Here's what the network learned.", [60, 8, 280, 270]], ["Each arrow is its best move. Colour is how good that move looks.", [60, 8, 280, 270]]], [["Mostly it rounds the cat, though a few spots right below still point into it.", [60, 8, 280, 270]], ["Watch the teal walk from the start. Twelve moves. Good, not perfect.", [60, 8, 280, 270]]]],
    draw(t) { const n = FULL().net; D.meadow({ t, heat: maxQ(n), heatA: clamp(t - .3) }); qArrows(n, clamp(t - 1.5));
      const w = M('gwS', () => D.greedyWalk(n, S0[0], S0[1], 9100)); if (t > 4) D.path(w.P, clamp(Math.floor((t - 4) * 3), 0, w.P.length), { c: C.teal, r: 2.6 }); D.pipAt(S0[0], S0[1], 1, t);
      card(['arrow: the move with the largest Q', 'colour: that largest Q (gold = good)', { s: 'teal: Pip’s walk from the start, no random moves', c: C.soft }], t - 2, { y: 300 }); } },
  { h: 'Inside the network', get p() { const q = D.qOf(FULL().net, S0[0], S0[1]), n = M('gwS', () => D.greedyWalk(FULL().net, S0[0], S0[1], 9100)).P.length - 1; return [`From the start spot, the outputs read up ${f2(q[0])}, right ${f2(q[1])}, down ${f2(q[2])}, left ${f2(q[3])}. Pip picks ${MN[D.argmax(q)]}.`, `The ${n}-move walk it takes is worth 0.9 to the power ${n - 1}, about ${f2(GAM ** (n - 1))}, less than its ${f2(Math.max(...q))}. Left, a wasted fence bump, scores above right, a good first move. It ranks the best move right here, but the numbers are only rough.`]; },
    shot: [3, 10],
+   say: [[["Inside the trained network, with Pip at the start.", [90, 20, 230, 260]], ["Up scores highest, so Pip goes up.", [70, 296, 260, 100]]], [["But the numbers are rough. Left, a wasted bump into the fence, scores above right.", [70, 296, 260, 100]], "It ranks the best move here, but the values are only approximate."]],
    draw(t) { const n = FULL().net, q = D.qOf(n, S0[0], S0[1]); D.drawNet(n, { x: 110, y: 30, w: 170, h: 220 }, { inL: ['x', 'y', 'to cheese', 'to cat'], outL: MN, outFmt: f2, f: D.feats(S0[0], S0[1]), hl: t > 3 ? D.argmax(q) : null });
      txt('trained network, Pip at the start', W / 2, 272, { s: 14, c: C.soft });
      if (t > 4) { box(70, 296, 260, 100, C.card, .95); rrect(70, 296, 260, 100, 213, { c: C.line, w: 1.1 }); qBars(q, 96, 314, { w: 210, h: 54, lo: 0, hi: .6, hl: D.argmax(q) }); } } },
@@ -293,6 +304,7 @@ const STEPS = [
    get p() { return ['**Tap a spot** on the meadow to drop Pip there. It walks by its network’s largest Q, no random moves. Teal ends at the cheese, rose at the cat, grey runs out of moves.', 'Slide to pick how long DQN trained. Early networks wander, bump the fence or walk into the cat; later ones take Pip round the cat to the cheese from almost anywhere.']; },
    shot: [3, 9],
    tap(x, y, st) { const wx = (x - FX) / FS, wy = 1 - (y - FY) / FS; if (wx < 0 || wx > 1 || wy < 0 || wy > 1 || D.zone(wx, wy)) return; st.tp = [wx, wy]; st.tt = null; },
+   say: [[["Your turn. Tap a spot to drop Pip there.", [60, 8, 280, 270]], ["It walks by its biggest Q, no random moves.", [60, 8, 280, 270]]], [["Slide to pick how long DQN trained.", [40, 290, 320, 50]], ["Early networks wander. Later ones round the cat, from almost anywhere.", [60, 8, 280, 270]]]],
    draw(t, st) { const k = this.ctl.values[st.ci ?? 4] - 1, n = tagNet(FULL().snaps[k].net), tp = st.tp || DEF_TP;
      if (st.tt == null || st.changed > st.tt || st.lastTp !== tp) { st.tt = t; st.lastTp = tp; }
      D.meadow({ t, heat: maxQ(n), heatA: .6 }); qArrows(n, .35);
@@ -302,6 +314,7 @@ const STEPS = [
      txt(st.tp ? (kk >= w.P.length ? (w.end > 0 ? `cheese in ${w.P.length - 1} moves` : w.end < 0 ? 'caught by the cat' : 'no ending in 60 moves') : '') : 'tap anywhere on the meadow', W / 2, 326, { s: 15, c: st.tp ? C.soft : C.goldInk, a: st.tp ? 1 : .6 + .4 * Math.sin(t * 3) }); } },
  { h: 'Atari, from pixels', get p() { return ['DQN made its name on Atari video games. In 2013 Volodymyr Mnih and colleagues at DeepMind trained it on seven games. In 2015, in Nature, one DQN with the **same network and settings** played **49 games**, learning from screen pixels and score alone.', 'Input: the last **four frames**, not four measurements, so motion was visible; outputs: one Q-value per joystick action.']; },
    shot: [3, 10],
+   say: [[["DQN made its name on Atari games.", [30, 40, 350, 160]], ["The input was the last four frames of the screen, so motion showed.", [30, 40, 350, 160]], ["The outputs, one Q per joystick action.", [30, 40, 350, 160]]], [["In twenty fifteen, one network with the same settings played forty nine games.", [30, 292, 340, 87]]]],
    draw(t) { [3, 2, 1, 0].forEach(k => alpha(clamp(t - .4 - (3 - k) * .4), () => tv(40 + k * 10, 50 + k * 10, 1.1, t - k * .12, k)));
      alpha(clamp(t - 2.5), () => { txt('last 4 frames', 110, 182, { s: 14, c: C.soft }); arrow(170, 95, 222, 95, 1300, { w: 1.6 });
        rrect(228, 60, 70, 70, 1301, { fill: C.card }); txt('network', 263, 95, { s: 15 }); arrow(304, 95, 330, 95, 1302, { w: 1.6 });
@@ -309,10 +322,12 @@ const STEPS = [
      card(['2013: 7 games · 2015 (Nature): 49 games', 'one network, same settings for every game', { s: 'input: pixels + score · output: Q per action', c: C.soft }], t - 4); } },
  { h: 'What it did, and didn’t', get p() { return ['DQN reached at least three quarters of a professional human tester’s score on 29 of the 49 games, and beat earlier learning methods on most.', 'It failed where rewards are rare, like **Montezuma’s Revenge**, where random moves almost never score. It needed tens of millions of frames per game, far more practice than a person. Later reels show replay, target networks and their successors.']; },
    shot: [3, 9],
+   say: [[["Forty nine games, one recipe.", [130, 30, 140, 130]]], [["It reached at least three quarters of a human tester's score on twenty nine of them.", [30, 292, 340, 87]], ["It failed where rewards are rare, like Montezuma's Revenge.", [30, 292, 340, 87]]], "And it needed far more practice than a person."],
    draw(t) { tv(150, 40, 1.1, t); txt('49 games, one recipe', W / 2, 140, { s: 17, c: C.ink, a: clamp(t - .5) });
      card([{ s: '≥ 75 % of a human tester: 29 of 49 games', c: C.goldInk }, { s: 'rare rewards (Montezuma’s Revenge): failed', c: C.roseInk }, { s: 'tens of millions of frames per game', c: C.soft }], t - 1.5, { y: 180, gap: 1.5 }); } },
  { h: 'Recap', get p() { return ['**DQN** is Q-learning with a neural network: Pip’s measurements in, one Q-value per move out, ε-greedy to act, and nudges toward reward + 0.9 × the largest Q at the landing spot.', 'Done naively, the targets run away and the lessons come one corner at a time. Replay memory and a target network made it learn, here on the meadow and on 49 Atari games.']; },
    shot: [3, 9],
+   say: [[["So, DQN is Q-learning with a neural network.", [30, 292, 340, 110]], ["Measurements in, one Q per move out.", [30, 292, 340, 110]]], ["Done naively, it flounders. Replay memory and a target network make it learn, on the meadow and on Atari."]],
    draw(t) { const n = FULL().net; D.meadow({ t, heat: maxQ(n), heatA: .6 }); qArrows(n, .5); D.pipAt(S0[0], S0[1], 1, t);
      card(['network: measurements in, a Q per move out', 'target: reward + 0.9 × largest Q at landing', 'replay memory: learn from random old moves', { s: 'target network: a frozen copy sets the targets', c: C.soft }], t - .3, { gap: 1 }); } },
 ];

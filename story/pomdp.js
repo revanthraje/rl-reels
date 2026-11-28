@@ -137,15 +137,18 @@ const KEEP = (b, i) => b.map((v, x) => v > .004 ? x + 1 : 0).filter(Boolean);
 const STEPS = [
  { h: 'A maze built for fog', p: ['A new maze, built to show one problem: a corridor of seven cells, numbered 1 to 7, with three rooms below: the cheese under cell 4, cats under cells 1 and 7.', 'The usual rules: +1 for stepping onto the cheese, −1 onto a cat, either ends the walk, γ (gamma) 0.9. Each walk starts in one of the seven cells, picked at random.'],
    shot: [3, 9],
+   say: [[["Here's a new maze, built to show one problem.", [20, 25, 360, 125]], ["A corridor of seven cells, with three rooms below.", [20, 25, 360, 125]], ["The cheese sits under the middle cell. Cats wait under both ends.", [20, 25, 360, 125]]], [["The usual rules apply. And each walk starts in a random corridor cell.", [30, 292, 340, 110]]]],
    draw(t) { mazeDraw({ t, draw: t / 1.5, pop: ease((t - 1.6) * 2), nums: clamp(t - 2.4) }); pip(cx(1), cy(0), 1, t, clamp(t - 3));
      if (t > 4) card(['corridor cells 1 to 7, three rooms below', { s: 'onto the cheese +1, onto a cat −1: walk over', c: C.goldInk }, 'up, or down into a wall: a bump, Pip stays', { s: 'γ = 0.9; start: any of cells 1 to 7, at random', c: C.soft }], t - 4, { gap: 1.2 }); } },
  { h: 'Fog', p: ['Now the fog comes in. Pip sees only its own cell, and even there only which sides are walls and which are open. No cheese, no cats, no cell numbers.', 'What Pip senses is its **observation**. Where it really is, the cell, is still the **state**, but Pip cannot see it.'],
    shot: [3, 9],
+   say: [[["Now the fog rolls in.", [20, 25, 360, 125]], ["Pip can no longer see the cheese, the cats, or even the cell numbers.", [20, 25, 360, 125]]], [["All it can feel is which sides of its own cell are walls.", [140, 160, 120, 110]]], [["What Pip senses is its observation. Where it really is, is still the state. Pip just can't see it.", [30, 292, 340, 87]]]],
    draw(t) { const f = clamp((t - .8) / 1.5); mazeDraw({ t, nums: 1 - f, fog: f, see: 1 }); pip(cx(1), cy(0), 1, t);
      if (t > 3) { feel(1, 200, 210, 54, clamp(t - 3)); txt('what Pip feels in cell 2', 200, 168, { s: 15, c: C.soft, a: clamp(t - 3) }); txt('walls above and below, open left and right', 200, 258, { s: 14, c: C.soft, a: clamp(t - 3.6) }); }
      if (t > 5) card([{ s: 'state: the cell Pip is in (hidden)', c: '#3f7f7c' }, { s: 'observation: what Pip can sense right now', c: C.goldInk }, { s: 'here: walls or openings on its four sides', c: C.soft }], t - 5, { gap: 1.2 }); } },
  { h: 'Only four feelings', p: ['Walking the corridor, Pip can feel only four different things. Cell 1: a wall on the left, an opening below. Cell 7: the mirror image. Cell 4: open left, right and below.', 'And cells 2, 3, 5 and 6 all feel exactly the same: walls above and below, open on both sides. Call that feeling **corridor**.'],
    shot: [4, 11],
+   say: [[["Walk the corridor, and Pip can feel only four different things.", [20, 165, 360, 100]], ["The left end. The right end. The junction above the cheese.", [20, 165, 360, 100]]], [["And this one, corridor. Four cells all feel exactly alike.", [20, 25, 360, 245]]], [["Seven cells, but only four feelings.", [30, 292, 340, 64]]]],
    draw(t) { mazeDraw({ t, nums: 1, fog: .35 }); const xs = [62, 160, 250, 338];
      [0, 3, 2, 1].forEach((o, i) => { const u = clamp(t - .8 - i * 1.4); if (u <= 0) return; feel(o, xs[i], 196, 34, u); txt(ON[o], xs[i], 228, { s: 14, a: u, c: o === 1 ? C.roseInk : C.ink });
        txt('cell' + (OCELLS[o].length > 1 ? 's ' : ' ') + OCELLS[o].map(x => x + 1).join(', '), xs[i], 248, { s: 13, a: u, c: C.soft });
@@ -153,6 +156,7 @@ const STEPS = [
      if (t > 6.5) card([{ s: '7 cells, but only 4 different feelings', c: C.ink }, { s: 'corridor = cell 2, 3, 5 or 6: Pip cannot tell which', c: C.roseInk }], t - 6.5, { gap: 1.2 }); } },
  { h: 'Twins that need opposite moves', p: ['Cells 3 and 5 feel identical, yet from cell 3 the cheese is to the right, and from cell 5 to the left. Likewise cells 2 and 6.', 'So what Pip feels does not tell it what to do. In the MDP reel’s words, the observation is **not Markov**: what happens next depends on more than what Pip can sense.'],
    shot: [3, 9],
+   say: [[["Look at cells three and five.", [20, 25, 360, 125]], ["From three, the cheese is to the right. From five, it's to the left.", [20, 25, 360, 125]]], [["Yet they feel exactly the same.", [80, 175, 240, 95]], ["Same feeling, opposite best moves.", [80, 175, 240, 95]]], [["So the observation alone is not Markov. What happens next depends on more than what Pip can sense.", [30, 292, 340, 64]]]],
    draw(t) { mazeDraw({ t, nums: 1, hi: [[2, 0, C.rose, .25 * clamp(t - .5)], [4, 0, C.rose, .25 * clamp(t - .5)]] });
      if (t > 1.5) { const u = clamp(t - 1.5); alpha(u, () => { rarrow(cx(2), cy(0) + 6, RIGHT, C.goldInk, 610); rarrow(cx(4), cy(0) + 6, LEFT, C.goldInk, 615); rarrow(cx(1), cy(0) + 6, RIGHT, C.goldInk, 620); rarrow(cx(5), cy(0) + 6, LEFT, C.goldInk, 625); }); }
      if (t > 3) { feel(1, 130, 200, 40, clamp(t - 3)); feel(1, 270, 200, 40, clamp(t - 3)); txt('cell 3', 130, 236, { s: 14, a: clamp(t - 3) }); txt('cell 5', 270, 236, { s: 14, a: clamp(t - 3) }); txt('=', 200, 200, { s: 28, a: clamp(t - 3.6) });
@@ -160,22 +164,26 @@ const STEPS = [
      if (t > 6) card(['same feeling, opposite best moves', { s: 'the observation alone is not Markov', c: C.roseInk }], t - 6, { gap: 1.2 }); } },
  { h: 'A name for it: POMDP', p: ['Underneath, nothing changed: states, moves, rewards and γ are still an MDP. Add one thing, which observation each state gives, and you have a **partially observable** MDP: a **POMDP**, said “pom-dee-pee”.', 'The true state is still Markov. It is just hidden behind the observations.'],
    shot: [3, 9],
+   say: ["Underneath, nothing changed. It's still an MDP.", [["Add one thing, what each state lets Pip sense, and you get a partially observable MDP.", [30, 170, 340, 87]], ["A POMDP, said pom dee pee.", [30, 170, 340, 87]]], [["Pip gets corridor, never cell three. The true state is still there, just hidden.", [30, 300, 340, 64]]]],
    draw(t) { mazeDraw({ t, nums: 1, fog: .2 });
      card(['MDP: states, moves, P(s′ | s, a), rewards, γ', { s: '+ observations: what each state lets Pip sense', c: C.goldInk }, { s: '= POMDP: the state is there, but hidden', c: '#3f7f7c' }], t - .6, { y: 170, gap: 1.5 });
      if (t > 5) card([{ s: 'here: cell 3 → “corridor”, cell 4 → “junction”', c: C.soft }, { s: 'Pip gets “corridor”, never “cell 3”', c: C.soft }], t - 5, { y: 300, gap: 1.2 }); } },
  { h: 'A rule from what Pip feels', p: ['The simplest policy maps the current observation straight to a move. It has no memory, so it is called **memoryless**.', 'Three entries are easy: left end, go right; junction, go down; right end, go left. But a memoryless rule has one entry for “corridor”, so all four corridor cells must get the same move.'],
    shot: [3, 10],
+   say: ["The simplest rule maps what Pip feels straight to a move. No memory at all.", [["Three entries are easy. Left end, go right. Junction, go down. Right end, go left.", [20, 165, 360, 100]], ["But corridor gets just one entry.", [20, 165, 360, 100]]], [["So all four corridor cells must share the same move.", [30, 292, 340, 64]]]],
    draw(t) { mazeDraw({ t, fog: .6 }); const rows = [[0, 'go right'], [2, 'go down'], [3, 'go left'], [1, '?']];
      rows.forEach(([o, s], i) => { const u = clamp(t - .8 - i * 1.1); if (u <= 0) return; const x = 50 + i * 92; feel(o, x + 18, 196, 30, u); txt(ON[o], x + 18, 226, { s: 13, a: u, c: C.soft }); txt(s, x + 18, 250, { s: 16, a: u, c: o === 1 ? C.roseInk : C.goldInk }); });
      if (t > 5.5) card(['memoryless policy: observation → move', { s: 'one entry for “corridor”, shared by cells 2, 3, 5, 6', c: C.roseInk }], t - 5.5, { gap: 1.2 }); } },
  { h: 'Corridor means right', p: [`Try “corridor: go right”. Cells 1 to 4 work. But start in cell 5: right to 6, right to 7, the right end says left, back to 6, which feels like corridor: right again. Pip shuttles **forever**.`, `So it reaches the cheese from ${NOK(R_R)} of 7 starts. “Corridor: go left” fails on the other side, also ${NOK(R_L)} of 7. Up and down only bump.`],
    shot: [4, 11],
+   say: ["Try corridor means right.", [["Start in cell five and watch.", [20, 25, 360, 125]], ["Right, right, the end turns Pip around. Then it feels corridor again, and goes right.", [20, 25, 360, 240]], ["Pip shuttles back and forth, forever.", [20, 25, 360, 125]]], [["It reaches the cheese from only four of seven starts. Corridor means left fails the same way, on the other side.", [30, 292, 340, 64]]]],
    draw(t) { const D = .9, m = walkAt(LOOP, Math.max(0, t - .8), D), k = Math.min(LOOP.length - 1, m.k); mazeDraw({ t, nums: 1, fog: .45, see: m.done ? 5 : LOOP[k].x }); pip(m.x, m.y, m.face, t);
      if (t > .8) { const s = LOOP[k]; feel(OBS(s.x), 200, 196, 34, 1); txt(`feels ${ON[OBS(s.x)]}  →  ${MN[s.m]}`, 200, 236, { s: 16, c: OBS(s.x) === 1 ? C.roseInk : C.goldInk }); }
      caption(m.done ? 'and so on, forever (we stop a walk after 50 steps)' : `step ${Math.min(LOOP.length, m.k + 1)}`);
      if (t > 9) card([`corridor → right:  cheese from ${NOK(R_R)} of 7 starts (1 to 4)`, `corridor → left:  cheese from ${NOK(R_L)} of 7 starts (4 to 7)`], t - 9, { gap: 1.1 }); } },
  { h: 'Roll a die?', p: [`One trick helps a little: in the corridor, flip a coin: left or right. Now every start reaches the cheese, with dithering. Average return over the 7 starts: ${f2(AV.coin)}, against ${f2(AV.right)} for “always right”.`, `Seeing its cell, Pip would go straight: ${f2(AV.see)}. No memoryless rule can. With the full state a fixed rule always suffices; under fog, a random one can beat every fixed one.`],
    shot: [3, 10],
+   say: ["One trick helps a little. In the corridor, flip a coin.", [["Now every start reaches the cheese, with some dithering.", [30, 150, 345, 120]], ["Average return rises from zero point four nine to zero point six two.", [30, 150, 345, 120]], ["Seeing its cell, Pip would score zero point eight four.", [30, 150, 345, 120]]], [["Under fog, a random rule can beat every fixed one.", [30, 292, 340, 64]]]],
    draw(t) { mazeDraw({ t, nums: 1, fog: .3 });
      const items = [['always right', AV.right, C.rose], ['coin flip in the corridor', AV.coin, C.orange], ['if Pip could see its cell', AV.see, C.teal]];
      txt('average return over the 7 starts', 40, 162, { s: 14, c: C.soft, al: 'left' });
@@ -184,6 +192,7 @@ const STEPS = [
      if (t > 6) card([{ s: 'a stochastic rule can beat every fixed one here', c: C.ink }, { s: 'but no rule on observations alone sees the cell', c: C.soft }], t - 6, { gap: 1.2 }); } },
  { h: 'Fix one: remember', p: ['Give Pip a one-item memory: **the move it just made**. Now “corridor, going right” and “corridor, going left” are different situations, each with its own entry.', `Rule: in the corridor keep going the way you were; with no memory yet, go right. From cell 5: right, right, the end turns it around, then left, left, left, down. Cheese in ${MEMW.length} steps.`],
    shot: [4, 12],
+   say: ["Fix one. Give Pip a tiny memory, the move it just made.", [["Now corridor going right and corridor going left are different situations.", [70, 170, 280, 80]]], [["Watch from cell five. Right, right, the end turns it around, then left, left, left, and down.", [20, 25, 360, 125]], ["Cheese in six steps.", [20, 25, 360, 125]], ["Now every start reaches the cheese.", [30, 292, 340, 87]]]],
    draw(t) { const D = .9, m = walkAt(MEMW, Math.max(0, t - 1.2), D), k = Math.min(MEMW.length - 1, m.k); mazeDraw({ t, nums: 1, fog: .45, see: m.done ? -1 : MEMW[k].x }); pip(m.x, m.y, m.face, t);
      if (t > 1.2) { const s = MEMW[k], last = k ? MN[MEMW[k - 1].m] : 'none yet'; feel(OBS(s.x), 120, 200, 34, 1); txt(ON[OBS(s.x)], 120, 232, { s: 14, c: C.soft });
        txt('+', 170, 200, { s: 22 }); txt(`last move: ${last}`, 260, 200, { s: 16, c: '#3f7f7c' }); txt(`→ ${MN[s.m]}`, 260, 228, { s: 17, c: C.goldInk }); }
@@ -191,16 +200,19 @@ const STEPS = [
      if (t > 8.5) card([`memory rule: cheese from ${NOK(R_MEM)} of 7 starts`, { s: `average return ${f2(AV.mem)}   (seeing the cell: ${f2(AV.see)})`, c: C.soft }, { s: 'no memory on move 1: cells 5 and 6 detour', c: C.soft }], t - 8.5, { gap: 1.2 }); } },
  { h: 'Learning in the fog', p: [`Can Q-learning find them? Same settings: one move in five random, α (alpha) 0.2. Across: walks. Up: return, averaged over the last 20 walks and ${NRUN} runs.`, `Grey dashed: Pip seeing its cell. Lines start below 0: early walks often meet a cat. Rose, learning from feelings, stalls near ${f2(LEARN.feel.last100)}: its one corridor entry mixes opposite-move twins, and a greedy rule cannot flip a coin.`],
    shot: [4, 12],
+   say: ["Can Q-learning find a good rule by itself?", [["Watch the chart. The grey dashed line is Pip learning while seeing its cell.", [20, 205, 370, 195]], ["Rose learns from feelings only.", [20, 205, 370, 195]]], [["Rose stalls, near zero point three seven.", [20, 205, 370, 195]], "Its one corridor entry mixes twins that need opposite moves."]],
    draw(t) { mazeDraw({ t, nums: 1, fog: .45 }); const n1 = clamp(Math.floor((t - 2.5) * 80), 0, NWALK), n2 = clamp(Math.floor((t - 6.5) * 80), 0, NWALK);
      txt('Q-learning, ε 0.2, α 0.2, γ 0.9', 200, 170, { s: 15, c: C.soft });
      chart({ y0: 388, y1: 222, title: `return, last 20 walks, mean of ${NRUN} runs`, lines: [{ v: LEARN.see.sm, col: '#9a9187', dash: 1, n: n1, label: 'sees its cell', lc: C.soft, dy: -9 }, { v: LEARN.feel.sm, col: C.rose, n: n2, label: 'feels only', lc: C.roseInk, dy: 10 }] }); } },
  { h: 'Memory pays, slowly', p: [`Teal learns from what Pip feels plus its last move. At first no better, with more situations to fill; then it pulls ahead: ${f2(LEARN.mem.last100)} against ${f2(LEARN.feel.last100)} over the last 100 walks.`, `After ${NWALK} walks, the rose runs’ best moves reach the cheese from ${LEARN.feel.ok.toFixed(1)} of 7 starts on average; the teal runs’, ${LEARN.mem.ok.toFixed(2)}. All lines include random exploring moves, so even grey stays below ${f2(AV.see)}.`],
    shot: [4, 12],
+   say: [[["Teal learns from feelings plus the last move.", [20, 205, 370, 195]], ["At first it's no better. There are more situations to fill.", [20, 205, 370, 195]], ["Then it pulls ahead, to zero point five four.", [20, 205, 370, 195]]], [["After three hundred walks, teal's best moves reach the cheese from almost every start.", [30, 40, 340, 87]]]],
    draw(t) { const n3 = clamp(Math.floor((t - 1) * 70), 0, NWALK);
      chart({ y0: 388, y1: 222, title: `return, last 20 walks, mean of ${NRUN} runs`, lines: [{ v: LEARN.see.sm, col: '#9a9187', dash: 1, label: 'sees its cell', lc: C.soft, dy: -9 }, { v: LEARN.feel.sm, col: C.rose, label: 'feels only', lc: C.roseInk, dy: 10 }, { v: LEARN.mem.sm, col: '#3f9a96', w: 2.2, n: n3, label: 'feels + last move', lc: '#2f6f6c', dy: -9 }] });
      if (t > 6) card([`best moves after ${NWALK} walks, cheese from:`, { s: `feels only: ${LEARN.feel.ok.toFixed(1)} of 7 starts on average`, c: C.roseInk }, { s: `feels + last move: ${LEARN.mem.ok.toFixed(2)} of 7 (${LEARN.mem.all7} of ${NRUN} runs: all 7)`, c: '#2f6f6c' }], t - 6, { y: 40, gap: 1.2 }); } },
  { h: 'Fix two: a belief', p: ['Fix two needs more knowledge. Give Pip **the map**: where each move leads and what each cell feels like, but not its own position. Then it can keep a **belief**: its chance of each cell, shown as shading.', `At first, 1 in 7 per cell, about ${f2(1 / 7)}. Then Pip feels “corridor”, which only cells 2, 3, 5 and 6 feel like: 1 in 4 each.`],
    shot: [3, 10],
+   say: ["Fix two needs more knowledge. Give Pip the map, but not its own position.", [["Now it can keep a belief, its chance of being in each cell. Shading shows it.", [20, 25, 360, 140]], ["At first, every cell is equally likely.", [20, 25, 360, 140]]], [["Then Pip feels corridor. Only four cells fit, so each gets one in four.", [20, 25, 360, 140]]]],
    draw(t) { const b = t < 5 ? BX[0] : BX[1], u = t < 5 ? 1 : ease((t - 5) / .8), bel = BX[0].map((v, x) => lerp(v, BX[1][x], t < 5 ? 0 : u));
      mazeDraw({ t, nums: 1, fog: .25, bel, belNums: 1 }); pip(cx(4), cy(0) - 2, 1, t, .25); txt('true cell (Pip can’t tell)', cx(4), OY - 12, { s: 12, c: C.soft, a: .8 });
      belCaption(t < 5 ? 'start: every cell equally likely' : 'feels “corridor”: only 2, 3, 5, 6 fit', clamp(t - 1));
@@ -208,6 +220,7 @@ const STEPS = [
      card(['belief = a chance for every cell, adding up to 1', { s: 'needs the map: what each cell feels like', c: C.soft }], t - 7, { gap: 1.2 }); } },
  { h: 'Move, then look', p: ['Pip moves right. Not knowing from where, it shifts **every** chance one cell right: cell 2’s to 3, cell 6’s to 7, and so on.', 'Then it feels corridor again. Cells 4 and 7 do not feel like that, so their chances are wiped out. Cells 3 and 6 remain, scaled back up to add to 1: one half each.'],
    shot: [5.5, 8.5, 12],
+   say: [[["Pip moves right.", [20, 25, 360, 140]], ["It doesn't know from where, so every chance shifts one cell right.", [20, 25, 360, 140]]], [["Then it feels corridor again.", [20, 25, 360, 140]], ["Cells that don't feel like that are wiped out. Two remain, at one half each.", [20, 25, 360, 140]]], [["Move, then look. That's the whole update.", [30, 292, 340, 64]]]],
    draw(t) { let bel, cap; if (t < 3) { bel = BX[1]; cap = 'before: 2, 3, 5, 6'; } else if (t < 7) { const u = ease((t - 3) / 1.2); bel = BX[1].map((v, x) => lerp(v, BX[2][x], u)); cap = 'after moving right: 3, 4, 6, 7'; } else { const u = ease((t - 7) / 1.2); bel = BX[2].map((v, x) => lerp(v, BX[3][x], u)); cap = 'feels “corridor”: only 3 and 6 fit'; }
      const pm = walkAt([{ x: 4, m: RIGHT, nx: 5 }], clamp(t - 3, 0, 1), 1); mazeDraw({ t, nums: 1, fog: .25, bel, belNums: 1 }); pip(pm.x, cy(0) - 2, 1, t, .25);
      if (t > 3 && t < 6.5) for (let x = 1; x < 6; x++) if (BX[1][x] > .01) alpha(clamp((t - 3) * 2) * (1 - clamp((t - 5.8) * 2)), () => arrow(cx(x) - 4, OY + CS + 10, cx(x + 1) - 8, OY + CS + 10, 640 + x, { c: '#2f6f6c', w: 1.5, head: 5 }));
@@ -215,6 +228,7 @@ const STEPS = [
      card(['1. move: shift every chance the way the move goes', '2. look: keep the cells that feel like this, rescale'], t - 1, { gap: 5.5 }); } },
  { h: 'Certain', p: ['Pip moves right again: chances shift to 4 and 7. It feels the **right end**, unique to cell 7: now Pip is certain.', `The map’s plan: left, left, left, down. Moving right led away from the cheese, but bought **information**: ${2 + 4} moves in all, as many as the memory rule. “Go right until sure” was hand-made; generally, planning from a belief is its own problem.`],
    shot: [3.5, 7, 13],
+   say: [[["Pip moves right once more.", [20, 25, 360, 140]], ["Now it feels the right end. Only one cell feels like that.", [20, 25, 360, 140]], ["The belief collapses. Pip is certain.", [20, 25, 360, 240]]], [["Watch it follow the map. Left, left, left, and down.", [20, 25, 360, 125]]], [["Moving right earned nothing directly. But it told Pip where it was.", [30, 292, 340, 64]]]],
    draw(t) { let bel; if (t < 2.5) { const u = ease((t - .6) / 1.2); bel = BX[3].map((v, x) => lerp(v, BX[4][x], u)); } else { const u = ease((t - 3) / 1); bel = BX[4].map((v, x) => lerp(v, BX[5][x], u)); }
      const P = [{ x: 5, m: RIGHT, nx: 6 }], pm = walkAt(P, clamp(t - .6, 0, 1), 1);
      const plan = [{ x: 6, m: LEFT, nx: 5 }, { x: 5, m: LEFT, nx: 4 }, { x: 4, m: LEFT, nx: 3 }, { x: 3, m: DOWN, nx: 3, d: true }], q = t > 7 ? walkAt(plan, t - 7, .9) : null;
@@ -225,6 +239,7 @@ const STEPS = [
      if (t > 7.5) card(['moving right earned nothing directly', { s: 'but it told Pip where it was: information', c: C.goldInk }], t - 7.5, { gap: 1.2 }); } },
  { h: 'Shaky whiskers', p: [`Say each feeling is right 9 times in 10, else a random other one; moves never skid. Looks now lower chances, not wipe them out. Same readings: ${f2(BS[5][6])} sure of cell 7.`, `Had the middle reading wrongly said “junction”, cell 7 still gets ${f2(BW[5][6])}: starts in 5 or 6 explain it, as right from 7 bumps. Cell 5 gets ${f2(BW[5][4])}: a start in 3, only the last reading wrong.`],
    shot: [4, 11],
+   say: ["Real whiskers are shaky. Say each feeling is right nine times in ten.", [["Now a look lowers chances, instead of wiping them out.", [20, 25, 360, 225]], ["With the same readings, Pip is zero point nine six sure of cell seven.", [20, 25, 360, 140]]], [["If the middle reading had been wrong, cell seven still leads, at zero point six six.", [20, 25, 360, 225]]]],
    draw(t) { const A = t < 6.5, B = A ? BS[5] : BW[5]; mazeDraw({ t, nums: 1, fog: .25, bel: B, belNums: 1 }); pip(cx(6), cy(0) - 2, -1, t, .25);
      const rd = A ? [1, 1, 3] : [1, 2, 3]; txt('readings:', 46, 176, { s: 15, c: C.soft, al: 'left' });
      rd.forEach((o, i) => { feel(o, 150 + i * 70, 178, 28, clamp(t - .5 - i * .5), !A && i === 1 ? C.roseInk : C.ink); txt(ON[o], 150 + i * 70, 204, { s: 12, c: !A && i === 1 ? C.roseInk : C.soft, a: clamp(t - .5 - i * .5) }); });
@@ -237,6 +252,7 @@ const STEPS = [
      const [nx, r, d] = step(st.x, b.m); st.n++; st.at = t; st.lastM = b.m;
      if (d) { st.ended = r; return; } st.x = nx; st.b = predict(st.b, b.m); const o = readFeel(st); st.log.push(o); st.b = look(st.b, o, ACCS[st.acc]); },
    shot: [3, 8],
+   say: ["Your turn. Pip starts in a hidden cell. Tap left, right or down to move it.", [["Watch the belief shift after each move, then sharpen after each feel.", [20, 25, 360, 140]]], ["Use the slider to make the whiskers unreliable, and see how much longer it takes to be sure."]],
    draw(t, st) { yt(st); const bm = st.b.indexOf(Math.max(...st.b));
      mazeDraw({ t, nums: 1, fog: .25, bel: st.ended ? null : st.b, belNums: st.ended ? 0 : 1 }); pip(cx(st.x), (st.ended ? cy(1) : cy(0)) - 2, st.lastM === LEFT ? -1 : 1, t, st.ended ? 1 : .3);
      if (st.ended) { txt(st.ended > 0 ? 'cheese! +1' : 'a cat! −1', 200, 168, { s: 20, c: st.ended > 0 ? C.goldInk : C.roseInk }); }
@@ -245,14 +261,17 @@ const STEPS = [
      card(st.ended ? [`walk over after ${st.n} moves`, { s: 'tap here for a new walk', c: C.soft }] : [`moves: ${st.n}    ` + (st.b.filter(v => v > st.b[bm] - 1e-6).length > 1 ? `tied: cells ${st.b.map((v, x) => v > st.b[bm] - 1e-6 ? x + 1 : 0).filter(Boolean).join(', ')}` : `most likely: cell ${bm + 1}, chance ${f2(st.b[bm])}`), { s: `faint mouse = true cell; whiskers right ${Math.round(ACCS[st.acc] * 100)}%`, c: C.soft }, { s: 'tap here for a new walk', c: C.soft }], 5, { gap: 0 }); } },
  { h: 'Memory or belief?', p: ['Built with the map from every move and look, a belief holds all history says of Pip’s place, so choosing from it is Markov again. But it needs the map, and one number per state: hopeless for big worlds.', 'Memory needs no map: deep RL often uses a **recurrent network**, like an LSTM, reading one observation at a time; ordinary training shapes what it keeps.'],
    shot: [3, 9],
+   say: [[["So, memory or belief?", [20, 25, 360, 140]], ["A belief holds everything the history says about Pip's place, so choosing from it is Markov again.", [30, 176, 340, 87]], ["But it needs the map, and a number for every state.", [30, 176, 340, 87]]], [["Memory needs no map. Deep RL often uses a recurrent network that learns what to keep.", [30, 176, 340, 87]]]],
    draw(t) { mazeDraw({ t, nums: 1, fog: .3, bel: BX[3], belNums: .8 });
      card([{ s: 'belief: needs the map, exact, one number per state', c: '#2f6f6c' }, { s: 'memory: no map, learns what to keep', c: C.goldInk }, { s: 'recurrent network: memory learned from data', c: C.soft }], t - .8, { y: 176, gap: 1.4 }); } },
  { h: 'Where you meet fog', p: ['In poker you cannot see the other cards, so good players and programs reason about what an opponent might hold, given their bets: a belief.', 'A self-driving car that loses sight of a cyclist behind a bus must remember the cyclist is probably still there. In the DQN reel, the Atari player took in four recent screens: a short memory, so motion could be seen.'],
    shot: [3, 9],
+   say: ["You meet fog everywhere.", [["In poker, you can't see the other cards, so you keep a belief about your opponent's hand.", [30, 176, 340, 87]], ["A self driving car must remember the cyclist hidden behind a bus.", [30, 176, 340, 87]]], [["And the Atari player in the DQN reel looked at four recent screens, a short memory.", [30, 176, 340, 87]]]],
    draw(t) { mazeDraw({ t, nums: 0, fog: .7 }); pip(cx(2), cy(0), 1, t, 1);
      card(['poker: hidden cards → a belief about hands', 'driving: a hidden cyclist → remember it', { s: 'Atari: last 4 screens → a short memory', c: C.soft }], t - .8, { y: 176, gap: 1.4 }); } },
  { h: 'Recap', p: ['In a **POMDP** the agent gets observations, not the state. Different states can look the same, so a rule on observations alone can fail, as Pip shuttled in the corridor.', 'Two fixes: **memory** of recent observations and moves, which Q-learning can learn without a map; or a **belief**, chances over states, updated after every move and look, which needs the map.'],
    shot: [3, 9],
+   say: ["So that's a POMDP. The agent sees observations, not the state.", [["Twins look the same, so a rule on observations alone can loop forever.", [30, 176, 340, 110]]], [["Two fixes. Remember what you saw and did. Or keep a belief, and update it with every move and look.", [30, 176, 340, 110]]]],
    draw(t) { mazeDraw({ t, nums: 1, fog: .3, bel: BX[3], belNums: .6 });
      card(['observation ≠ state: twins look the same', 'memoryless rules can loop forever', 'memory: remember what you saw and did', { s: 'belief: move → shift chances, look → reweigh', c: '#2f6f6c' }], t - .3, { y: 176, gap: 1 }); } },
 ];

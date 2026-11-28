@@ -97,60 +97,72 @@ function tapCell(x, y, st) { const c = Math.floor((x - OX) / CS), r = Math.floor
 const STEPS = [
  { h: 'Another way to plan', p: ['Wet floor: a tried move goes that way 8 times in 10, sliding to each side 1 in 10. Bumps leave Pip in place. Stepping **onto** the cheese pays +1, onto the cat −1, both end the walk, other steps pay 0, and γ (gamma) is 0.9.', 'We hold the rulebook, the **model**, so we plan at a desk, improving a whole plan in rounds.'],
    shot: [5, 11],
+   say: [[["Pip's maze again, on the wet floor.", [40, 16, 320, 256]], ["Eight times in ten a move goes straight. Otherwise, a slide.", [30, 292, 340, 87]]], [["We hold the rulebook again.", [30, 292, 340, 87]]], "But this time, instead of sweeping values, we'll improve a whole plan in rounds."],
    draw(t) { wet(clamp(t)); maze({ draw: t / 1.4, pop: { cheese: ease((t - 1.6) * 3), cat: ease((t - 2) * 3) }, labels: clamp(t - 2.6), t }); if (t > 2.4) pip(cx(0), cy(3), 1, t);
      if (t > 4.5) card(['wet floor: 0.8 straight, 0.1 slides to each side', 'cheese +1, cat −1 (walk ends) · else 0 · γ = 0.9', { s: 'we hold the rulebook; Pip just follows the plan', c: C.soft }], t - 4.5, { gap: 1.1, fs: 16 }); } },
  { h: 'A bad first plan', p: ['A **plan**, or **policy**, puts one arrow in every cell, and Pip always tries that move. Any randomness now comes from the floor alone.', 'Start with a plan that is clearly bad: every arrow points up. From the start, Pip walks up to the top corner and then pushes against the wall, moving on only when it happens to slide.'],
    shot: [3, 10],
+   say: [[["A plan puts one arrow in every cell.", [40, 16, 320, 256]], ["Let's start with a clearly bad one. Every arrow points up.", [40, 16, 320, 256]]], [["Watch Pip walk up to the top corner, and push against the wall.", [40, 16, 320, 256]], ["It only moves on when it happens to slide.", [40, 16, 320, 256]]]],
    draw(t) { wet(); maze({ t }); planArrows(RD[0].plan, (c, r) => clamp((t - .5 - key(c, r) * .08) * 3));
      const path = [[0, 3], [0, 2], [0, 1], [0, 0]], t2 = t - 3.5, k = clamp(Math.floor(t2 / .7), 0, 3), u = ease((t2 % .7) / .7 * 1.3);
      if (t2 < 0) pip(cx(0), cy(3), 1, t); else if (t2 < 2.1) { const a = path[k], b = path[Math.min(3, k + 1)]; pip(cx(a[0]), lerp(cy(a[1]), cy(b[1]), u), 0, t); } else { const bump = Math.sin(Math.PI * clamp(((t2 - 2.1) % 1) / .6)) * 10; pip(cx(0), cy(0) - bump, 0, t); txt('bump!', cx(0) + 30, cy(0) - 20, { s: 14, c: C.soft, a: clamp(t2 - 2.4) }); }
      if (t > 6) card(['plan: every arrow up', { s: 'Pip tries its arrow; only the floor adds chance', c: C.soft }], t - 6, { gap: 1.1 }); } },
  { h: 'Round 1: evaluate', p: ['First, measure this plan: compute its notebook as in the Bellman reel, now averaging over landings. Each cell: the average of reward + 0.9 × value there, using only the plan’s move.', `Sweep from zeros until nothing moves more than 0.001: ${RD[0].n} sweeps, more than value iteration needed, because its walks are long and news travels slowly. The start is worth only ${f2(V1[SK])}.`],
    shot: [4, 12],
+   say: ["Round one. First, measure this plan.", [["Watch the notebook fill in, sweep after sweep, using only the plan's moves.", [40, 16, 320, 256]]], [["It takes twenty four sweeps to settle.", [60, 392, 280, 24]], ["And the start is worth just zero point zero one.", [30, 292, 340, 87]]]],
    draw(t) { wet(); const F = evalFrame(RD[0].hist, t - .8, 7); maze({ V: F.V, t }); nums(F.V); planArrows(RD[0].plan, .45);
      caption(F.done ? `settled after ${F.n} sweeps` : `evaluation sweep ${F.k}`);
      if (t > 8.5) card(['value here = average over landings of', '      [ reward + 0.9 × value there ]   (plan’s move only)', { s: `start: ${f2(V1[SK])}`, c: C.goldInk }], t - 8.5, { gap: 1, fs: 16 }); } },
  { h: 'Reading the bad notebook', p: [`Below the cheese the plan is already right: up, to the cheese, worth ${f2(V1[K41])}. Beside the cheese it pushes into the wall; only a slide reaches the cheese: ${f2(V1[K30])}.`, `Below the cat, up walks straight into it: ${f2(V1[K32])}, and bottom-row cells lower left drift in too. Left of the cat: ${f2(V1[K21])}, as a slide onto the cat loses about what moving up gains.`],
    shot: [3, 10],
+   say: [[["Let's read this bad notebook.", [40, 16, 320, 256]], ["Below the cheese, up is already right. Zero point seven seven.", [40, 16, 320, 256]], ["Beside the cheese, up pushes into the wall.", [40, 16, 320, 256]]], [["And below the cat, up walks straight into it. Minus zero point eight three.", [40, 16, 320, 256]]]],
    draw(t) { wet(); const a1 = clamp(t - .5), a2 = clamp(t - 4.5); maze({ V: V1, t, hi: [[4, 1, C.gold, .3 * a1], [3, 0, C.gold, .25 * a1], [3, 2, C.rose, .3 * a2]] }); nums(V1); planArrows(RD[0].plan, .5);
      card([{ s: `below the cheese: up = cheese → ${f2(V1[K41])}`, c: C.goldInk }, { s: `beside the cheese: up = wall → ${f2(V1[K30])}`, c: C.goldInk }, { s: `below the cat: up = cat → ${f2(V1[K32])}`, c: C.roseInk }], t - 1, { gap: 1.8, fs: 16 }); } },
  { h: 'Round 1: improve', p: ['Fix the plan: score each move in every cell by this notebook, averaging reward + 0.9 × value over landings. That is its **Q**: the move once, then the plan. Point each arrow at the best Q, keeping old arrows on ties, so no flip-flops.', `Beside the cheese, up: ${f2(S30[0])}; right: 0.8 × 1 − 0.1 + 0.1 × 0.9 × ${f2(V1[K30])} = ${f2(HAND30R)}. Switch.`],
    shot: [4, 12],
+   say: [[["Now fix the plan. Take the cell beside the cheese.", [40, 16, 320, 256]], ["Score every move by this notebook. That's its Q.", [30, 292, 340, 110]]], [["Up, the current arrow, scores zero point four.", [30, 292, 340, 110]], ["Right scores zero point seven four. Switch!", [30, 292, 340, 110]]], "Ties keep the old arrow, so nothing flip flops."],
    draw(t) { wet(); maze({ V: V1, t, hi: [[3, 0, C.teal, .2]] }); nums(V1, (c, r) => (c === 3 && r === 0 ? 1 : .35)); planArrows(RD[0].plan, (c, r) => (c === 3 && r === 0 ? 1 - clamp(t - 9) : .35));
      if (t < 5) fan(3, 0, 1, t - .5, { gap: .7 }); if (t > 9) alpha(clamp(t - 9), () => G.arrowIn(3, 0, 1, 1700, { c: '#2f6f6c', w: 2.2 }));
      const ls = [1, 0, 3, 2].map(m => ({ s: `Q(${NAMES[m]}) = ${f2(S30[m])}${m === 1 ? '   ← best' : m === 0 ? '   (current arrow)' : ''}`, c: m === 1 ? C.goldInk : S30[m] < 0 ? C.roseInk : C.ink }));
      card(ls, t - 4.5, { gap: 1, fs: 16, lh: 22 }); } },
  { h: 'Ten arrows change', p: [`Done in every cell, ${RD[0].changed.length} of 16 arrows change. The top row now runs right; below the cat, the arrow turns away.`, 'Some look odd. Left of the cat it now pushes into the rock: up gains little, risks sliding onto the cat; the rock is safe. Two bottom-row cells point left. They win only by the bad plan’s notebook; next round rejudges them.'],
    shot: [3, 9],
+   say: [[["Do that in every cell. Watch the teal ones change.", [40, 16, 320, 256]], ["Ten arrows flip.", [30, 292, 340, 64]]], [["The top row now runs right. Below the cat, the arrow turns away.", [40, 16, 320, 256]], "Some look odd. They only win by the old plan's notebook. Next round rejudges them."]],
    draw(t) { wet(); const u = clamp(t - 1.5); maze({ V: V1, t }); nums(V1, .5); hiCells(RD[0].changed, C.teal, .3 * u);
      planArrows(t > 2.5 ? RD[0].np : RD[0].plan, 1, G, { c: (c, r) => (t > 2.5 && RD[0].changed.includes(key(c, r)) ? '#2f6f6c' : C.goldInk) });
      if (t > 4) card([`round 1: ${RD[0].changed.length} arrows changed (teal)`, { s: 'judged with the old plan’s notebook', c: C.soft }], t - 4, { gap: 1.1 }); } },
  { h: 'Round 2', p: [`Evaluate the new plan, starting its sweeps from the last notebook: ${RD[1].n} sweeps (from zeros it would take ${R2ZERO}). The start jumps from ${f2(V1[SK])} to ${f2(RD[1].V[SK])}.`, `Improve again with the new numbers: only ${RD[1].changed.length} arrows change. Left of the cat it points up again, below the cat it now goes down, around the cat, and one bottom-row cell turns right.`],
    shot: [5, 12],
+   say: [[["Round two. Measure the new plan.", [40, 16, 320, 256]], ["Watch the start jump, from zero point zero one to zero point three two.", [100, 298, 200, 28]]], [["Then improve again. Only three arrows change this time.", [40, 16, 320, 256]], ["Below the cat, it now goes down, around the cat.", [40, 16, 320, 256]]]],
    draw(t) { wet(); const { F, imp } = roundScene(UP, 1, t - .5, { ev: 4.5 }); caption(imp > 0 ? `improve: ${RD[1].changed.length} arrows change` : F.done ? `settled after ${F.n} sweeps` : `round 2, evaluation sweep ${F.k}`);
      txt(`start: ${f2(F.V[SK])}`, W / 2, 312, { s: 18, c: C.goldInk }); } },
  { h: 'Rounds 3 and 4', p: [`Round 3: ${RD[2].n} sweeps, start ${f2(RD[2].V[SK])}, and just ${RD[2].changed.length} arrow changes, in the bottom row. Round 4: ${RD[3].n} sweeps, start ${f2(RD[3].V[SK])}, and no arrow changes at all.`, `When improving changes nothing, we stop. This is exactly the plan that value iteration, the previous reel, found on the same floor${SAME ? '' : ' (CHECK)'}, including the detour below the cat.`],
    shot: [5, 13],
+   say: [[["Round three. Just one arrow changes.", [40, 16, 320, 256]]], [["Round four. Nothing changes at all. So we stop.", [40, 16, 320, 256]]], "It's exactly the plan value iteration found on this floor, detour and all."],
    draw(t) { wet(); const i = t < 7 ? 2 : 3, tt = t < 7 ? t - .5 : t - 7.3, { F, imp } = roundScene(UP, i, tt, { ev: 3 });
      caption(imp > 0 ? (RD[i].changed.length ? `round ${i + 1}: ${RD[i].changed.length} arrow changes` : `round ${i + 1}: nothing changes → stop`) : `round ${i + 1}, evaluation sweep ${F.k}`);
      txt(`start: ${f2(F.V[SK])}`, W / 2, 312, { s: 18, c: C.goldInk }); } },
  { h: 'Round by round', p: ['Here are the four rounds in a table. Each row is one round’s plan: how many sweeps its evaluation took, what that plan makes the start worth, and how many arrows its improvement changed.', `Round 1’s fix shows up in row 2: the start jumps from ${f2(RD[0].V[SK])} to ${f2(RD[1].V[SK])}. After that, rounds only fine-tune: ${RD.map(x => x.changed.length).join(', ')} arrows changed.`],
    shot: [3, 10],
+   say: [[["Here are the four rounds in one table.", [30, 286, 340, 106]], ["Each row is one plan, its sweeps, and what it makes the start worth.", [30, 286, 340, 106]]], [["Round two jumps the start to zero point three two.", [30, 286, 340, 106]], ["After that, it's fine tuning. Ten, three, one, then zero arrows changed.", [30, 286, 340, 106]]]],
    draw(t) { wet(); maze({ V: FIN.V, t }); nums(FIN.V, .5); planArrows(FIN.plan, .7);
      const x0 = 40, y0 = 298, cols = [x0 + 20, x0 + 95, x0 + 185, x0 + 276]; box(x0 - 10, y0 - 12, 340, 106, C.card, .95); rrect(x0 - 10, y0 - 12, 340, 106, 1900, { c: C.line, w: 1.1 });
      ['round', 'sweeps', 'start (this plan)', 'arrows changed'].forEach((s, j) => txt(s, cols[j], y0 + 2, { s: 14, c: C.soft }));
      RD.forEach((x, i) => { const a = clamp(t - .8 - i * 1.1) ; if (a <= 0) return; const y = y0 + 24 + i * 20; [String(i + 1), String(x.n), f2(x.V[SK]), String(x.changed.length)].forEach((s, j) => txt(s, cols[j], y, { s: 16, a, c: j === 2 ? C.goldInk : C.ink })); }); } },
  { h: 'Why it never gets worse', p: [`Beside the cheese, the old plan, up, is worth ${f2(V1[K30])}. Right once, then the old plan: its Q, ${f2(S30[1])}, which is why right was picked.`, `Wherever Pip lands, the new arrow passed that test too, so using it twice is no worse, then three times, and on. The new plan, always: ${f2(V2_30)}. Across the maze, ${UPS.join(', ')} numbers rose per round; none fell.`],
    shot: [4, 12],
+   say: [[["Why does it never get worse?", [40, 16, 320, 256]], ["Beside the cheese, right once and then the old plan already beats the old plan.", [30, 292, 340, 110]]], [["And the new arrows wherever Pip lands passed that test too.", [30, 292, 340, 110]], "Use them again and again, and you're still no worse. Every round, numbers rise. None fall."]],
    draw(t) { wet(); const ph = t < 7 ? 0 : 1, V = ph ? RD[1].V : V1; maze({ V, t, hi: [[3, 0, C.teal, .25]] }); nums(V, (c, r) => (c === 3 && r === 0 ? 1 : .35)); planArrows(ph ? RD[1].plan : RD[0].plan, (c, r) => (c === 3 && r === 0 ? 1 : .3));
      card([{ s: `old plan (up) here:  ${f2(V1[K30])}`, c: C.ink }, { s: `right once, then old plan:  Q = ${f2(S30[1])}  ≥ ${f2(V1[K30])}`, c: C.goldInk }, { s: 'new arrows at the next cells too:  still ≥', c: C.goldInk }, { s: `new plan, always:  ${f2(V2_30)}  (round 2 notebook)`, c: '#2f6f6c' }], t - .5, { gap: 1.8, fs: 16, lh: 21, y: 289 });
      caption(ph ? 'round 2: the new plan evaluated' : 'round 1 notebook'); } },
  { h: 'Why it stops at the best', p: ['Switches need a strictly higher Q, so each changing round strictly gains; no plan returns, and with 4,294,967,296 plans the rounds must end.', `At the end each arrow has its cell’s best Q. Beside the cheese: right ${f2(QF30[1])}, up ${f2(QF30[0])}, left ${f2(QF30[3])}, down ${f2(QF30[2])}. Any other move, used once then ours, is no better, nor twice, and so on: no plan beats ours.`],
    shot: [4, 10],
+   say: [[["Why does it stop at the best?", [40, 16, 320, 256]], ["Each change strictly improves, so no plan ever comes back.", [30, 292, 340, 110]], ["There are only finitely many plans, so the rounds must end.", [30, 292, 340, 110]]], [["And at the end, every arrow has its cell's best Q. Nothing can beat that.", [30, 292, 340, 110]]]],
    draw(t) { wet(); maze({ V: FIN.V, t, hi: [[3, 0, C.teal, .22]] }); nums(FIN.V); planArrows(FIN.plan, .8);
      card(['each change: a strictly higher Q → strictly better', '4,294,967,296 plans → no repeats → it ends', { s: 'at the end, beside the cheese:', c: C.goldInk }, { s: `   Q right ${f2(QF30[1])} ≥ up ${f2(QF30[0])}, left ${f2(QF30[3])}, down ${f2(QF30[2])}`, c: C.goldInk }, { s: 'other moves: no better once, twice, … → best plan', c: C.goldInk }], t - .5, { gap: 1.2, fs: 15, lh: 20, y: 289 }); } },
  { h: 'Rounds versus sweeps', p: [`Policy iteration needed ${RD.length} rounds; value iteration needed ${VIS} sweeps. But each round hides a whole evaluation: ${UP.sweeps} sweeps in total. Those sweeps are cheaper, one move per cell instead of four.`, `Counting move scores: ${PI_COST.toLocaleString('en-US')} here against ${VI_COST.toLocaleString('en-US')} for value iteration, about the same. Value iteration is the extreme case: its max picks the best arrow and does one evaluation sweep at once.`],
    shot: [4, 10],
+   say: [[["Policy iteration on the left. Value iteration on the right.", [4, 20, 388, 180]], ["The same arrows.", [4, 20, 388, 180]]], [["Four rounds against sixteen sweeps. But each round hides a full evaluation.", [30, 226, 340, 87]], ["Counting all the work, they come out about the same.", [30, 226, 340, 87]]]],
    draw(t) { const a = clamp(t - .3), b = clamp(t - 1.6);
      alpha(a, () => { wet(1, GA); GA.maze({ V: FIN.V, t }); planArrows(FIN.plan, 1, GA, { w: 1.3 }); txt('policy iteration', GA.ox + 95, 28, { s: 15, c: '#3f7f7c' }); });
      alpha(b, () => { wet(1, GB); GB.maze({ V: VIX, t }); planArrows(VIPLAN.reduce((p, m, i) => { p[key(...CELLS[i])] = m; return p; }, new Array(20).fill(-1)), 1, GB, { w: 1.3 }); txt('value iteration', GB.ox + 95, 28, { s: 15, c: C.goldInk }); });
@@ -158,6 +170,7 @@ const STEPS = [
  { h: 'Your turn', ctl: { label: 'first plan', values: SLV, def: 0, fmt: v => SLN[v], onChange: st => { st.cell = null; } }, tap: tapCell,
    p: [`Pick a different first plan and watch the rounds. Starting all right takes ${STARTS[1].rounds.length} rounds; all down or all left take ${STARTS[2].rounds.length === STARTS[3].rounds.length ? STARTS[2].rounds.length + ' each' : STARTS[2].rounds.length + ' and ' + STARTS[3].rounds.length}, because they reach the cheese only by sliding: their early notebooks are mostly zeros, so news spreads slowly.`, `Every start ends at the same plan${ALLSAME ? '' : ' (CHECK)'}. Tap a cell to see its four Q values in the round on screen.`],
    shot: [4, 12],
+   say: [[["Your turn. Pick a different first plan, and watch the rounds.", [40, 16, 320, 256]], ["All right takes three rounds. All down or all left take seven.", [40, 290, 320, 50]]], [["But every start ends at the same plan.", [40, 16, 320, 256]], ["Tap a cell to see its four Q values.", [60, 392, 280, 24]]]],
    draw(t, st) { const R = STARTS[st.ci ?? 0], t0 = st.changed ?? 0, tt = Math.max(0, t - (t0 > 0 ? t0 : 0)), per = 3.4, i = Math.min(R.rounds.length - 1, Math.floor(tt / per));
      wet(); const { F, imp } = roundScene(R, i, tt - i * per, { ev: 1.8, settled: 1 }); const x = R.rounds[i];
      txt(`round ${i + 1} of ${R.rounds.length}: settled values  ·  start ${f2(F.V[SK])}`, W / 2, 300, { s: 17, c: C.goldInk });
@@ -167,6 +180,7 @@ const STEPS = [
      caption(imp > 0 && i === R.rounds.length - 1 ? 'nothing changes → done' : 'tap a cell to see its Q values'); } },
  { h: 'The big template', p: ['Evaluate a plan, then improve it using that: this loop is everywhere in RL. Loosened, it is **generalised policy iteration**: evaluate with a few sweeps, improve only some cells, or shift the plan a little, then repeat.', 'Later reels, like actor-critic, learn without a rulebook: a **critic** estimates values from experience, and an **actor** nudges the plan toward moves the critic rates higher.'],
    shot: [4, 10],
+   say: [[["Evaluate, then improve. This loop is everywhere in RL.", [40, 110, 320, 90]], ["The gold arrow hands a notebook over. The teal arrow hands back a better plan.", [40, 110, 320, 90]]], [["Do each half only partly, and it's generalised policy iteration.", [30, 292, 340, 87]], ["Actor critic, later on, works just like this.", [30, 292, 340, 87]]]],
    draw(t) { const x = W / 2, y = 150, a = clamp(t - .5);
      alpha(a, () => { rrect(x - 150, y - 30, 110, 60, 2000, { fill: C.card, c: C.line }); txt('evaluate', x - 95, y - 6, { s: 18 }); txt('plan → notebook', x - 95, y + 15, { s: 13, c: C.soft });
        rrect(x + 40, y - 30, 110, 60, 2001, { fill: C.card, c: C.line }); txt('improve', x + 95, y - 6, { s: 18 }); txt('notebook → plan', x + 95, y + 15, { s: 13, c: C.soft });
@@ -175,10 +189,12 @@ const STEPS = [
           if (t > 3) card(['policy iteration: each half done fully', 'generalised: each half only partly', { s: 'actor-critic: critic evaluates, actor improves', c: C.soft }], t - 3, { gap: 1.2, fs: 16 }); } },
  { h: 'Where it shows up', p: ['Ronald Howard described policy iteration in 1960, in his book on dynamic programming and Markov processes. It remains a standard way to solve planning problems whose rules are known, like stock and maintenance decisions.', 'Its biggest legacy is the loop itself: judge the current behaviour, then nudge it toward what the judgement says is better.'],
    shot: [4, 10],
+   say: ["Ronald Howard described policy iteration in nineteen sixty.", [["It's still a standard tool when the rules are known. Inventory, maintenance, routes.", [30, 292, 340, 87]]], "Its biggest legacy is the loop itself. Judge what you do, then nudge it toward better."],
    draw(t) { wet(); maze({ V: FIN.V, t }); nums(FIN.V, .5); planArrows(FIN.plan, .6);
      card(['Howard, 1960: policy iteration', 'known rules: inventory, maintenance, routes', { s: 'the loop lives on: judge, then improve', c: C.soft }], t - .5, { gap: 1.2, fs: 16 }); } },
  { h: 'Recap', p: ['**Policy iteration** starts from any plan and repeats two halves: evaluate the plan’s notebook, then point each arrow at its best-scoring move.', 'Each round is at least as good as the last, in every cell. When no arrow changes, the plan is the best one. Few rounds, but each holds a full evaluation.'],
    shot: [3, 9],
+   say: [[["So, policy iteration starts from any plan.", [30, 292, 340, 110]], ["Evaluate it, then point each arrow at its best move.", [30, 292, 340, 110]]], ["Every round is at least as good as the last. When nothing changes, you've found the best plan."]],
    draw(t) { wet(); maze({ V: FIN.V, t }); nums(FIN.V); planArrows(FIN.plan, .8); pip(cx(0), cy(3), 1, t);
      card(['evaluate: sweep the plan’s rule until settled', 'improve: arrow → best average score', 'repeat until no arrow changes', 'never worse; ends at the best plan'], t - .3, { gap: 1, fs: 16 }); } },
 ];

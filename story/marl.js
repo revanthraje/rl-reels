@@ -167,10 +167,12 @@ function round(rec, t, d, k0 = 0) { return { k: k0 + Math.floor(t / d), u: t % d
 
 const STEPS = [
  { h: 'Not alone any more', p: ['In every reel so far, Pip was the only one learning. The cheese, the cat, even the wet floor followed **fixed rules**: the same move in the same cell gave the same chances, every time.', 'Now meet **Tam**, a second mouse in the same maze, with a pink bow. Tam learns too. Several learners sharing one world: that is **multi-agent RL**.'],
+   say: ["In every reel so far, Pip learned alone. Everything else followed fixed rules.", [["Now meet Tam, a second mouse, with a pink bow.", [40, 16, 320, 256]], ["Tam learns too.", [40, 16, 320, 256]]], ["Several learners sharing one world. That's multi-agent RL.", [30, 292, 340, 87]]],
    draw(t) { const G = L.gridWorld({}); G.maze({ t, draw: clamp(t / 1.5) }); if (t > 1) { G.pip(G.cx(0), G.cy(3), 1, t); name('Pip', G.cx(0), G.cy(3) + 22, clamp(t - 1)); }
      if (t > 2.5) { tam(G.cx(4), G.cy(3) + 3, -1, .95, t); name('Tam', G.cx(4), G.cy(3) + 22, clamp(t - 2.5)); }
      card(['before: one learner, fixed rules', 'now: two learners in one world', { s: 'each picks its own moves and gets its own rewards', c: C.soft }], t - 4, { gap: 1.2 }); } },
  { h: 'The others are part of the world', p: ['From Pip’s point of view, Tam is part of the world, like the floor: what happens after Pip’s move can depend on what Tam does. And for Tam, Pip is part of its world.', 'But the floor never changes its habits. Tam does, as it learns. So the chances in Pip’s world keep shifting. A world like that is called **non-stationary**.'],
+   say: [[["From Pip's side, Tam is just part of the world, like the floor.", [20, 40, 360, 215]], ["And for Tam, Pip is part of its world.", [20, 40, 360, 215]]], [["But the floor never changes its habits. Tam does, as it learns.", [30, 292, 340, 87]], ["So Pip's world keeps shifting under its feet. That's called non-stationary.", [30, 292, 340, 87]]]],
    draw(t) { smallMaze(26, TAMC, t, clamp(t - .3)); smallMaze(226, PIPC, t, clamp(t - 1.6));
      txt('Pip’s world', 101, 48, { s: 16, a: clamp(t - .3) }); txt('Tam’s world', 301, 48, { s: 16, a: clamp(t - 1.6) });
      if (t > .8) { L.mouse(101, 214, 1, .9, t); name('Pip, outside: the learner', 101, 240, clamp(t - .8)); alpha(clamp(t - .8), () => arrow(101, 198, 101, 184, 77, { c: C.soft })); }
@@ -178,60 +180,73 @@ const STEPS = [
      card(['the floor: same chances, every time', 'Tam: changes its habits as it learns', { s: 'so Pip’s world keeps changing: non-stationary', c: C.roseInk }], t - 3.5, { gap: 1.3 }); } },
  { h: 'One room, two doors', p: ['Shrink the maze to one room. Each round, Pip and Tam each pick a door at once, without seeing the other’s choice.', 'The **big door** is heavy: it opens only if both push, and then each gets a big cheese, worth 1. Pushing alone gets nothing. The **small hole** always has a crumb, worth 0.3, for each mouse there. The round ends, paid at once.'],
    shot: [3, 9],
+   say: [[["Let's shrink things to one room and two doors.", [20, 30, 360, 250]], ["Each round, both mice pick a door at once, without seeing each other.", [20, 30, 360, 250]]], [["Watch the big door. It opens only if both push, and then each gets a big cheese.", [20, 30, 360, 250]], ["Push alone, and you get nothing.", [20, 30, 360, 250]], ["The small hole always has a crumb, worth zero point three.", [30, 292, 340, 87]]]],
    draw(t) { const recs = [{ a: 0, b: 0, r1: 1, r2: 1 }, { a: 0, b: 1, r1: 0, r2: .3 }, { a: 1, b: 1, r1: .3, r2: .3 }], d = 2.6, k = Math.floor((t - 1) / d);
      if (t < 1) teamScene(null, 0, t, { lab: clamp(t * 2) }); else teamScene(recs[k % 3], (t - 1) % d, t, { dice: 0 });
      card(['both at the big door: 1 each', 'alone at the big door: 0', 'at the hole: 0.3, whatever the other does'], t - 1.2, { gap: 2.6 }); } },
  { h: 'The payoff table', p: ['Rows: Pip’s door. Columns: Tam’s. Each box shows Pip’s payoff, then Tam’s.', 'Both do best **together** at the big door, 1 each, so they are a team. But the big door is a gamble: it pays only if the other comes too. The hole is safe. This is a **stag hunt**: two hunters catch a stag only together, while a hare is safe alone.'],
+   say: [["Here's the payoff table. Pip's door picks the row, Tam's the column.", [40, 284, 330, 112]], [["Both at the big door is best for both. They're a team.", [40, 284, 330, 112]], "But it's a gamble. It only pays if the other comes too. The hole is safe.", "Game theorists call this a stag hunt."]],
    draw(t) { teamScene(null, 0, t); payTable(TEAM, ['Pip', 'Tam'], clamp(t - .5) * 2, { hl: (i, j) => t > 6 && i === 0 && j === 0 }); } },
  { h: 'How each mouse learns', p: ['Each mouse keeps two numbers, its payoff guess for each door, both starting at 0. It takes the bigger-numbered door, a coin toss on ties; one round in five it picks at random, to keep trying both.', 'After the round, it moves its door’s number a fifth of the way toward the payoff. Neither knows the other is learning: these are **independent learners**.'],
+   say: [["Each mouse keeps two numbers, a guess for each door. Both start at zero.", [30, 292, 340, 80]], [["It picks the bigger number, but one round in five, it picks at random.", [20, 30, 360, 250]], ["After each round, it moves that door's number a fifth of the way toward the payoff.", [30, 292, 340, 80]]], "Neither knows the other is learning. They're independent learners."],
    draw(t) { teamScene(null, 0, t); qTable([0, 0], [0, 0], clamp(t - .5), { y: 292 });
      if (t > 3) alpha(clamp(t - 3), () => { txt('new = old + 0.2 × (payoff − old)', 200, 388, { s: 18, c: C.ink }); });
      if (t > 5) alpha(clamp(t - 5), () => { txt('bigger number, but 1 round in 5: random', 200, 200, { s: 16, c: C.roseInk }); }); } },
  { h: 'The first rounds', p: [`Round 1: all numbers are 0; both toss coins and pick the hole. Each gets 0.3, and its hole number goes from 0 to ${f2(R1.q[0][1])}. Now the hole leads, so both stay.`, `Round ${FIRSTX + 1}: one of Pip’s random rounds sends it to the big door. Tam is at the hole, so the door stays shut: payoff 0, and Pip’s big-door number stays 0.`],
    shot: [3.5, 14.5],
+   say: [[["Watch the first rounds.", [20, 30, 360, 250]], ["Both toss coins and land at the hole. Each gets its crumb, and the hole's number rises.", [30, 292, 340, 80]]], ["Now the hole leads, so both stay there.", [30, 292, 340, 80]], ["Then one random round sends Pip to the big door alone. Tam's at the hole, so it stays shut. Nothing.", [20, 30, 360, 250]]],
    draw(t) { const d = 2.4, ks = [0, 1, 2, 3, 4, FIRSTX], i = clamp(Math.floor(t / d), 0, ks.length - 1), u = t - i * d, rec = T[ks[i]];
      teamScene(rec, Math.min(u, 2.39), t); const show = u > 1.2 ? rec.q : rec.qb; qTable(show[0], show[1], 1, { hl: u > 1.2 ? [rec.a, rec.b] : null });
      caption(`round ${ks[i] + 1}`); } },
  { h: 'The big door, alone', p: [`Before round ${LL1 + 1}, Pip tried the big door ${LONE} times, all at random, each time with Tam at the hole: 0.`, 'Is Pip wrong? Not really. Tam goes to the big door only in its random rounds, half of one in five: **one round in ten**. So it pays 0.1 on average, less than the crumb’s 0.3. Given Tam’s habit, the hole really is better.'],
+   say: [[["Pip keeps trying the big door, but only in random rounds.", [20, 30, 360, 250]], ["Eleven tries alone, every one paid zero.", [30, 292, 340, 80]]], ["Is Pip wrong? Not really. Tam only comes along about one round in ten.", "So the big door pays about zero point one on average, less than the crumb."]],
    draw(t) { const tries = T.slice(0, LL1).map((x, i) => (x.a === 0 ? i : -1)).filter(i => i >= 0), d = 1.25, i = clamp(Math.floor(t / d), 0, tries.length - 1), u = t - i * d, rec = T[tries[i]];
      teamScene(rec, Math.min(u, 1.24) + .25, t, { dice: 0 }); qTable(rec.q[0], rec.q[1], 1, { hl: [0, null] });
      caption(t < tries.length * d ? `round ${tries[i] + 1}: try ${i + 1} of ${LONE}` : `${LONE} tries alone, all paid 0`); },
    shot: [4, 15] },
  { h: 'A lucky round', p: [`Round ${LL1 + 1}: both happen to make a random choice, and both pick the big door. It opens! Each number for the big door jumps from 0 to ${f2(T[LL1].q[0][0])}. Then each happens to try it once alone, and drops to ${f2(T[LL2].qb[0][0])}.`, `Round ${LL2 + 1}: another random double. ${f2(T[LL2].qb[0][0])} + 0.2 × ${f2(1 - T[LL2].qb[0][0])} = ${f2(T[LL2].q[0][0])}, just above the hole’s 0.3. Now both prefer the big door.`],
    shot: [3, 10],
+   say: [[["Round one hundred. By luck, both pick the big door at random.", [20, 30, 360, 250]], ["It opens! Their big door numbers jump to zero point two.", [30, 292, 340, 80]]], [["Then a second lucky double.", [20, 30, 360, 250]], ["The number climbs to zero point three three, just above the hole.", [30, 292, 340, 80]], "Now both prefer the big door."]],
    draw(t) { const d = 3.4, i = t < d ? 0 : 1, u = t - i * d, rec = T[i ? LL2 : LL1];
      teamScene(rec, Math.min(u, 3.39), t); const show = u > 1.2 ? rec.q : rec.qb; qTable(show[0], show[1], 1, { hl: u > 1.2 ? [0, 0] : null });
      caption(`round ${(i ? LL2 : LL1) + 1}`); } },
  { h: 'Same door, different world', p: ['The world from Pip’s side. Across: rounds 1 to 200. Up: the chance the big door pays Pip, which is Tam’s chance of picking it. Round 1: 0.5, Tam’s first coin toss.', `The door never changed; **Tam** did: it jumped from 0.1 to 0.9 after round ${LL2 + 1}. On the wet floor, chances stayed fixed; here Pip’s lessons can go stale any time.`],
+   say: [[["Here's the world from Pip's side.", [20, 292, 370, 112]], ["The line is the chance the big door pays Pip. That's just Tam's chance of picking it.", [20, 292, 370, 112]]], [["The door never changed. Tam did, jumping from zero point one to zero point nine.", [20, 292, 370, 112]], "Pip's lessons can go stale at any moment."]],
    draw(t) { const n = clamp(Math.floor(t / 7 * NR), 1, NR), rec = T[n - 1]; teamScene(null, 0, t, { lab: .5 });
      txt(`round ${n}: Tam ${pLeft(rec.qb[1]) > .5 ? 'prefers the big door' : pLeft(rec.qb[1]) < .5 ? 'prefers the hole' : 'has no favourite'}`, 200, 198, { s: 15, c: C.ink });
      worldChart(n, { marks: 1 }); } },
  { h: 'A hundred pairs', p: [`100 pairs, each with its own dice, play ${NR} rounds. Dots are pairs: gold if both prefer the big door, teal if both the hole, grey otherwise.`, `After 50 rounds, ${C50.hole} pairs share the hole; after ${NR}, still ${C200.hole}, and ${C200.big} reached the big door. A pair at the hole is stuck sensibly: whoever switches alone gets 0. Only a lucky double frees them.`],
    shot: [5, 14],
+   say: [[["Now a hundred pairs, each with its own dice.", [95, 28, 210, 245]], ["Gold dots share the big door. Teal dots share the hole.", [95, 28, 210, 245]]], [["After two hundred rounds, forty seven pairs are still at the hole.", [30, 292, 340, 87]], ["They're stuck, but sensibly. Whoever switches alone gets nothing.", [30, 292, 340, 87]]]],
    draw(t) { const n = clamp(Math.floor((t - 1) / 9 * NR), 1, NR), cnt = countAt(n);
      for (let i = 0; i < NP; i++) { const v = PAIRS[i][n - 1], x = 110 + (i % 10) * 20, y = 40 + Math.floor(i / 10) * 21; dot(x, y, 7, v === 0 ? C.gold : v === 1 ? C.teal : '#d8cfc4', clamp(t * 2)); }
      txt(`after round ${n}`, 200, 262, { s: 16, a: clamp(t * 2) });
      card([{ s: `both prefer the big door: ${cnt.big}`, c: C.goldInk }, { s: `both prefer the hole: ${cnt.hole}`, c: '#3f7f7c' }, { s: `no shared favourite: ${cnt.other}`, c: C.soft }], 2, { gap: 0 }); } },
  { h: 'Now against the cat', p: ['Teammates share a goal. Opponents do not. New game: Pip runs to one of two doors, with cheese behind each, and the cat waits at one door. Same door: caught, Pip gets −1, the cat +1. Different doors: Pip eats, +1, and the cat gets −1.', 'What one wins, the other loses. This is called **zero-sum**: pure competition.'],
    shot: [3, 10],
+   say: ["Teammates share a goal. Opponents don't.", [["New game. Pip runs to one of two doors, and the cat waits at one.", [20, 30, 360, 250]], ["Same door, Pip is caught. Different doors, Pip eats.", [20, 30, 360, 250]]], ["What one wins, the other loses. That's zero sum.", [40, 284, 330, 112]]],
    draw(t) { const recs = [{ a: 0, b: 1 }, { a: 1, b: 1 }], d = 2.8, k = Math.floor((t - .6) / d);
      if (t < .6) catScene(null, 0, t); else catScene(recs[k % 2], (t - .6) % d, t);
      payTable(ZERO, ['Pip', 'cat'], clamp(t - 4) * 2, { doors: ['left', 'right'] }); } },
  { h: 'Chasing each other', p: [`Pip and the cat learn like the two mice: two numbers each, one round in five random. The strips show each one’s favourite door before every round: gold for left, teal for right.`, `The cat learns Pip’s favourite and waits there, so that door starts to cost Pip, and Pip switches. Then the cat follows. Pip’s favourite changed ${HSW} times in ${NR} rounds. Neither settles.`],
    shot: [4, 13],
+   say: ["Pip and the cat learn just like the two mice.", [["The strips show each one's favourite door, round by round.", [20, 288, 370, 102]], ["The cat learns where Pip goes, and waits there. So Pip switches. Then the cat follows.", [20, 288, 370, 102]]], ["Pip's favourite flipped nineteen times. Neither settles.", [20, 288, 370, 102]]],
    draw(t) { const n = clamp(Math.floor((t - 1) / 9 * NR), 0, NR); const rec = H[Math.max(0, n - 1)];
      catScene(n ? rec : null, n ? 1.6 : 0, t); favStrips(n); caption(n ? `round ${n}` : ''); } },
  { h: 'No resting point', p: ['Best play here is the policy reel’s rock, paper, scissors answer: a coin toss. If both do, neither gains by changing alone: nothing left to learn. Such a resting point is an **equilibrium**; so was the pair at the hole.', `Our learners never hold it: each has a favourite, taken nine rounds in ten, which the other exploits. Pip went left ${HLEFT} of ${NR} times: near half, but only on average.`],
+   say: [["The best play here is a coin toss, like rock, paper, scissors.", "If both play that, neither gains by changing. That resting point is an equilibrium."], [["Our learners never hold it.", [20, 288, 370, 102]], ["Each has a favourite, which the other exploits.", [20, 288, 370, 102]]]],
    draw(t) { catScene(null, 0, t); favStrips(NR);
      alpha(clamp(t - 3), () => { txt('best: a coin toss, 50 : 50', 200, 202, { s: 17, c: C.goldInk }); }); } },
  { h: 'Your turn: be the cat', tap: tapDoor,
    p: [`You are the cat: tap a door to wait there. Pip keeps learning; its two numbers are below.`, `A cat always at the left door caught this Pip ${30 - AL_ESC === 1 ? 'just once' : (30 - AL_ESC) + ' times'} in 30 rounds; against 1000 other Pips, ${AL_AVG.toFixed(1)} on average, mostly in Pip’s random rounds. A coin-tossing cat catches about half: Pip escaped ${COIN_ESC} of 1000 in our run. Can you catch Pip more often?`],
+   say: ["Your turn. You're the cat. Tap a door to wait there.", [["Pip keeps learning. Its two numbers are on the card.", [30, 292, 340, 87]], ["A coin tossing cat catches about half. Can you catch Pip more often?", [20, 30, 360, 250]]]],
    draw(t, st) { const hist = st.hist || [], res = vsYou(hist), n = res.length, last = res[n - 1], u = n ? t - st.tt : 0;
      catScene(last && u < 3.2 ? { a: last.a, b: last.c } : null, Math.min(u, 3), t, { catName: 'you' });
      const done = u > 1.2, shown = done ? res : res.slice(0, -1), m = shown.length, caught = shown.filter(x => x.r < 0).length, q = last ? (done ? last.q : last.qb) : [0, 0];
      card([`rounds: ${m}    caught: ${caught}    escaped: ${m - caught}`, `Pip’s numbers:  left ${f2(q[0])}   right ${f2(q[1])}`, { s: n && done ? (last.a === last.c ? 'you caught Pip' : 'Pip got away') : n ? '…' : 'tap the left or the right door', c: C.soft }], 10, { gap: 0 });
      if (!n) alpha(.6 + .4 * Math.sin(t * 3), () => { txt('tap', 108, 122, { s: 20, c: C.goldInk }); txt('tap', 292, 122, { s: 20, c: C.goldInk }); }); } },
  { h: 'Train together, act alone', p: ['One popular fix: **centralised training with decentralised acting**. During training a helper, often called a **critic**, learns a number for each pair of doors, like the payoff table, seeing what neither mouse can: the big door pays 1 when both come. Each mouse is nudged toward doors the helper rates highly.', 'Acting, each mouse decides alone, helper gone. MADDPG (2017) is one, not run here.'],
+   say: ["One popular fix. Train together, act alone.", [["During practice, a helper sees everything.", [24, 40, 170, 200]], ["It learns the value of each pair of doors, and nudges each mouse toward good ones.", [24, 40, 170, 200]]], ["When it's time to act, the helper's gone. Each mouse decides from its own view.", [206, 40, 170, 200]]],
    draw(t) { const a1 = clamp(t - .3), a2 = clamp(t - 3);
      alpha(a1, () => { rrect(24, 40, 170, 200, 400, { c: C.line, w: 1.1, fill: C.card }); txt('practice', 109, 58, { s: 16 });
        L.robot(109, 130, 1.4, t); txt('helper: sees all', 109, 80, { s: 13, c: C.soft }); L.mouse(64, 200, 1, .9, t); tam(156, 200, -1, .9, t);
@@ -241,15 +256,18 @@ const STEPS = [
        txt('own view', 246, 160, { s: 13, c: C.soft }); txt('own view', 338, 160, { s: 13, c: C.soft }); });
      card(['practice: helper scores each pair of doors', 'acting: each uses only what it sees', { s: 'often shortened to CTDE', c: C.soft }], t - 4.5, { gap: 1.2 }); } },
  { h: 'Playing against yourself', p: ['When both sides share the rules, like chess, an agent can train against **copies of itself**. As it improves, so does its opponent, so practice is never too easy or hopeless. This **self-play** taught AlphaZero chess and Go.', 'An uneven game, like runner against cat, needs both roles trained. Self-play can still circle, as our learners did, so big systems also play older copies.'],
+   say: [[["When both sides share the rules, like chess, an agent can train against a copy of itself.", [40, 80, 320, 170]], ["As it improves, so does its opponent. Practice is never too easy, or hopeless.", [40, 80, 320, 170]]], [["That's self play. It taught AlphaZero chess and Go.", [30, 292, 340, 110]], ["Big systems also play older copies, to avoid chasing in circles.", [30, 292, 340, 110]]]],
    draw(t) { const bx = 140, by = 90, q = 30; alpha(clamp(t * 1.5), () => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) box(bx + i * q, by + j * q, q, q, (i + j) % 2 ? '#cdbfa8' : '#f6eedf', 1); rrect(bx, by, 4 * q, 4 * q, 430, { w: 1.6 }); });
      alpha(clamp(t - .8), () => { L.mouse(88, 180, 1, 1.05, t); name('Pip', 88, 210); });
      alpha(clamp(t - 1.6), () => { L.mouse(312, 180, -1, 1.05, t); name('Pip’s copy', 312, 210); txt('same rules for both sides', 200, 236, { s: 14, c: C.soft }); });
      card(['opponent = a copy of the learner', 'it gets better at the same pace', { s: 'uneven games: train both roles', c: C.soft }, { s: 'older copies too: fewer circles', c: C.soft }], t - 2.5, { gap: 1.2 }); } },
  { h: 'Out in the world', p: ['In April 2019, **OpenAI Five**, five copies of one network trained mostly by self-play, beat OG, the reigning Dota 2 world champions. That year DeepMind’s **AlphaStar** reached Grandmaster level in StarCraft II, training a **league**: many agents, old and new, playing each other.', 'Both took enormous practice. This reel’s shifting world is one reason multi-agent training is hard.'],
+   say: [["In 2019, OpenAI Five beat the Dota 2 world champions, trained mostly by self play.", [20, 30, 360, 240]], ["The same year, AlphaStar reached Grandmaster in StarCraft Two, with a whole league of agents.", [30, 292, 340, 87]], "Both took enormous practice. A shifting world is one reason it's hard."],
    draw(t) { const tm = [[60, C.teal], [340, C.rose]]; tm.forEach(([x, col], s) => { for (let i = 0; i < 5; i++) { const a = clamp((t - .4 - s * .8 - i * .15) * 3); if (a > 0) { alpha(a, () => L.robot(x + (s ? -1 : 1) * (i % 2) * 34, 50 + i * 44, 1.1, t + i, s ? '#e9b3b3' : '#9fc9c7')); } } });
      alpha(clamp(t - 2), () => { txt('5 against 5', 200, 120, { s: 18 }); txt('every agent learning at once', 200, 146, { s: 14, c: C.soft }); });
      card(['2019  OpenAI Five beats OG at Dota 2', '2019  AlphaStar: Grandmaster in StarCraft II', { s: 'both: self-play at a huge scale', c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'Recap', p: ['In **multi-agent RL**, several learners share a world. To each one, the others are part of that world, and because they keep learning, the world is **non-stationary**.', 'Teammates can get stuck on a safe but poor habit; opponents can chase each other forever. Helpers that see everything during training, and self-play, are common ways to cope.'],
+   say: ["So that's multi-agent RL. Several learners, one world.", ["To each one, the others are part of the world, and they keep changing.", [30, 292, 340, 110]], ["Teams can settle on a safe but poor habit. Rivals can chase each other forever.", [30, 292, 340, 110]]],
    draw(t) { teamScene(null, 0, t, { lab: .6 });
      card(['several learners, one world', 'the others are part of each one’s world', 'they learn, so that world keeps changing', 'teams can settle low; rivals keep chasing'], t - .3, { gap: 1 }); } },
 ];

@@ -283,11 +283,13 @@ const raceChart = (n, o = {}) => chart(Object.assign({ x0: 60, x1: 352, y0: 388,
 const STEPS = [
  { h: 'Pip’s network, again', p: ['The DQN reel’s simple version floundered until two fixes came on: a replay memory and a frozen copy for targets. This reel studies the first alone, so the frozen copy stays off: targets come from the network being trained.', 'Same network: four measurements in, one Q-value per move out. Walks start at random spots, last at most 60 moves; one move in five is random.'],
    shot: [3, 9],
+   say: [[["Here's Pip's meadow again, with the cheese, the cat, and Pip at the start.", [64, 8, 272, 268]]], [["And here's the same little network. Four measurements go in, and one value per move comes out.", [120, 284, 180, 116]], "Last time, two fixes rescued it. This reel tests just the first one, on its own."]],
    draw(t) { D.meadow({ t, labels: clamp(t - 1) }); D.pipAt(.1, .1, 1, t); const n = D.newNet(4, 8, 4, 7000);
      D.drawNet(n, { x: 130, y: 296, w: 150, h: 92 }, { inL: D.FNAMES, outL: D.MN, a: clamp(t - 2), build: clamp((t - 2) / 2) });
      caption('the network: 4 measurements in, 4 Q-values out', clamp(t - 4)); } },
  { h: 'Learning on the go', p: ['Simplest plan: learn from experience in order. Each move makes one **experience**, a card: where Pip stood, the move, the reward, and where it landed or that the walk ended. That is all a target needs.', 'For fairness later, each update uses the latest 32 cards. After each move the handful slides one card, so each card serves 32 updates in a row.'],
    shot: [4, 11],
+   say: [[["Watch Pip walk, and watch the cards pile up below.", [20, 292, 360, 84]], ["Every move becomes one card: where Pip was, what it did, what it got, and where it landed.", [20, 292, 360, 84]]], ["The simplest plan is to learn from the newest cards, in order. Each update looks at the latest thirty two."]],
    draw(t) { const r = need('rec0'); D.meadow({ t }); if (!r) { busy(progress(['rec0']), 345); return; }
      const s = 7024 + Math.min(Math.floor(t / .8), 18), u = ease((t % .8) / .5);
      trailOf(r, s - 12, s); const x = lerp(r.xs[s - 1], r.xs[s], u), y = lerp(r.ys[s - 1], r.ys[s], u); D.pipAt(x, y, r.xs[s] >= r.xs[s - 1] ? 1 : -1, t);
@@ -297,6 +299,7 @@ const STEPS = [
  { get p() { const N = nums(), a = N.a, xs = N.lat.map(s => a.xs[s]), ys = N.lat.map(s => a.ys[s]);
      return [`The latest 32 cards, on the meadow: Pip has lingered in the top-left corner, x from ${fx(Math.min(...xs))} to ${fx(Math.max(...xs))}, y from ${fx(Math.min(...ys))} to ${fx(Math.max(...ys))}. ${N.bumps} of the 32 moves bumped the fence; when this stretch began, the network’s favourite move at ${N.lefts === 32 ? 'all 32' : N.lefts + ' of the 32'} spots was left, toward it.`, 'Consecutive experiences are alike, or **correlated**. The network gets nearly the same lesson 32 times.']; },
    h: 'Near-duplicates', shot: [4, 10],
+   say: [[["Now look at where those thirty two cards sit.", [64, 8, 272, 268]], ["They're all bunched up in one corner, near the fence.", [64, 8, 272, 268]]], [["Read the cards below. They tell almost the same story.", [20, 292, 360, 84]], "Moves that follow each other are alike. So the network hears one lesson, over and over."]],
    draw(t) { const r = need('rec0'); D.meadow({ t }); if (!r) { busy(progress(['rec0'])); return; } const N = nums();
      trailOf(r, SHOW - 31, SHOW, { a: .6 }); spots(r, N.lat, C.orange, clamp(t - 1), 3.2); D.pipAt(r.xs[SHOW], r.ys[SHOW], -1, t);
      if (t > 2) txt('the latest 32', D.px(.2), D.py(.45), { s: 15, c: '#c4581f', a: clamp(t - 2), al: 'left' });
@@ -304,6 +307,7 @@ const STEPS = [
      caption('four of the 32 cards in this handful', clamp(t - 4.5)); } },
  { get p() { const N = nums(); return [`The ringed spot below the cheese is one move from it, worth about 1; the network said ${f2(N.v0)}. Pip never goes near, yet in ${W1 - W0} moves it falls to ${f2(N.v1)}.`, `All spots share 76 knobs, so fitting the corner shifts the cheese’s numbers, uncorrected by any card. Old lessons get **overwritten**. Not mainly the moving target: in run 2, frozen copy on, the same value slid from ${f2(N.t0)} to ${f2(N.t1)} in ${N.tw} moves.`]; },
    h: 'Old lessons get overwritten', shot: [3, 12],
+   get say() { const N = nums(); return [[["Watch the ringed spot just below the cheese.", [64, 8, 272, 268]], ["It should be worth about one.", [64, 8, 272, 268]]], [["Pip is far away, in its corner. Yet watch the gold line slide down.", [40, 296, 320, 94]], `It ends near ${f2(N.v1)}.`], ["Every spot shares the same knobs. Tuning them for the corner quietly rubs out what Pip knew about the cheese."]]; },
    draw(t) { const r = need('rec0'); if (!r) { D.meadow({ t }); busy(progress(['rec0'])); return; } const N = nums();
      const s = Math.round(lerp(W0, W1, clamp((t - 1.5) / 9))), sn = WIN.reduce((b, v) => v <= s ? v : b, WIN[0]);
      D.meadow({ t, heat: heatOf(r.snaps[sn]) }); trailOf(r, Math.max(W0, s - 14), s, { a: .6 }); D.pipAt(r.xs[s], r.ys[s], 1, t);
@@ -313,6 +317,7 @@ const STEPS = [
      txt('gold squares: best Q-value there (for drawing only)', W / 2, 410, { s: 13, c: C.soft, a: clamp(t - 11) }); } },
  { h: 'A shoebox of cards', p: ['The fix is **experience replay**. Every experience card goes into a shoebox, the **replay memory**, and stays there for a while. This box keeps the latest 2000 cards; when it is full, the oldest card is thrown out.', 'So the box holds moves from many walks, all over the meadow.'],
    shot: [4, 10],
+   say: [[["Here's the fix. A shoebox for cards.", [110, 120, 180, 100]], ["Every move drops a new card in, and it stays a while.", [110, 120, 180, 100]]], [["When the box is full, the oldest card falls out.", [30, 292, 340, 87]], "So at any moment, the box holds moves from many walks, from all over the meadow."]],
    draw(t) { D.meadow({ t }); D.pipAt(.3, .5, 1, t); dimScene(.7);
      const n = Math.min(14, Math.floor(t * 2)); shoebox(W / 2, 170, n, t, { label: 'replay memory: the latest 2000 cards' });
      const k = (t * 1.2) % 1; if (t > .5) { box(W / 2 - 7 + 40 * (1 - k), 60 + k * 90, 14, 22, C.card, 1 - clamp((k - .85) * 6)); rrect(W / 2 - 7 + 40 * (1 - k), 60 + k * 90, 14, 22, 860, { c: C.line, w: .8, once: true }); }
@@ -320,6 +325,7 @@ const STEPS = [
  { get p() { const N = nums(); return ['Before each update, Pip draws 32 cards from the box **at random**: a random handful, called a **minibatch** (the DQN reel’s 32 picked at random). One gradient step then fits all 32 at once, on average.',
      `This handful comes from all over the meadow. On average over the run, two cards in a random handful lie ${fx(N.spB)} apart; two of the latest 32 only ${fx(N.spA)}.`]; },
    h: 'A random handful', shot: [3, 9],
+   get say() { const N = nums(); return [["Before each update, Pip shakes the box and pulls out thirty two cards at random."], [["Watch the teal dots appear.", [64, 8, 272, 268]], ["They're scattered all over the meadow.", [64, 8, 272, 268]], ["The faint orange ones, the latest thirty two, sat in one corner.", [64, 8, 272, 268]]], [`On average, two random cards lie about ${fx(N.spB)} apart. Two recent ones, only ${fx(N.spA)}.`]]; },
    draw(t) { const r = need('rnd0'), q = need('rec0'); D.meadow({ t }); if (!r || !q) { busy(progress(['rec0', 'rnd0'])); return; } const N = nums();
      alpha(.35 * (1 - clamp(t - 1.5)) + .15, () => spots(q, N.lat, C.orange, 1, 2.6));
      const b = r.batches[SHOW]; b.forEach((s, i) => dot(D.px(r.xs[s]), D.py(r.ys[s]), 3.4, C.teal, clamp((t - 1.5) * 3 - i * .08)));
@@ -327,11 +333,13 @@ const STEPS = [
      card([{ s: 'teal: a random handful of 32 from the box', c: '#3f8582' }, { s: 'faint orange: the latest 32, from before', c: '#c4581f' }, { s: `same moment of training: move ${SHOW}`, c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'A fair race', p: ['Both versions train 8000 moves each, same seeds. Each update uses 32 cards and one gradient step of the same size. Only **which** 32 differs: the latest, or a random handful from the box.', 'Every 500 moves, a test: from 30 fixed spots Pip follows its largest Q, no random moves. The chart counts spots from which it reaches the cheese, out of 30.'],
    shot: [3, 10],
+   say: [["Now a fair race. Both versions get the same moves, the same seeds, and the same size of update. The only difference is which cards they learn from."], [["These dots are thirty test spots.", [64, 8, 272, 268]], ["Every so often, Pip tries to reach the cheese from each one, with no random moves.", [64, 8, 272, 268]], ["The chart below will count its successes.", [40, 300, 330, 100]]]],
    draw(t) { D.meadow({ t }); dimScene(.3); D.TESTS.forEach(([x, y], i) => dot(D.px(x), D.py(y), 3, C.ink, clamp((t - .5) * 3 - i * .05)));
      if (t > 2.5) txt('the 30 test spots', W / 2, 282, { s: 14, c: C.soft, a: clamp(t - 2.5) });
      alpha(clamp(t - 4), () => raceChart(0)); txt('across: moves of experience', W / 2, 411, { s: 13, c: C.soft, a: clamp(t - 6) }); } },
  { get p() { const N = nums(); return ['Four runs per version: thin lines single runs, thick their average. Teal: random handfuls; orange: the latest 32. Single runs jump a lot.', `After 8000 moves, replay reaches the cheese from ${f1(last(N.evRnd))} of 30 spots on average, the latest 32 from ${f1(last(N.evRec))}. Replay won ${N.wins} of the 4 runs, and its average ${N.ahead === 500 ? 'is ahead at every test' : `stays ahead from move ${N.ahead} on`}. Same work; only the cards differ.`]; },
    h: 'The race', shot: [5, 13],
+   get say() { const N = nums(); return [[["Watch the lines grow.", [40, 28, 330, 236]], ["Teal is replay. Orange learns from the latest cards.", [40, 28, 330, 236]], ["The thin lines are single runs, and they jump around a lot.", [40, 28, 330, 236]]], [["Follow the thick lines, the averages.", [40, 28, 330, 236]], `At the end, replay reaches the cheese from about ${f1(last(N.evRnd))} spots out of thirty. The other, about ${f1(last(N.evRec))}.`, "Same work. Only the cards differ."]]; },
    draw(t) { if (busyKeys(RACE)) return; const N = nums(), n = clamp(Math.floor((t - .5) * 2.5), 0, 16);
      const ser = []; K.forEach(k => { ser.push({ v: force('rec' + k).ev, col: C.orange, w: 1, a: .35, n }); ser.push({ v: force('rnd' + k).ev, col: C.teal, w: 1, a: .35, n }); });
      ser.push({ v: N.evRec, col: '#c4581f', w: 2.6, n }, { v: N.evRnd, col: '#3f8582', w: 2.6, n }); const c = raceChart(0, BIG(ser));
@@ -339,6 +347,7 @@ const STEPS = [
      card([{ s: 'teal: random handfuls from the box', c: '#3f8582' }, { s: 'orange: the latest 32 moves', c: '#c4581f' }, { s: 'thin: single runs · thick: average of 4', c: C.soft }], t - 1, { y: 300, gap: 1.1 }); } },
  { get p() { const N = nums(); return [`A random handful samples the whole meadow fairly, so each step nudges everywhere a little rather than bending toward one corner. Below the cheese, over the last 4000 moves, the replay run swings by about ${f2(N.sB)}, the latest-32 run by ${f2(N.sA)}.`, `Both use each card about ${Math.round(N.use)} times; replay spreads them over 2000 moves, mixed with other cards, instead of 32 updates in a row.`]; },
    h: 'Why the shuffle helps', shot: [4, 12],
+   say: [["Why does shuffling help? A random handful covers the whole meadow fairly. So each update nudges everywhere a little, instead of bending toward one corner."], [["Look at the spot below the cheese again, late in training.", [40, 296, 320, 115]], ["Orange swings wildly.", [40, 296, 320, 115]], ["Teal stays much steadier.", [40, 296, 320, 115]]]],
    draw(t) { const r = need('rnd0'), q = need('rec0'); D.meadow({ t, heat: r ? heatOf(r.snaps[8000]) : null, heatA: .6 }); if (!r || !q) { busy(progress(['rec0', 'rnd0'])); return; } const N = nums();
      ring(P[0], P[1]); const n = clamp(Math.floor((t - 1) * 600), 0, 4000);
      chart({ x0: 70, x1: 340, y0: 384, y1: 312, lo: -.2, hi: 1.2, xmax: 4000, yt: [0, 1], xl: ['move 4000', '8000'], title: 'best Q-value just below the cheese (run 1)',
@@ -347,6 +356,7 @@ const STEPS = [
  { get p() { const N = nums(), sa = N.gA, sb = N.gB, say = g => g.end > 0 ? `reaches the cheese in ${g.P.length - 1} moves` : g.end < 0 ? `runs into the cat after ${g.P.length - 1} moves` : 'never gets there in 60 moves';
      return ['Run 1’s two networks at 8000 moves, mapped by largest Q: left replay, right the latest 32. Gold good, rose bad.', `Following the map from the start, the replay Pip ${say(sa)}, along the bottom and up the right side; the left-side route of the DQN reel is about as long. The other one ${say(sb)}.`]; },
    h: 'Two maps', shot: [4, 11],
+   get say() { const N = nums(), g = N.gA; return [["Here are the two finished networks, as maps. Gold is good, rose is bad."], [["On the left, replay.", [8, 22, 192, 216]], g.end > 0 ? ["Watch Pip follow it from the start. It goes along the bottom, up the right side, and finds the cheese.", [8, 22, 192, 216]] : ["Watch Pip follow it from the start.", [8, 22, 192, 216]]], [["On the right, the latest cards only. Watch where that Pip ends up.", [200, 22, 192, 216]]]]; },
    draw(t) { const r = need('rnd0'), q = need('rec0'); if (!r || !q) { busy(progress(['rec0', 'rnd0']), 150); return; } const N = nums(), s = .72;
      [[r, N.gA, 12, 'replay', '#3f8582'], [q, N.gB, 204, 'latest 32', '#c4581f']].forEach(([run, g, x0, lab, col], i) => {
        mini(x0 - D.FX * s, 46 - D.FY * s, s, () => { D.meadow({ t, heat: heatOf(run.snaps[8000]), tufts: .5 }); if (t > 3) D.path(g.P, Math.floor((t - 3) * 6), { r: 3 }); D.pipAt(D.START[0], D.START[1], 1, t); });
@@ -354,15 +364,18 @@ const STEPS = [
      card(['maps: the largest Q-value at each spot', 'teal dots: Pip following its largest Q-value', { s: 'run 1, after 8000 moves', c: C.soft }], t - 1, { y: 252, gap: 1.2 }); } },
  { h: 'Old cards, old habits', p: ['The box’s cards came from an **older** Pip, with older Q-values and habits. DQN doesn’t mind: its target, as in Q-learning, asks the worth of the **best** move from the landing spot, whatever habit made the card. Any card gives a fair target.', 'SARSA-like methods, learning about Pip’s current habit, would study a Pip that no longer exists, so they cannot simply reuse old cards.'],
    shot: [3, 10],
+   say: [[["One worry. The cards in the box came from an older Pip, with older habits.", [110, 110, 180, 100]]], [["DQN doesn't mind.", [30, 292, 340, 106]], ["Its target always asks about the best move from the landing spot, whoever made the card.", [30, 292, 340, 106]], ["A method like SARSA, which studies today's habit, would be learning about a Pip that's gone.", [30, 292, 340, 106]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.5, .3, 1, t); dimScene(.72); shoebox(W / 2, 150, 14, t, { label: 'cards from moves 6000 … 8000' });
      card(['DQN target: reward + 0.9 × best Q there', { s: '  → any card gives a fair target', c: C.goldInk }, 'SARSA: learns about today’s habit', { s: '  → old cards describe an old Pip', c: C.roseInk }], t - 1.5, { gap: 1.2, fs: 16, lh: 22 }); } },
  { h: 'What about the deadly triad?', p: ['The funcapprox reel warned: a network, plus targets built from guesses, plus data from another habit can blow up. Replay has all three: old cards come from older Pips.', 'Nothing guarantees safety, but here it stayed calm, likely because the box holds only the latest 2000 moves, so its cards come from Pips much like today’s. The next reel’s frozen copy adds more safety.'],
    shot: [3, 9],
+   say: [["Remember the deadly triad? A network, targets built from guesses, and data from other habits. Replay has all three."], [["Here it stayed calm anyway.", [30, 80, 340, 110]], ["The box only keeps recent moves, so its cards come from Pips much like today's.", [30, 80, 340, 110]], "The next reel adds more safety."]],
    draw(t) { D.meadow({ t }); D.pipAt(.5, .3, 1, t); dimScene(.72);
      card(['network: shared knobs  ✓', 'targets from guesses (bootstrapping)  ✓', 'cards from other habits (off-policy)  ✓', { s: 'here: stable, the box only holds recent moves', c: C.goldInk }], t - .8, { y: 80, gap: 1.2, fs: 16 }); } },
 { get p() { const N = nums(); return ['Drag the **memory size** (four runs each). With 32 cards even a random handful is a near-duplicate; a few hundred already work much better.',
      `Keeping all 8000 was worse here (${f1(last(N.caps[3]))} against ${f1(last(N.caps[2]))}). Every card gives a fair target, but the box decides **which spots** get lessons. Likely: most cards then come from early walks, in places today’s Pip rarely visits.`]; },
    h: 'Your turn', ctl: { label: 'memory', values: CAPS, def: 2, fmt: v => v + ' cards', onChange: st => {} }, shot: [3, 9],
+   get say() { const N = nums(); return [["Your turn. Drag the memory size, and watch the race replay."], [["With a tiny box, even a random handful is full of near-duplicates.", [40, 28, 330, 236]], ["A few hundred cards already work much better.", [40, 28, 330, 236]]], [["Surprisingly, keeping all eight thousand did worse here.", [100, 280, 200, 120]], "The box decides which spots get lessons. Old cards point at places today's Pip rarely visits."]]; },
    draw(t, st) { const c = CAPS[st.ci ?? 2], keys = K.map(k => capKey(c, k));
      const ready = keys.every(k => need(k)); if (!ready) { busy(progress(keys), 140); return; }
      const n = clamp(Math.floor((t - (st.changed ?? 0) - .2) * 6), 0, 16), av = avgEv(keys), ser = keys.map(k => ({ v: force(k).ev, col: C.teal, w: 1, a: .35, n }));
@@ -372,10 +385,12 @@ const STEPS = [
      txt(n >= 16 ? `average after 8000 moves: ${f1(last(av))} of 30` : ' ', W / 2, 392, { s: 16, c: '#3f8582' }); } },
  { h: 'Where it came from', p: ['Long-Ji Lin proposed experience replay in 1992. DQN made it famous in 2015: its memory held the latest one million moves, and each update used a random handful of 32. Without replay, DQN’s Breakout score dropped from about 317 to about 10.', 'One upgrade, **prioritised replay** (Schaul and others, 2016), draws the surprising cards, those with a big TD error, more often.'],
    shot: [3, 9],
+   say: [["Experience replay goes back to Long-Ji Lin, in nineteen ninety two."], [["DQN made it famous in twenty fifteen, with a memory of a million moves.", [30, 100, 340, 110]], ["Without replay, its Breakout score fell from about three hundred and seventeen to about ten.", [30, 100, 340, 110]], ["Later, prioritised replay drew the surprising cards more often.", [30, 100, 340, 110]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); dimScene(.6);
      card(['1992  Lin: experience replay', '2015  DQN: 1 million cards, handfuls of 32', '2016  prioritised replay: surprises first', { s: 'Breakout: about 317 with replay, 10 without', c: C.soft }], t - .5, { y: 100, gap: 1.2 }); } },
  { h: 'Recap', p: ['Moves that follow each other are near-duplicates, and fitting the latest ones bends the shared knobs toward one corner, overwriting old lessons.', '**Experience replay** keeps the latest moves as cards in a memory and learns from random handfuls: varied, fair samples of the whole meadow, each card reused many times.'],
    shot: [3, 9],
+   say: [["So, moves that follow each other are near-duplicates. Learning from them in order bends the network toward one corner, and old lessons fade."], [["Experience replay keeps a box of recent cards, and learns from random handfuls.", [30, 292, 340, 110]], "Varied lessons, each card reused many times, and much less forgetting."]],
    draw(t) { const r = need('rnd0'); D.meadow({ t, heat: r ? heatOf(r.snaps[8000]) : null, heatA: .5 }); D.pipAt(.1, .1, 1, t);
      card(['every move: a card into the memory', 'every update: 32 cards drawn at random', 'random handful: varied, less forgotten', { s: 'fine for DQN, which learns about the best move', c: C.soft }], t - .3, { gap: 1 }); } },
 ];

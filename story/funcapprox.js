@@ -244,21 +244,25 @@ const INL = ['x', 'y', 'to cheese', 'to cat'];
 const STEPS = [
  { h: 'Out of the maze', get p() { return ['Pip has left the maze for an open **meadow**: no cells, no walls inside. Its position is just two numbers, **x** from left to right and **y** from bottom to top, each between 0 and 1.', 'The rules stay: +1 on the step landing inside the cheese circle, −1 inside the cat’s circle, either ending the walk. γ (gamma) is still 0.9.']; },
    shot: [3, 9],
+   say: [[["Pip has left the maze, for an open meadow.", [60, 8, 280, 270]], ["No cells, no inside walls. Its position is just two numbers, x and y.", [60, 8, 280, 270]]], [["Same rules. Cheese circle plus one, cat circle minus one.", [30, 292, 340, 87]], "And gamma is still zero point nine."]],
    draw(t) { D.meadow({ t, draw: clamp(t / 1.2), cheese: clamp(t - 1.4), cat: clamp(t - 2), labels: clamp(t - 2.6) }); axes(clamp(t - 1)); D.pipAt(S0[0], S0[1], 1, t);
      if (t > 3.4) card(['position: two numbers, x and y, from 0 to 1', '+1 into the cheese circle, −1 into the cat’s', { s: 'either one ends the walk · γ = 0.9', c: C.soft }], t - 3.4); } },
  { h: 'Moves on bumpy grass', get p() { return [`Pip still has four moves: up, right, down, left. A move carries it 0.15 that way, plus a small random **wobble** from the uneven grass. Three moves right from the start (0.10, 0.10) landed at (${fx(DEMO[1][0])}, ${fx(DEMO[1][1])}), then (${fx(DEMO[2][0])}, ${fx(DEMO[2][1])}), then (${fx(DEMO[3][0])}, ${fx(DEMO[3][1])}).`, 'The fence round the meadow stops Pip at the edge.']; },
    shot: [2, 7],
+   say: [[["Pip still has four moves. Watch three steps to the right.", [60, 8, 280, 270]], ["Each carries it about zero point one five, plus a little random wobble from the bumpy grass.", [60, 8, 280, 270]]], [["And the fence stops Pip at the edge.", [30, 292, 340, 87]]]],
    draw(t) { D.meadow({ t }); const m = walkAlong(DEMO, Math.max(0, t - .8), 1.3, { c: C.teal });
      DEMO.slice(1, m.k + 1).forEach((p, i) => tag(`${fx(p[0])}, ${fx(p[1])}`, p[0], p[1], clamp((t - .8 - (i + 1) * 1.3) * 2), C.ink, { dy: i % 2 ? 18 : -18, w: 32 }));
      card(['a move: 0.15 in its direction', '+ a small random wobble', { s: 'the fence stops Pip at the edge', c: C.soft }], t - 5.2); } },
  { h: 'Pip’s habit', get p() { return ['As in the values reel, Pip follows a fixed **habit**. Below 0.7 high, it goes up. Higher, it steps toward the cheese along whichever gap is bigger, sideways or up and down. One move in five goes a random direction instead.', `Here is walk 1: ${W1.length} moves; move ${W1R + 1} was random. We want this habit’s **values**: from each spot, the expected discounted return.`]; },
    shot: [3, 10],
+   say: [[["Pip follows a fixed habit again. Watch the arrows.", [60, 8, 280, 270]], ["Up at first, then toward the cheese.", [60, 8, 280, 270]], ["And one move in five, a random direction.", [30, 292, 340, 87]]], [["Here's walk one. Ten moves, ending in the cheese.", [60, 8, 280, 270]], "We want this habit's values, from every spot."]],
    draw(t) { D.meadow({ t }); habitArrows(clamp(t - .3)); const m = walkAlong(W1P, Math.max(0, t - 2), .55);
      if (m.k > W1R && m.k <= W1R + 3) txt('random move', px(W1P[W1R + 1][0]) + 44, py(W1P[W1R + 1][1]), { s: 13, c: C.roseInk });
      if (m.done) bubble('+1', px(CHEESE[0]), py(CHEESE[1]) - 18, t - 2 - W1.length * .55);
      card(['below 0.7 high: go up', 'then: toward the cheese, along the bigger gap', { s: '1 move in 5: a random direction', c: C.soft }], t - 1); } },
  { h: 'A notebook for every spot?', get p() { return ['Each maze cell’s number was visited again and again. Here positions are real numbers and the wobble random, so every landing spot is new.', `Pip took ${NW.toLocaleString('en-US')} walks, from walk 2 on with random starts. It stood on ${NSPOT.toLocaleString('en-US')} spots and, except when squeezed into a fence corner, ${DUP === 0 ? 'never on exactly the same spot twice' : 'on the same spot twice only ' + DUP + ' times'}. A notebook page per spot would never be reread.`]; },
    shot: [3, 10],
+   say: [[["In the maze, each cell got visited again and again.", [60, 8, 280, 270]], ["Here, every landing spot is new. Watch the blue dots.", [60, 8, 280, 270]]], [["In ten thousand walks, Pip never stood on exactly the same spot twice.", [30, 292, 340, 64]], "A notebook page per spot would never be read again."]],
    draw(t) { D.meadow({ t }); D.path(W1P, W1P.length, { a: .8 });
      [2, 5, 8].forEach((i, q) => tag(`${f3(W1P[i][0])}, ${f3(W1P[i][1])}`, W1P[i][0], W1P[i][1], clamp(t - .8 - q * .6), C.ink, { dx: q === 1 ? -46 : 46, dy: 0, w: 40 }));
      const n = clamp(Math.floor((t - 3) * 40), 0, 150); for (let w = 1; w <= n; w++) { const s = WALKS[w][0]; dot(px(s.nx), py(s.ny), 1.8, C.blue, .7); }
@@ -266,6 +270,7 @@ const STEPS = [
      if (t > 6) card([`spots visited in ${NW.toLocaleString('en-US')} walks: ${NSPOT.toLocaleString('en-US')}`, { s: `exact repeats (fence corners aside): ${DUP}`, c: C.roseInk }], t - 6); } },
  { h: 'Chop it into squares?', get p() { return ['We could cut the meadow into squares and keep one number per square. With 16 by 16 squares that is 256 numbers, and each learns only from its own visits.', 'Worse, two neighbouring squares are almost the same place, yet what one learns teaches the other nothing. Finer squares mean more numbers and fewer visits each; coarser ones blur everything together.']; },
    shot: [3, 10],
+   say: [[["We could cut the meadow into squares.", [60, 8, 280, 270]], ["Sixteen by sixteen, one number each.", [60, 8, 280, 270]]], [["But look at these two neighbours. Almost the same place, learning separately.", [60, 8, 280, 270]], ["Neither teaches the other anything.", [30, 290, 340, 110]]]],
    draw(t) { D.meadow({ t }); const a = clamp(t - .5); for (let k = 1; k < 16; k++) { alpha(a * .6, () => { rline(px(k / 16), FY, px(k / 16), FY + FS, 800 + k, { c: C.line, w: .8, once: true, j: .3 }); rline(FX, py(k / 16), FX + FS, py(k / 16), 820 + k, { c: C.line, w: .8, once: true, j: .3 }); }); }
      const u = clamp(t - 2.5); box(px(4 / 16), py(6 / 16), FS / 16, FS / 16, C.teal, .7 * u); box(px(5 / 16), py(6 / 16), FS / 16, FS / 16, C.blue, .7 * u); D.pipAt(4.4 / 16, 3.6 / 16, 1, t);
      if (u > 0) arrow(px(4.9 / 16), py(4.4 / 16), px(5 / 16), py(5.3 / 16), 1600, { c: C.ink, w: 1.3, head: 5 });
@@ -273,12 +278,14 @@ const STEPS = [
      card(['16 × 16 = 256 separate numbers', { s: 'neighbours share nothing they learn', c: C.roseInk }], t - 5, { y: 336 }); } },
  { h: 'Nearby spots, similar values', get p() { return [`The habit’s true values, colour by colour: gold good, rose bad, stronger for bigger. We worked them out with ${NMC} test walks from the middle of each square, something Pip cannot do; it must learn them.`, `Note the dark band **below the cat**: from there the habit climbs straight into it, ${f2(trueAt(...BELOW))} at (0.60, 0.30). Mostly, though, nearby spots have similar values.`]; },
    shot: [4, 11],
+   say: [[["Here are the habit's true values. Gold is good, rose is bad.", [60, 8, 280, 270]], ["Pip can't see this. It has to learn it.", [60, 8, 280, 270]]], [["Notice the dark band below the cat. From there, the habit climbs straight into it.", [60, 8, 280, 270]]], [["But mostly, nearby spots have similar values.", [30, 330, 340, 64]]]],
    draw(t) { const T = TRUE(); D.meadow({ t, heat: (x, y) => trueAt(x, y), heatA: clamp(t - .5) }); axes(.7);
      legend(300, clamp(t - 1.5)); txt('true value of the habit, square by square', W / 2, 322, { s: 14, c: C.soft, a: clamp(t - 1.5) });
      if (t > 4) { ring(BELOW[0], BELOW[1], C.roseInk, clamp(t - 4)); tag(f2(trueAt(...BELOW)), BELOW[0], BELOW[1], clamp(t - 4), C.roseInk, { dy: 18, w: 22 }); }
      if (t > 6) card([{ s: 'close spots: similar values', c: C.goldInk }, { s: 'so one spot’s lesson should help its neighbours', c: C.soft }], t - 6, { y: 338 }); } },
  { h: 'Four measurements', get p() { return ['So instead of naming the spot, Pip **describes** it with a few measurements, called **features**: its x, its y, its distance to the cheese and its distance to the cat.', `At the start these are ${fx(SF[0])}, ${fx(SF[1])}, ${fx(SF[2])} and ${fx(SF[3])}. Spots that are close have similar measurements, so a rule built on them treats them alike. That is **generalisation**.`]; },
    shot: [3, 9],
+   say: [[["So instead of naming the spot, Pip describes it with a few measurements.", [60, 8, 280, 270]], ["Its x and y. Its distance to the cheese. Its distance to the cat.", [60, 8, 280, 270]]], [["Close spots have similar measurements, so a rule built on them treats them alike.", [30, 292, 340, 87]], "That's generalisation."]],
    draw(t) { D.meadow({ t, heatA: 0 }); const a = clamp(t - .8), b = clamp(t - 1.6);
      alpha(a, () => { ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = C.goldInk; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(px(S0[0]), py(S0[1])); ctx.lineTo(px(CHEESE[0]), py(CHEESE[1])); ctx.stroke(); ctx.restore(); });
      alpha(b, () => { ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = C.roseInk; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(px(S0[0]), py(S0[1])); ctx.lineTo(px(CAT[0]), py(CAT[1])); ctx.stroke(); ctx.restore(); });
@@ -286,10 +293,12 @@ const STEPS = [
      card([`x = ${fx(SF[0])}      y = ${fx(SF[1])}`, `to cheese = ${fx(SF[2])}      to cat = ${fx(SF[3])}`, { s: 'four measurements describe any spot', c: C.soft }], t - 2.6); } },
  { h: 'A recipe with five knobs', get p() { return ['The simplest rule: multiply each measurement by its own number, add them up, plus a fixed amount b. Those five numbers are **weights**, the knobs Pip can turn. Such a rule is a **linear** recipe.', 'All five knobs start at 0, so the recipe guesses 0 everywhere. One recipe guesses for every spot on the meadow, even spots never visited.']; },
    shot: [3, 9],
+   say: [[["The simplest rule. Multiply each measurement by its own knob, and add them up.", [30, 292, 340, 87]], ["That's a linear recipe, with five knobs.", [30, 292, 340, 87]]], [["All start at zero, so every guess is zero.", [60, 8, 280, 270]], "And one recipe guesses for every spot, even ones never visited."]],
    draw(t) { D.meadow({ t, heat: () => 0 }); D.pipAt(S0[0], S0[1], 1, t); txt('every guess 0', px(.3), py(.45), { s: 15, c: C.soft, a: clamp(t - 5) });
      card(['guess = b + w1 × x + w2 × y', '          + w3 × to cheese + w4 × to cat', { s: 'knobs b, w1, w2, w3, w4: all 0 to start', c: C.soft }], t - .6, { gap: 1.4 }); } },
  { h: 'Nudging the knobs', get p() { return [`TD target: reward + 0.9 × the landing guess, or just the reward at the end. Walk 1’s last step, from (${fx(LIN().first.s.x)}, ${fx(LIN().first.s.y)}) into the cheese: target 1, guess 0, error 1.`, `Each knob moves by **step size × error × its measurement**, with 1 for b. At step size 0.05, b becomes ${f3(LIN().first.after[0])}. That is a **gradient step** on (target − guess)², target held fixed: bigger measurements sway the guess more, so move more.`]; },
    shot: [3, 11],
+   say: [[["Walk one's last step, into the cheese.", [60, 8, 280, 270]], ["Target one, guess zero. The error is one.", [60, 8, 280, 270]]], [["Now each knob moves by step size, times error, times its measurement.", [18, 290, 364, 108]], ["Watch them change, one by one.", [18, 290, 364, 108]]], "That's a gradient step. Bigger measurements sway the guess more, so they move more."],
    draw(t) { const F = LIN().first; D.meadow({ t }); D.path(W1P, W1P.length, { a: .5 }); ring(F.s.x, F.s.y, C.goldInk, clamp(t - .5)); D.pipAt(CHEESE[0], CHEESE[1], 1, t); bubble('+1', px(CHEESE[0]), py(CHEESE[1]) - 18, t - .6);
      const nm = ['b', 'w1 (x)', 'w2 (y)', 'w3 (cheese)', 'w4 (cat)'], x0 = 34, dx = 68;
      if (t > 2) { box(18, 290, 364, 108, C.card, .95); rrect(18, 290, 364, 108, 210, { c: C.line, w: 1.1 }); txt('knob += 0.05 × error 1 × measurement', W / 2, 304, { s: 15, c: C.soft }); }
@@ -297,38 +306,45 @@ const STEPS = [
        txt(s, X, 330, { s: 13, c: C.soft, a: u }); txt(`× ${f2(F.f[i])}`, X, 350, { s: 14, a: u }); txt(`0 → ${f3(F.after[i])}`, X, 374, { s: 15, c: C.goldInk, a: u }); }); } },
  { h: 'One nudge moved every spot', get p() { return [`That single nudge changed the guess **everywhere**. The spot Pip left now guesses ${f3(linV(LIN().first.after)(LIN().first.s.x, LIN().first.s.y))}. The start, far away, now guesses ${f3(linV(LIN().first.after)(S0[0], S0[1]))}, and the spot below the cat ${f3(linV(LIN().first.after)(...BELOW))}, though nothing happened there.`, 'This sharing is the whole point, and its danger: every lesson about one spot spills onto all the others.']; },
    shot: [4, 11],
+   say: [[["That one nudge changed the guess everywhere. Watch the meadow warm up.", [60, 8, 280, 270]]], [["The start, far away, moved. The spot below the cat moved too, though nothing happened there.", [60, 8, 280, 270]]], [["That sharing is the whole point. And its danger.", [30, 310, 340, 64]]]],
    draw(t) { const F = LIN().first, V = linV(F.after), u = clamp((t - 1) / 1.5); D.meadow({ t, heat: (x, y) => u * V(x, y), vmax: .2 }); txt('colours ×4 brighter here', FX + FS - 4, FY + FS + 10, { s: 12, c: C.soft, al: 'right' });
      [[F.s.x, F.s.y, 'here'], [S0[0], S0[1], 'start'], [BELOW[0], BELOW[1], 'below cat']].forEach(([x, y, s], i) => { const a = clamp(t - 3 - i * 1.2); ring(x, y, C.goldInk, a); tag(`${s} ${f3(u * V(x, y))}`, x, y, a, C.goldInk, { dy: i === 0 ? 18 : -18, dx: i === 1 ? 26 : 0, w: 46 }); });
      card(['one nudge after one step at one spot', { s: 'lifted the guess of every spot on the meadow', c: C.goldInk }], t - 6.5, { y: 310 }); } },
  { h: 'Training the recipe', get p() { return [`Train on all ${NW.toLocaleString('en-US')} walks; random starts cover the whole meadow. Pip nudges after every move, and the step size shrinks from 0.05 to ${f3(A_LIN * .05)}, so late walks only fine-tune.`, `Chart: the **average gap** between guess and true value over the 240 grass squares. It drops from ${f2(LIN().gaps[0])} to ${f2(LIN().gaps[LIN().gaps.length - 1])}, mostly in the first few hundred walks, then wobbles as walks tug the shared knobs.`]; },
    shot: [4, 12],
+   say: [[["Now train on all ten thousand walks.", [60, 8, 280, 270]], ["Watch the colours settle.", [60, 8, 280, 270]]], [["The chart below tracks the average gap from the true values.", [20, 285, 360, 115]], ["It drops from zero point four seven to about zero point two, then wobbles.", [20, 285, 360, 115]]]],
    draw(t) { const S = LIN(), n = clamp(Math.floor((t - 1) * 12), 0, S.snaps.length - 1); D.meadow({ t, heat: linV(S.snaps[n]) }); D.pipAt(S0[0], S0[1], 1, t);
      gapChart([{ v: S.gaps, col: '#c99a3a', label: f2(S.gaps[S.gaps.length - 1]), dy: -6 }], n + 1); caption(`after walk ${(n * SNAP || 1).toLocaleString('en-US')}`); } },
  { h: 'What a straight recipe can’t draw', get p() { return [`Left: the true values. Right: the trained recipe. It gets the big picture, good near the cheese, poor far away, but misses the band below the cat: at (0.60, 0.30) the truth is ${f2(trueAt(...BELOW))}, the recipe ${f2(linV(LIN().w)(...BELOW))}.`, 'Why? The recipe only adds up measurements. A dip **only** where Pip is near the cat’s x **and** below it needs measurements combined, and adding can’t do “and”.']; },
    shot: [4, 11],
+   say: [[["True values on the left. The trained recipe on the right.", [4, 20, 394, 220]], ["It gets the big picture.", [208, 20, 190, 220]]], [["But look at the ring below the cat. The truth is strongly negative. The recipe says about zero.", [4, 20, 394, 230]]], [["The recipe can only add. Near the cat's x and below it needs an and.", [30, 296, 340, 64]]]],
    draw(t) { const V = linV(LIN().w); mini(8, 40, .7, { t, heat: (x, y) => trueAt(x, y), labels: 0, after: () => ring(BELOW[0], BELOW[1], C.roseInk, clamp(t - 3)) });
      mini(212, 40, .7, { t, heat: V, after: () => ring(BELOW[0], BELOW[1], C.roseInk, clamp(t - 3)) }); txt('true values', 98, 26, { s: 15, c: '#3f7f7c' }); txt('linear recipe', 302, 26, { s: 15, c: C.goldInk });
      txt(f2(trueAt(...BELOW)), 98, 240, { s: 15, c: C.roseInk, a: clamp(t - 3) }); txt(f2(V(...BELOW)), 302, 240, { s: 15, c: C.soft, a: clamp(t - 3) }); txt('below the cat:', W / 2, 240, { s: 14, c: C.soft, a: clamp(t - 3) });
      legend(272, .8); card(['the recipe adds measurements, each times its knob', { s: '“near the cat’s x and below it” needs combining', c: C.roseInk }], t - 5, { y: 296 }); } },
  { h: 'A tiny neural network', get p() { return ['Hand-making a measurement for that band needs the answer already. Instead, a tiny **neural network**: the four measurements, scaled to −1 to 1, feed 8 **hidden units**, each summing them with its own weights and squashing the result into −1 to 1. The output sums those with more weights: the guess.', `Lines: weights; gold positive, rose negative, thicker bigger. 49 knobs, starting small and random. From the start’s measurements it guesses ${f2(D.forward(NET().snaps[0], D.feats(...S0)).out[0])}.`]; },
    shot: [3, 10],
+   say: [[["So, a tiny neural network.", [100, 20, 220, 260]], ["The four measurements feed eight hidden units.", [100, 20, 220, 260]], ["Each adds them up with its own weights, then squashes the result.", [100, 20, 220, 260]]], [["The output adds those up again. That's the guess.", [30, 292, 340, 87]], "Forty nine knobs in all."]],
    draw(t) { const n = NET().snaps[0], f = D.feats(S0[0], S0[1]); D.drawNet(n, { x: 120, y: 30, w: 170, h: 220 }, { inL: INL, outL: ['guess'], f: t > 6 ? f : null, build: clamp((t - .5) / 3) });
      txt('measurements', 92, 268, { s: 13, c: C.soft }); txt('8 hidden units', 205, 268, { s: 13, c: C.soft }); txt('guess', 300, 268, { s: 13, c: C.soft });
      card(['hidden unit: add up (weight × input), then squash', 'guess: add up (weight × hidden unit)', { s: '4 × 8 + 8 + 8 + 1 = 49 knobs', c: C.soft }], t - 3.5); } },
  { h: 'Same nudge, through the network', get p() { return ['Each knob moves by step size × error × **how much turning that knob would change this guess**. For the recipe that was the measurement. In a network it is computed layer by layer, output first: **backpropagation**.', `At walk 1’s end it guessed ${f3(NET().first.g)} beside the cheese: error 1 − ${f3(NET().first.g)} = ${f3(NET().first.e)}. One nudge at step size 0.1 lifts it to ${f3(NET().first.after)}.`]; },
    shot: [3, 10],
+   say: [[["The nudge works the same way.", [100, 20, 220, 260]], ["Each knob moves by how much turning it would change the guess.", [30, 292, 340, 87]]], [["Watch the error flow back through the network, output first.", [100, 20, 220, 260]], ["That's backpropagation.", [100, 20, 220, 260]]], [["A single nudge more than doubles this guess.", [30, 292, 340, 87]]]],
    draw(t) { const F = NET().first, f = D.feats(F.s.x, F.s.y), aft = t > 6.5; D.drawNet(aft ? F.net : F.pre, { x: 120, y: 24, w: 170, h: 200 }, { inL: INL, outL: ['guess'], f, outFmt: f3 });
      const ea = clamp(t - 1.5) * (aft ? 0 : 1); if (ea > 0) { alpha(ea, () => arrow(300, 252, 150, 252, 1700, { c: C.roseInk, w: 1.6 })); txt('the error flows back', 225, 266, { s: 13, c: C.roseInk, a: ea }); }
      txt(aft ? 'after one nudge' : 'before', 330, 180, { s: 14, c: aft ? C.goldInk : C.soft });
      card([`target 1, guess ${f3(F.g)}, error ${f3(F.e)}`, 'knob += 0.1 × error × (effect of knob on guess)', { s: `guess here: ${f3(F.g)} → ${f3(F.after)}`, c: C.goldInk }], t - 3); } },
  { h: 'The network learns the shadow', get p() { const N = netV(NET().n); return [`The same ${NW.toLocaleString('en-US')} walks, now nudging the network, step size 0.1 shrinking to ${f3(A_NET * .05)}. Blue is its average gap, gold the recipe’s. The network ends at ${f2(NET().gaps[NET().gaps.length - 1])} against ${f2(LIN().gaps[LIN().gaps.length - 1])}.`, `The band below the cat appears: at (0.60, 0.30) the network says ${f2(N(...BELOW))}, the truth ${f2(trueAt(...BELOW))}. But it is too wide: at (${fx(WIDE[0])}, ${fx(WIDE[1])}), truly worth ${f2(trueAt(...WIDE))}, it says ${f2(N(...WIDE))}.`]; },
    shot: [5, 12],
+   say: [[["Train the network on the same walks.", [60, 8, 280, 270]], ["Blue is its average gap. Gold, the recipe's.", [20, 285, 360, 115]], ["The network ends lower.", [20, 285, 360, 115]]], [["And the band below the cat appears.", [60, 8, 280, 270]], ["But it's too wide. It spills onto spots that are actually fine.", [60, 8, 280, 270]]]],
    draw(t) { const S = NET(), n = clamp(Math.floor((t - 1) * 12), 0, S.snaps.length - 1); D.meadow({ t, heat: netV(S.snaps[n]) }); D.pipAt(S0[0], S0[1], 1, t);
      if (n === S.snaps.length - 1) { ring(BELOW[0], BELOW[1], C.roseInk, clamp(t - 10)); ring(WIDE[0], WIDE[1], C.ink, clamp(t - 11)); }
      gapChart([{ v: LIN().gaps, col: '#e3c48a', w: 1.2, label: f2(LIN().gaps[LIN().gaps.length - 1]), dy: -7 }, { v: S.gaps, col: '#4f7fb0', n: n + 1, label: f2(S.gaps[S.gaps.length - 1]), dy: 7 }], n + 1);
      caption(`network after walk ${(n * SNAP || 1).toLocaleString('en-US')}`); } },
  { h: 'The catch: shared knobs', get p() { const d = ripD(); return [`Walk ${RIP.k + 1} was one move into the cheese: one nudge, raising that spot by ${f3(d.here)}. The far-off start moved too, by ${sg(d.start)}. TD targets use the same knobs, so nudges move them too.`, 'Shared knobs, guesses from guesses and **different**-policy data can blow learning up together: Sutton and Barto’s **deadly triad**. Here the third was missing: Pip learned about its own habit, and stayed calm.']; },
    shot: [4, 11],
+   say: [[["Here's the catch. Walk fifty six was one move into the cheese.", [60, 8, 280, 270]], ["The colour shows what that one nudge changed.", [60, 8, 280, 270]]], [["The far off start moved too. And TD targets use the same knobs, so they move as well.", [60, 8, 280, 270]]], [["Add data from a different policy, and that's the deadly triad.", [30, 296, 340, 87]]]],
    draw(t) { NET(); const A = netV(RIP.before), B = netV(RIP.after), P = [[WALKS[RIP.k][0].x, WALKS[RIP.k][0].y]].concat(WALKS[RIP.k].map(s => [s.nx, s.ny]));
      D.meadow({ t, heat: (x, y) => (B(x, y) - A(x, y)), vmax: .05, heatA: clamp(t - 1.5) }); D.path(P, P.length, { c: C.ink, a: .9, r: 3 });
      txt('colour = change from this one walk (strongly magnified)', W / 2, 284, { s: 13, c: C.soft, a: clamp(t - 1.5) });
@@ -338,6 +354,7 @@ const STEPS = [
    get p() { return ['**Tap a spot** on the meadow to teach Pip “this spot is worth 1”: 5 nudges there, step size 0.05, from the trained model. Watch which other spots change with it.', 'Slide to switch between linear recipe and network. The recipe moves near and far spots about equally. The network moves nearby spots more, but far ones too: never only the spot you tapped.']; },
    shot: [3, 9],
    tap(x, y, st) { const wx = (x - FX) / FS, wy = 1 - (y - FY) / FS; if (wx < 0 || wx > 1 || wy < 0 || wy > 1 || D.zone(wx, wy)) return; st.tp = [wx, wy]; },
+   say: [[["Your turn. Tap a spot to teach Pip, this spot is worth one.", [60, 8, 280, 270]], ["Watch which other spots change with it.", [60, 8, 280, 270]]], [["Slide between the recipe and the network.", [60, 8, 280, 270]], ["The recipe moves near and far alike. The network moves nearby spots more.", [30, 310, 340, 40]]]],
    draw(t, st) { const kind = st.ci ?? 1, base = kind ? netV(NET().n) : linV(LIN().w), tp = st.tp, V = tp ? nudged(kind, tp[0], tp[1]) : base;
      D.meadow({ t, heat: V }); legend(296, 1);
      if (tp) { ring(tp[0], tp[1], C.ink, 1, 8); const d0 = V(...S0) - base(...S0);
@@ -346,10 +363,12 @@ const STEPS = [
      caption(kind ? 'network (49 knobs)' : 'linear recipe (5 knobs)'); } },
  { h: 'Where you’ve seen this', get p() { return ['In 1992 Gerald Tesauro’s **TD-Gammon** learned backgammon with exactly this mix: a neural network for the values of board positions, trained with TD targets from games against itself. Later versions played close to the best human players.', 'Today almost every large RL system uses a network instead of a table. The next reel, DQN, does it for Q-values and learns Atari games from the screen.']; },
    shot: [3, 10],
+   say: [[["TD Gammon used exactly this mix in nineteen ninety two.", [30, 292, 340, 87]], ["A network for the values, trained with TD, from games against itself.", [30, 292, 340, 87]]], ["Today almost every large RL system uses a network instead of a table. The next reel, DQN, does it for Atari."]],
    draw(t) { D.meadow({ t, heat: netV(NET().n) }); const P = W1P; walkAlong(P, (t * 1.6) % (P.length * .55 + 1.5), .55, { a: .7 });
      card(['TD-Gammon (1992): network + TD, self-play', 'DQN (2013, 2015): network + Q-learning, Atari', { s: 'tables only for small worlds', c: C.soft }], t - 1.5); } },
  { h: 'Recap', get p() { return ['When states are too many, or never repeat, a table cannot work. **Function approximation** describes a state with features and learns a function with a few knobs that gives a guess for any state.', 'Learning nudges the knobs toward TD targets, a gradient step. Because the knobs are shared, every lesson generalises to similar states, and sometimes spills where it should not.']; },
    shot: [3, 9],
+   say: [[["So, when states never repeat, describe them with features.", [30, 292, 340, 110]], ["Then learn a function with a few knobs that guesses for any state.", [30, 292, 340, 110]]], ["Shared knobs mean every lesson generalises. And sometimes, it spills where it shouldn't."]],
    draw(t) { D.meadow({ t, heat: netV(NET().n) }); D.pipAt(S0[0], S0[1], 1, t);
      card(['describe the spot: features', 'guess = a function of the features, with knobs', 'nudge: knob += step × error × its effect', { s: 'shared knobs: generalise, but spill over', c: C.soft }], t - .3, { gap: 1 }); } },
 ];

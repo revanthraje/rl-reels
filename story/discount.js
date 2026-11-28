@@ -86,12 +86,14 @@ function weightBars(g, n, o = {}) {
 const STEPS = [
  { h: 'Two loose ends', p: ['The last reel left two problems. With plain rewards, a 10-step and a 147-step walk to the cheese both return 1; a step cost fixed that, but too big a cost made the cat the best plan.', 'And a never-ending task’s sum can grow forever. **Discounting** helps with both. Its knob must be chosen too, but it can never make the cat look good.'],
    shot: [4, 10],
+   say: [[["Remember this one? The hundred and forty seven step walk.", [40, 16, 320, 256]], ["With plain rewards, it scored the same as a ten step walk.", [30, 292, 340, 87]]], [["A step cost fixed that, but too big a cost made the cat look best.", [30, 292, 340, 87]]], "And endless tasks have sums that never stop growing. Discounting helps with both."],
    draw(t) { maze({ t }); const e = EPS[4], n = Math.min(e.length, Math.floor(t * 30)); trail(e.slice(0, n).map(q => [q.c, q.r]), .8); const q = e[Math.max(0, n - 1)]; pip(cx(n >= e.length ? q.nc : q.c), cy(n >= e.length ? q.nr : q.r), 1, t);
      card(['10 steps or 147 steps: return 1 either way', 'a step cost: too big, and the cat wins', { s: 'never-ending tasks: the sum can blow up', c: C.soft }], t - 1, { gap: 1.6 });
      caption(n < e.length ? `episode 5, step ${n}` : 'episode 5: 147 steps, return 1'); } },
 
  { h: 'Sooner is better', p: ['Would you take 100 rupees today or 100 rupees in a year? Most people take it today. You can use it now, and who knows what happens in a year.', 'So a reward far in the future should count for a little less than the same reward now. RL builds this in with one number.'],
    shot: [4, 10],
+   say: [[["A quick question. A hundred rupees today, or a hundred in a year?", [40, 40, 320, 200]], ["Most people grab it today.", [40, 40, 320, 200]]], [["You can use it sooner, and the future is uncertain.", [30, 292, 340, 87]]], "So a reward far away should count a little less. RL builds that in with one number."],
    draw(t) { dim(0);
      const coinsAt = (x, y, n, a) => { for (let i = 0; i < n; i++) alpha(a, () => L.coin(x + (i % 5) * 16 - 32, y - Math.floor(i / 5) * 9, 9, '₹')); };
      txt('today', 110, 70, { s: 20, a: clamp(t - .4) }); txt('in a year', 290, 70, { s: 20, a: clamp(t - 1.2) });
@@ -102,12 +104,14 @@ const STEPS = [
 
  { h: 'The discount factor γ', p: ['This is the **discount factor** **γ (gamma)**, from 0 to 1. The next reward counts fully. Each step of delay multiplies by γ: one step, γ; two steps, γ times γ, written γ²; k steps, γ to the power k.', 'The bars show γ = 0.9: 1, 0.9, 0.81, 0.73. γ = 1 means no discount; γ = 0 means only the first reward counts.'],
    shot: [4, 11],
+   say: [[["That number is gamma, the discount factor, between zero and one.", [40, 40, 340, 230]], ["Watch the bars shrink as the delay grows.", [40, 40, 340, 230]]], [["With gamma at zero point nine, each step of delay multiplies by zero point nine again.", [40, 40, 340, 230]], ["Ten steps out, a reward counts only about a third.", [30, 292, 340, 87]]]],
    draw(t) { weightBars(.9, 12, { y0: 230, h: 160, labels: true, ticks: true, grow: k => (t - 1 - k * .45) * 2.5 });
      txt('how much a reward counts', 50, 50, { s: 15, al: 'left', c: C.soft }); txt('steps after the first reward →', 370, 260, { s: 14, al: 'right', c: C.soft, a: clamp(t - 1) });
      rcard([[g2('γ', '0'), ' = 1,   ', g2('γ', '1'), ' = 0.9,   ', g2('γ', '2'), ' = 0.9 × 0.9 = 0.81'], [g2('γ', '3'), ' = 0.73,  …,   ', g2('γ', '10'), ' = 0.35'], { parts: ['γ near 1: shrinks slowly · γ near 0: fast'], c: C.soft }], t - 7, { gap: 1.2 }); } },
 
  { h: 'The discounted return', p: ['Now redefine the return. The first reward counts fully, the next is multiplied by γ, the one after by γ², and so on.', 'G t = R t+1 + γ R t+2 + γ² R t+3 + … With γ = 1 this is the plain sum from the last reel. With γ below 1, every reward still counts, just less the later it comes.'],
    shot: [5, 11],
+   say: [[["So here's the new return.", [20, 60, 360, 150]], ["The first reward counts fully. The next is times gamma. The one after, times gamma twice.", [20, 60, 360, 150]]], [["Set gamma to one, and you're back to the plain sum.", [20, 170, 360, 40]]], [["Below one, every reward still counts, just less the later it comes.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); dim(.94);
      rich([['G', 't'], ' = ', ['R', 't+1'], ' + γ ', ['R', 't+2'], ' + ', g2('γ', '2'), ' ', ['R', 't+3'], ' + …'], W / 2, 90, { s: 28, al: 'center', a: clamp(t - .4) });
      const lab = (s, x, y, a) => txt(s, x, y, { s: 14, c: C.soft, a });
@@ -117,6 +121,7 @@ const STEPS = [
 
  { h: 'Back in the maze', p: ['Drop the step cost: cheese +1, cat −1, other steps 0 again, and take γ = 0.9. On the shortest walk, the +1 is the seventh reward, six steps after the first.', 'So it counts 0.9 to the sixth: 0.9 × 0.9 × 0.9 × 0.9 × 0.9 × 0.9 = 0.53. The discounted return of the shortest walk is 0.53.'],
    shot: [4, 11],
+   say: [[["Back to the maze, with no step cost and gamma at zero point nine.", [40, 16, 320, 256]], ["Watch Pip take the shortest walk.", [40, 16, 320, 256]], ["Each cell shows how much its reward is shrunk.", [40, 16, 320, 256]]], [["The cheese is six steps after the first reward, so it counts zero point five three.", [30, 292, 340, 64]]]],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, clamp((t - .3) / 2), 520); const m = walkPath(SHORT, clamp(t - 2.4, 0, 99), .55); pip(m.x, m.y, m.face, t);
      SHORT.slice(1).forEach(([c, r], k) => { const a = clamp((t - 2.6 - k * .55) * 2); if (a <= 0) return; rich(['× ', g2('0.9', String(k))], cx(c), cy(r) + 22, { s: 13, al: 'center', a, c: C.soft }); });
      if (t > 2.6 && t < 7.6) caption('label in a cell = weight of the reward for stepping onto it');
@@ -125,6 +130,7 @@ const STEPS = [
 
  { h: 'Long walks lose, cats stay bad', p: ['Same three random episodes. Episode 10, 10 steps: 0.9 to the ninth, 0.39. Episode 1, 14 steps: 0.25. Episode 5, 147 steps: about 0.0000002.', 'Shorter walks win, with no step cost. A discounted cheese is always above 0, a discounted cat below 0, so the cat is never the best plan. Wandering forever earns 0: better than the cat, worse than any cheese.'],
    shot: [4, 11],
+   say: [[["Now the same three random walks.", [26, 292, 350, 100]], ["Ten steps scores zero point three nine. Fourteen steps, zero point two five.", [26, 292, 350, 100]], ["The long one, practically nothing.", [26, 292, 350, 100]]], [["And notice. A discounted cheese is always above zero, a discounted cat always below.", [40, 16, 320, 256]], "So the cat can never be the best plan."]],
    draw(t) { maze({ t }); dim(.35); const rows = [['shortest walk', 7, cheeseD(7)], ...SAME.map(i => [`episode ${i + 1}`, LENS[i], dret(epR(EPS[i]), .9)])];
      rows.forEach(([n, l, g], j) => { const a = clamp((t - .6 - j * 1.4) * 2), y = 306 + j * 24; if (a <= 0) return;
        txt(n, 36, y, { s: 16, al: 'left', a, c: j ? C.ink : C.goldInk }); txt(`${l} steps`, 146, y, { s: 15, al: 'left', c: C.soft, a }); rich([g2('0.9', String(l - 1)), ' = ' + (g < .001 ? '0.0000002' : f2(g))], 224, y, { s: 15, a, c: C.goldInk }); });
@@ -132,6 +138,7 @@ const STEPS = [
 
  { h: 'Counting backward again', p: ['Again count from every step of the shortest walk. From the last cell before the cheese, the return is 1. One step earlier, the +1 is one step later: 0.9. Then 0.81, 0.73, down to 0.53 at the start.', 'The rule: G t = R t+1 + γ × G t+1. A later reel builds on it; it is the seed of the Bellman equation.'],
    shot: [5, 12],
+   say: [[["Count backward along the shortest walk again.", [40, 16, 320, 256]], ["Next to the cheese, the return is one.", [40, 16, 320, 256]], ["Each step back multiplies by zero point nine, down to zero point five three at the start.", [40, 16, 320, 256]]], [["The rule is the next reward plus gamma times the next return. It's the seed of the Bellman equation.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, 1, 520); pip(cx(0), cy(3), 1, t);
      const n = SR.length; for (let k = n - 1; k >= 0; k--) { const a = clamp((t - .8 - (n - 1 - k) * .9) * 2); if (a <= 0) continue; const [c, r] = SHORT[k], g = dret(SR, .9, k);
        box(cx(c) - 20, cy(r) - 30, 40, 18, C.card, .9 * a); rich([['G', String(k)], ' ' + f2(g)], cx(c), cy(r) - 21, { s: 15, al: 'center', a, c: C.goldInk }); }
@@ -139,6 +146,7 @@ const STEPS = [
 
  { h: 'Reason 1: the future may not come', p: ['Why multiply by γ? One honest reason: suppose each step has a 1 in 10 chance of cutting the walk short. The lights go out, or Pip is called home, and nothing more is earned, good or bad.', `We sent Pip along the shortest walk 10,000 times like that. It reached the cheese ${CUT.got.toLocaleString('en-US')} times: ${(CUT.got / CUT.n * 100).toFixed(1)} percent, close to 0.9 to the sixth, 0.53.`],
    shot: [5, 12],
+   say: ["Why multiply by gamma? Here's one honest reason.", [["Suppose every step has a one in ten chance the walk just stops.", [40, 16, 320, 256]], ["The crosses mark walks cut short in each cell.", [40, 16, 320, 256]]], [["Out of ten thousand tries, Pip reached the cheese about fifty three percent of the time.", [30, 292, 340, 87]], "That's zero point nine to the sixth."]],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, 1, 520);
      const runs = Math.min(10000, Math.floor(clamp((t - 1) / 6) ** 2 * 10000)); const R = L.rng(CUT_SEED); let got = 0; const ends = new Array(8).fill(0);
      for (let i = 0; i < runs; i++) { let k = 1; for (; k < 7; k++) if (R() < .1) break; ends[k]++; if (k === 7) got++; }
@@ -149,6 +157,7 @@ const STEPS = [
 
  { h: 'γ as a survival chance', p: ['γ = 0.9 acts like a 9 in 10 chance per step that the world goes on; a reward six steps away survives six chances: 0.9 to the sixth.', 'Averaged over cut-offs, the fragile world’s plain return equals the discounted return exactly. That is reason one: **the far future is less certain**. It is a reading of γ; in practice the designer picks it.'],
    shot: [9],
+   say: [[["So gamma acts like a survival chance.", [30, 115, 350, 80]], ["Nine in ten that the world goes on, at every step.", [30, 115, 350, 80]], ["A reward six steps away has to survive six of those.", [30, 115, 350, 80]]], [["Averaged over the luck, that's exactly the discounted return.", [30, 292, 340, 87]], "In practice, though, the designer just picks gamma."]],
    draw(t) { maze({ t }); dim(.92);
      for (let k = 0; k < 7; k++) { const a = clamp((t - .6 - k * .6) * 2), x = 50 + k * 50; if (a <= 0) continue; rcircle(x, 140, 16, 990 + k, { fill: k < 6 ? '#cfe3e2' : C.yellow, c: C.ink, j: .6 }); txt(k < 6 ? '0.9' : '+1', x, 141, { s: 14, a }); if (k < 6) txt('×', x + 25, 141, { s: 16, c: C.soft, a }); }
      txt('keep going? 9 in 10, six times, then the cheese', W / 2, 186, { s: 15, c: C.soft, a: clamp(t - 4.5) });
@@ -156,6 +165,7 @@ const STEPS = [
 
  { h: 'Reason 2: sums stay finite', p: ['The never-ending task paying +1 per step has a sum that grows forever. Discounted with γ = 0.9, 1 + 0.9 + 0.81 + … reaches 6.5 after 10 steps, 8.8 after 20, 9.9 after 50.', 'It never passes 10: by the geometric series, the sum of γ to the k is 1 ÷ (1 − γ). Now every agent’s return is finite and comparable.'],
    shot: [5, 12],
+   say: [[["Reason two. Remember the task paying plus one forever?", [30, 40, 350, 230]], ["Watch the gold line with gamma at zero point nine.", [30, 40, 350, 230]]], [["Six and a half after ten steps. Nearly ten after fifty.", [30, 40, 350, 230]], ["It creeps toward the red line, but never passes ten.", [30, 40, 350, 230]]], [["One over one minus gamma. Every return is finite now.", [30, 292, 340, 64]]]],
    draw(t) { const n = clamp(Math.floor((t - .5) * 6), 0, 60), x0 = 50, x1 = 370, y0 = 250, Y = v => y0 - v / 10 * 180, X = k => x0 + k / 60 * (x1 - x0);
      rline(x0, y0, x1, y0, 970, { c: C.line, w: 1 }); rline(x0, y0, x0, Y(10.6), 971, { c: C.line, w: 1 }); rline(x0, Y(10), x1, Y(10), 972, { c: C.rose, w: 1.2 });
      txt('10', x0 - 6, Y(10), { s: 12, c: C.roseInk, al: 'right' }); txt('limit', x1, Y(10) - 9, { s: 12, c: C.roseInk, al: 'right' }); txt('0', x0 - 6, y0, { s: 12, c: C.soft, al: 'right' }); txt('total so far', x0 + 4, Y(11.3), { s: 14, c: C.soft, al: 'left' }); txt('steps →', x1, y0 + 12, { s: 13, c: C.soft, al: 'right' });
@@ -166,6 +176,7 @@ const STEPS = [
 
  { h: 'How far ahead does it look?', p: ['That same 1 ÷ (1 − γ) is a rule of thumb for how far ahead an agent effectively looks. With γ = 0.9 it is 10 steps; with γ = 0.99, 100.', 'Why? A fragile world ending with chance 1 in 10 per step lasts 10 steps on average. Not a hard cut-off: a reward that far away still counts about 0.35.'],
    shot: [5, 12],
+   say: [[["That same one over one minus gamma tells how far ahead an agent looks.", [30, 50, 350, 210]], ["Gold is gamma zero point nine, about ten steps.", [30, 50, 350, 210]], ["Teal is zero point nine nine, about a hundred.", [30, 50, 350, 210]]], [["It's not a hard wall. At that distance, a reward still counts about a third.", [30, 292, 340, 87]]]],
    draw(t) { const x0 = 50, x1 = 370, y0 = 240, h = 170, N = 150, X = k => x0 + k / N * (x1 - x0), Y = v => y0 - v * h;
      rline(x0, y0, x1, y0, 960, { c: C.line, w: 1 }); rline(x0, y0, x0, y0 - h - 6, 961, { c: C.line, w: 1 }); txt('1', x0 - 6, Y(1), { s: 12, c: C.soft, al: 'right' }); txt('0', x0 - 6, y0, { s: 12, c: C.soft, al: 'right' });
      txt('how much a reward k steps later counts', x0 + 4, Y(1) - 16, { s: 14, c: C.soft, al: 'left' }); [0, 50, 100, 150].forEach(k => txt(String(k), X(k), y0 + 12, { s: 12, c: C.soft })); txt('k →', x1, y0 + 24, { s: 13, c: C.soft, al: 'right' });
@@ -175,6 +186,7 @@ const STEPS = [
 
  { h: 'A crumb or the cheese?', p: ['γ can change which plan is best. A crumb worth +0.3 sits in cell 6, two steps up; eating it also ends the walk. The cheese, +1, is seven steps away.', `Crumb plan: 0.3 × γ. Cheese plan: γ to the sixth. γ = 0.5: crumb wins, 0.15 to 0.016. γ = 0.9: cheese wins, 0.53 to 0.27. They swap at γ ≈ ${SWITCH.toFixed(2)}.`],
    shot: [4, 11],
+   say: [[["Gamma can even change which plan is best.", [40, 16, 320, 256]], ["A crumb, worth zero point three, sits just two steps up.", [40, 16, 320, 256]], ["The cheese is seven steps away.", [40, 16, 320, 256]]], [["With gamma at one half, the crumb wins.", [30, 292, 340, 87]], ["With zero point nine, the cheese wins.", [30, 292, 340, 87]]], "They swap near zero point seven nine."],
    draw(t) { maze({ t }); crumb(cx(0), cy(1), 1.4); txt('+0.3', cx(0) + 14, cy(1) - 18, { s: 15, c: C.goldInk }); route(SOL[.5].P, C.orange, -4, clamp((t - 1) / 1.2), 540); route(SHORT, C.gold, 4, clamp((t - 2.4) / 2), 520); pip(cx(0), cy(3), 1, t);
      txt('2 steps', cx(0) + 26, cy(2) + 4, { s: 13, c: C.goldInk, al: 'left', a: clamp(t - 2) }); txt('7 steps', cx(2), cy(3) + 22, { s: 13, c: C.goldInk, a: clamp(t - 4) });
      rcard([['crumb:  0.3 × γ           cheese:  ', g2('γ', '6')], ['γ = 0.5:   0.15   vs   0.016   → crumb'], ['γ = 0.9:   0.27   vs   0.53     → cheese']], t - 5, { gap: 1.4 }); } },
@@ -182,6 +194,7 @@ const STEPS = [
  { h: 'Your turn', ctl: { label: 'γ', values: GAMMAS, def: 2, fmt: v => v },
    p: ['Drag **γ**. Pip does not know the maze, but we do, so for each setting we compute the best plan, with discounting, and Pip walks it. Later reels show how Pip learns this. Bars: each plan’s worth from the start.', `Below about ${SWITCH.toFixed(2)} the crumb wins: the cheese is too far away to matter. Above it, Pip is patient enough for the cheese.`],
    shot: [3, 8],
+   say: [[["Your turn. Drag gamma, and Pip walks the best plan for that setting.", [40, 16, 320, 256]]], [["The two bars show what each plan is worth.", [20, 295, 370, 60]], ["Below about zero point seven nine, the crumb wins. Above it, Pip is patient enough for the cheese.", [20, 295, 370, 60]]]],
    draw(t, st) { const g = GAMMAS[st.ci ?? 2], S = SOL[g], since = t - (st.changed ?? 0);
      maze({ t }); crumb(cx(0), cy(1), 1.4); txt('+0.3', cx(0) + 14, cy(1) - 18, { s: 15, c: C.goldInk });
      route(S.P, S.goal === "crumb" ? C.orange : C.gold, 0, clamp(since / 1.2), 560); const m = walkPath(S.P, Math.max(0, since - 1.4), .5); pip(m.x, m.y, m.face, t);
@@ -191,6 +204,7 @@ const STEPS = [
 
  { h: 'The price of patience', p: ['Why not always use γ near 1? Then the far future’s luck counts more too. Random Pip’s 100 discounted returns, at three γ values:', 'At γ = 0.5 they squash to almost 0: steady, but barely telling cheese from cat. At 0.99 they spread nearly from −1 to +1, so judging the start from a few walks depends on which walks you saw.'],
    shot: [4, 11],
+   say: [[["So why not always use gamma near one?", [20, 30, 370, 250]], ["Each row shows random Pip's hundred returns, at three gammas.", [20, 30, 370, 250]]], [["At one half, they squash near zero. Steady, but short sighted.", [20, 60, 370, 70]], ["At zero point nine nine, they spread almost from minus one to plus one.", [20, 190, 370, 70]]], "Patience costs you noise."],
    draw(t) { const rowsG = [.5, .9, .99], x0 = 60, x1 = 360, X = v => x0 + (v + 1) / 2 * (x1 - x0);
      txt('discounted return of each random episode', 30, 44, { s: 15, al: 'left', c: C.soft });
      rowsG.forEach((g, j) => { const y = 112 + j * 66, a = clamp((t - .6 - j * 1.6) * 2); txt(`γ = ${g}`, 380, y - 38, { s: 15, al: 'right', a });
@@ -201,6 +215,7 @@ const STEPS = [
 
  { h: 'Where you meet γ', p: ['Discounting is old: economists discount future money the same way, through interest rates. In RL, the designer picks γ as part of the problem setup. DeepMind’s Atari player DQN used γ = 0.99.', 'Games that always end, like Go, can use γ = 1. People? Studies suggest we care far more about today versus tomorrow than day 100 versus day 101, unlike a constant γ.'],
    shot: [8],
+   say: ["Discounting is old. Economists use interest rates the same way.", [["In RL, the designer picks gamma. The Atari player DQN used zero point nine nine.", [20, 40, 370, 160]], ["Games that always end, like Go, can use one.", [20, 40, 370, 160]]], "And people? We care far more about today versus tomorrow than day one hundred versus day one hundred and one."],
    draw(t) {
      const rows = [['Atari, DQN 2015', 'γ = 0.99', 'about 100 steps'], ['typical RL tasks', 'γ = 0.9 to 0.999', '10 to 1,000 steps'], ['Go, chess', 'often γ = 1', 'every game ends']];
      txt('setting', 34, 60, { s: 15, al: 'left', c: C.soft }); txt('discount', 170, 60, { s: 15, al: 'left', c: C.soft }); txt('looks ahead', 282, 60, { s: 15, al: 'left', c: C.soft });
@@ -209,6 +224,7 @@ const STEPS = [
 
  { h: 'Recap', p: ['The **discount factor γ** makes a reward k steps after the first count γ to the k. Later rewards count less because the future is uncertain and sooner is better, and the sum stays finite even in never-ending tasks.', 'Small γ is impatient, γ near 1 is patient but its returns vary more. The agent looks roughly 1 ÷ (1 − γ) steps ahead.'],
    shot: [6],
+   say: [[["So, gamma shrinks each later reward a little more.", [30, 292, 340, 110]], ["The future is uncertain, and sums stay finite even when tasks never end.", [30, 292, 340, 110]]], ["Small gamma is impatient. Gamma near one is patient, but noisier."]],
    draw(t) { maze({ t }); route(SHORT, C.gold, 0, 1, 520); pip(cx(0), cy(3), 1, t);
      rcard([[['G', 't'], ' = ', ['R', 't+1'], ' + γ ', ['R', 't+2'], ' + ', g2('γ', '2'), ' ', ['R', 't+3'], ' + …'], [['G', 't'], ' = ', ['R', 't+1'], ' + γ × ', ['G', 't+1']], 'small γ: impatient · γ near 1: patient', { parts: ['looks about 1 ÷ (1 − γ) steps ahead'], c: C.goldInk }], t - .3, { gap: 1 }); } },
 ];

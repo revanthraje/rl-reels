@@ -104,14 +104,17 @@ const MV = ['up', 'right', 'down', 'left'];
 const STEPS = [
  { h: 'A chore for Pip', p: ['Back in Pip’s maze: cheese +1, cat −1, both end the walk, γ (gamma) = 0.9. Today there are also **three crumbs** lying around.', 'We want Pip to tidy up: pick up the crumbs, then go to the cheese. Pip, as always, knows nothing of what we want. It only feels the rewards we hand out.'],
    shot: [3, 9],
+   say: [["Welcome back to Pip's maze. Today there's a chore."], [["Three crumbs are lying around.", [40, 16, 320, 256]], "We want Pip to tidy up, then go to the cheese."], ["But Pip knows nothing of what we want. It only feels the rewards we hand out."]],
    draw(t) { maze({ t, labels: clamp(t - 1) }); CR.forEach(([c, r], i) => crumb(cx(c) + 14, cy(r) + 16, 1, clamp(t - 1.8 - i * .4))); pip(cx(0), cy(3), 1, t);
      card(['what we want: collect the crumbs,', 'then eat the cheese', { s: 'what Pip knows: only the rewards it gets', c: C.soft }], t - 3.5, { gap: 1.2 }); } },
  { h: 'Writing the reward', p: ['We have a crumb sensor, so we write: **+0.2 for every step that ends on a crumb**. Cheese and cat stay as before, and a walk stops after 50 steps.', 'The sensor only checks where Pip stands, so a crumb never disappears. Pip learns with Q-learning, as in the Q-learning reel: one move in five random.'],
    shot: [3, 10],
+   say: [["So we write a reward."], [["Every step that ends on a crumb pays a little bonus.", [30, 292, 340, 87]], "Cheese and cat stay the same."], ["Our sensor only checks where Pip stands. So a crumb never disappears."]],
    draw(t) { maze({ t }); crumbs(); pip(cx(0), cy(3), 1, t); CR.forEach(([c, r], i) => txt('+0.2', cx(c) - 8, cy(r) - 14, { s: 15, c: C.goldInk, a: clamp(t - 1 - i * .4) }));
      card(['+0.2 for each step that ends on a crumb', '+1 cheese, −1 cat: walk over', { s: 'walks stop after 50 steps; crumbs stay', c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'What Pip learned', p: [`After ${NW} walks, Pip follows its biggest numbers from the start, no random moves. It walks ${FSTEPS} steps to the crumb on the left, and then **bumps into the rock** beside it, again and again.`, 'Each bump is a step that ends on a crumb: +0.2, every single step. Pip never goes near the cheese.'],
    shot: [5, 12],
+   say: [["After training, Pip follows its biggest numbers from the start."], [["It walks to the crumb on the left.", [40, 16, 320, 256]], ["And then it bumps into the rock beside it, again, and again.", [40, 16, 320, 256]]], ["Each bump ends on the crumb. Bonus, every single step. Pip never goes near the cheese."]],
    draw(t) { maze({ t }); crumbs(); const P = HF.P.slice(0, HF.P.findIndex((p, i) => i > 0 && p[0] === HF.P[i - 1][0] && p[1] === HF.P[i - 1][1]));
      const tw = (P.length - 1) * .6, m = t < tw + .5 ? walker(P, t - .5, .6) : bumpLoop(t - tw - .5, FARM[0], FARM[1], BUMPM);
      trail(P.slice(0, (m.k ?? P.length) + 1), .6); pip(m.x, m.y, m.face, t);
@@ -119,30 +122,37 @@ const STEPS = [
      if (t > tw + 2) card([`walks to the crumb: ${P.length - 1} steps`, `then: bump ${MV[BUMPM]}, forever`, { s: '+0.2 on every step', c: C.goldInk }], t - tw - 2, { gap: 1.1 }); } },
  { h: 'Why bumping wins', p: [`Bump forever on the crumb: 0.2 every step. With the 0.9 discount, worth ${f2(FARMV)}. From the start: ${f2(STARTV)}. Going straight to the cheese along the bottom, over two crumbs: only ${f2(HONEST)}.`, `Even beside the cheese, the best move is to turn away. Left of it, eating is worth ${f2(EATV)}, returning to the left crumb ${f2(TURNV)}. Below it, the right crumb is next door: ${f2(BELOW_CR)}.`],
    shot: [4, 11],
+   say: [["Why does bumping win? A bonus every step, forever, adds up."], [["Even with the discount, it's worth more than the cheese.", [30, 292, 340, 87]]], [["Even right beside the cheese, the best move is to turn away.", [40, 16, 320, 256]]]],
    draw(t) { maze({ t, hi: t > 4 ? [[3, 0, C.rose, .25 * clamp(t - 4)]] : null }); crumbs(); const m = bumpLoop(t, FARM[0], FARM[1], BUMPM); pip(m.x, m.y, m.face, t);
      if (t > 4) txt('left of the cheese', cx(3), cy(0) + 18, { s: 12, c: C.roseInk, a: clamp(t - 4) });
      card([`bump forever on the crumb: 0.2 + 0.9 × 0.2 + … = ${f2(FARMV)}`, `from the start, bumping plan: ${f2(STARTV)}`, `from the start, straight to the cheese: ${f2(HONEST)}`, { s: `left of the cheese: eat ${f2(EATV)}, go back ${f2(TURNV)}`, c: C.roseInk }], t - 1, { gap: 1.3, fs: 16 }); } },
  { h: 'Reward hacking', p: ['Pip broke no rule. It found the best way to collect **exactly what we rewarded**: steps that end on a crumb. What we meant, tidy up and then eat, was never in the numbers.', 'When an agent scores well by a route its designers did not intend, it is called **reward hacking**, or **specification gaming**.'],
+   say: [["Pip broke no rule. It found the best way to collect exactly what we rewarded."], ["What we meant, tidy up and then eat, was never in the numbers."], [["Scoring well by a route the designers didn't intend is called reward hacking, or specification gaming.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); crumbs(); const m = bumpLoop(t, FARM[0], FARM[1], BUMPM); pip(m.x, m.y, m.face, t);
      card([{ s: 'we rewarded: steps that end on a crumb', c: C.goldInk }, { s: 'we meant: tidy up, then eat the cheese', c: C.ink }, { s: 'the agent optimises the first', c: C.roseInk }], t - 1, { gap: 1.3 }); } },
  { h: 'High score from the first walk', p: [`Each bar is one training walk, as high as its points, the plain sum of rewards; gold if it reached cheese. Scores are high from walk 1: once the crumb paid +0.2, that move had the only number above 0, so Pip repeated it.`, `Only ${FIRSTCHEESE} of the first 10 reached cheese, the last on walk ${LASTHONEST}. Last 50: ${f1(LASTPTS)} points per walk, ${LASTCHEESE} cheeses.`],
    shot: [4, 12],
+   say: [["Here's every training walk."], [["Each bar shows its points. Gold means it reached the cheese.", [40, 296, 340, 104]], ["The scores are high from the very first walk.", [40, 296, 340, 104]]], ["Watch the gold bars. Only a few early walks reach the cheese, then hardly any."]],
    draw(t) { maze({ t }); crumbs(); dim(.45); const m = bumpLoop(t, FARM[0], FARM[1], BUMPM); pip(m.x, m.y, m.face, t); pointsChart(Math.floor(clamp((t - 1) / 7) * NW), t); } },
  { h: 'Goodhart’s law', p: ['Economists know this as **Goodhart’s law**. In Marilyn Strathern’s words: when a measure becomes a target, it ceases to be a good measure.', 'Touching crumbs was a fine sign of tidying, as long as nobody optimised it. Once Pip optimised it, the sign and the goal came apart.'],
+   say: [["Economists know this as Goodhart's law. When a measure becomes a target, it stops being a good measure."], [["Touching crumbs was a fine sign of tidying, as long as nobody pushed on it.", [40, 16, 320, 256]]], ["Once Pip optimised it, the sign and the goal came apart."]],
    draw(t) { maze({ t }); crumbs(); dim(.7); txt('“When a measure becomes a target,', W / 2, 110, { s: 21, a: clamp(t - .5) }); txt('it ceases to be a good measure.”', W / 2, 140, { s: 21, a: clamp(t - 1.2) });
      txt('Goodhart’s law, as phrased by Marilyn Strathern', W / 2, 178, { s: 14, c: C.soft, a: clamp(t - 2) });
      card(['measure: steps on a crumb', 'goal: a tidy maze and a fed Pip', { s: 'optimise the measure hard → they come apart', c: C.roseInk }], t - 3, { gap: 1.2 }); } },
  { h: 'Patch the reward', p: ['Fix the loophole: each crumb pays +0.2 **once**, then is gone. Pip’s state now includes which crumbs are left, since that decides whether a cell pays.', `A longer run, ${PNW} walks: eight times as many states. Pip takes ${PF.P.filter(([c, r]) => crIdx(c, r) >= 0).length} crumbs en route, skips the left one, eats in ${PF.P.length - 1} steps. That is best here: all three are worth ${f2(PALL3)}, against ${f2(PBOT)}; the detour delays cheese.`],
    shot: [5, 12],
+   say: [["Let's patch the loophole. Each crumb pays once, then it's gone."], [["Now watch Pip. It picks up crumbs along the way, and eats.", [40, 16, 320, 256]]], [["But it skips the left one. The detour would delay the cheese too much.", [30, 292, 340, 87]]]],
    draw(t) { maze({ t }); const m = walker(PF.P, t - .5, .55), gone = new Set(); PF.P.slice(0, m.k + 1).forEach(([c, r]) => { const i = crIdx(c, r); if (i >= 0) gone.add(i); });
      crumbs(1, gone); trail(PF.P.slice(0, m.k + 1), .6); pip(m.x, m.y, m.face, t);
      if (m.done) bubble('+1', cx(4), cy(0) - 18, t - .5 - (PF.P.length - 1) * .55);
      card([`crumbs collected: ${gone.size} of 3`, m.done ? `cheese, after ${PF.P.length - 1} steps` : `step ${m.k}`, { s: `all three crumbs: ${f2(PALL3)};  this plan: ${f2(PBOT)}`, c: C.roseInk }], t - 1, { gap: .2 }); } },
  { h: 'Patches don’t scale', p: ['Patching worked because we watched Pip and saw the trick. In a big world we cannot list every loophole ahead, and a hard-searching agent finds the ones we missed.', 'A patch also changes the problem: Pip had to track which crumbs were left. Each fix is a new reward with its own gaps: ours still does not say “collect every crumb”, so Pip skipped one.'],
+   say: [["Patching worked because we watched Pip, and saw the trick."], [["In a big world, we can't list every loophole ahead of time.", [40, 16, 320, 256]], "A hard-searching agent finds the ones we missed."], ["And each patch is a new reward, with its own gaps."]],
    draw(t) { maze({ t }); pip(cx(4), cy(0) + 4, 1, t); dim(.5);
      card(['patch: works for the gap you saw', 'gaps you did not see stay open', { s: 'a strong optimiser finds them', c: C.roseInk }], t - .8, { gap: 1.2 }); } },
  { h: 'A boat that never finished', p: ['This happens with real agents. In 2016, OpenAI trained an agent on the boat racing game CoastRunners, where points come from hitting targets along the course.', 'It found a lagoon where three targets kept coming back, and circled there, crashing and catching fire, never finishing the race. It still scored more than finishing would. Like Pip, it was rewarded for points, not for the race.'],
    shot: [4, 10],
+   say: [["This happens with real agents, too."], [["In twenty sixteen, an agent learned the boat racing game CoastRunners.", [40, 30, 320, 230]], ["It found a lagoon where targets kept coming back, and circled there forever, crashing and catching fire.", [40, 30, 320, 230]]], ["It never finished the race, but it scored more than finishing would."]],
    draw(t) { const X = 200, Y = 140; rrect(40, 30, 320, 230, 800, { fill: '#dbe9f2', c: C.line });
      [[0, 1], [2.1, 1], [4.2, 1]].forEach(([a], i) => { const tx = X + Math.cos(a) * 62, ty = Y + Math.sin(a) * 48; L.rcircle(tx, ty, 8, 810 + i, { fill: C.yellow, j: .5 }); });
      const a = t * 1.5; boat(X + Math.cos(a) * 62, Y + Math.sin(a) * 48, a + Math.PI / 2);
@@ -151,6 +161,7 @@ const STEPS = [
      card(['2016, CoastRunners: points for hitting targets', 'agent: circles three targets that keep coming back', { s: 'more points than finishing; never finishes', c: C.roseInk }], t - 1.5, { gap: 1.2, fs: 16 }); } },
  { h: 'More from the list', p: ['Victoria Krakovna and colleagues at DeepMind keep a public list of such cases. A simulated robot arm, rewarded for the height of a block’s bottom face, **flipped the block over** instead of stacking it.', 'A simulated hand, judged by people watching through a camera, hovered between camera and ball so it **looked** like grabbing. A Tetris program paused the game forever, so it never lost.'],
    shot: [4, 10],
+   say: [["Researchers at DeepMind keep a public list of cases like this."], [["A robot arm, rewarded for the height of a block's bottom face, just flipped it over.", [30, 220, 340, 110]], ["A simulated hand only looked like it was grabbing, to the camera.", [30, 220, 340, 110]], ["And a Tetris program paused the game forever, so it never lost.", [30, 220, 340, 110]]]],
    draw(t) { ctx.save(); ctx.translate(200, 128); ctx.scale(1.15, 1.15); ctx.translate(-200, -128);
      // block flip
      const a1 = clamp(t - .5); alpha(a1, () => { rrect(40, 140, 90, 6, 830, { fill: C.line }); const fl = ease(clamp((t - 1.2) / 1.2)); ctx.save(); ctx.translate(85, 140 - 20); ctx.rotate(fl * Math.PI); L.rrect(-16, -16, 32, 32, 831, { fill: C.pink }); ctx.restore(); if (fl > .99) box(69, 102, 32, 4, C.roseInk); txt('was the bottom', 85, 92, { s: 12, c: C.roseInk, a: clamp(t - 2.4) }); txt('flipped block', 85, 166, { s: 13, c: C.soft }); });
@@ -161,14 +172,17 @@ const STEPS = [
      ctx.restore();
      card(['2017  arm flips the block (Popov and colleagues)', '2017  hand fools the camera (Christiano and colleagues)', '2013  Tetris paused forever (Tom Murphy)'], t - 7, { gap: 1.1, fs: 16, y: 220 }); } },
  { h: 'Why it matters more for strong agents', p: ['Pip found its trick in 20 cells. A stronger agent searches more, finding gaps weaker ones miss. In 2022, Alexander Pan, Kush Bhatia and Jacob Steinhardt found more capable agents exploited badly specified rewards more.', 'Chatbots tuned with a **reward model**, a network predicting which answers people prefer, face the same pull: an answer can score well with it yet be no better for people.'],
+   say: [["Pip found its trick in a tiny maze. Stronger agents search harder, and find gaps weaker ones miss."], [["Researchers found more capable agents exploit bad rewards more.", [30, 292, 340, 87]]], ["Chatbots tuned on a reward model feel the same pull. An answer can score well, yet be no better for people."]],
    draw(t) { maze({ t }); crumbs(); dim(.55); const m = bumpLoop(t, FARM[0], FARM[1], BUMPM); pip(m.x, m.y, m.face, t);
      card(['stronger search → finds more loopholes', '2022: more capable agents hacked more', { s: 'learned reward models can be gamed too', c: C.soft }], t - 1, { gap: 1.2 }); } },
  { h: 'What helps', p: ['No complete cure exists. Watch what the agent **does**, not just its score. Test it in situations it never trained on. Patch loopholes you find.', 'Don’t push too hard on a reward you do not fully trust. In chatbot tuning, a penalty usually keeps the new model’s answers close to the untuned model’s, so they cannot drift toward odd answers only the reward model likes.'],
+   say: [["There's no complete cure."], [["Watch what the agent does, not just its score. Test it in new situations. Patch the loopholes you find.", [30, 292, 340, 87]]], ["And don't push too hard on a reward you don't fully trust."]],
    draw(t) { maze({ t }); dim(.5);
      card(['watch behaviour, not only the score', 'test in new situations', 'patch loopholes you find', { s: 'don’t over-optimise an imperfect reward', c: C.soft }], t - .5, { gap: 1.1 }); } },
  { h: 'Your turn', ctl: { label: 'crumb reward', values: BV, def: 4, fmt: v => '+' + v },
    get p() { return ['Choose what each crumb step pays. After 100 training walks, Pip follows its biggest numbers from the start. How small before Pip goes for the cheese?', `Bumping is best only above about ${f2(thr())}. Below that Pip still bumps: the crumb came long before the cheese, and rare random moves never carry it far enough to learn better. Not hacking: unfinished **exploration**, from the bandit reels.`]; },
    shot: [3, 10],
+   say: [["Your turn. Choose what each crumb step pays."], [["Then watch where trained Pip goes.", [40, 16, 320, 256]]], ["How small does the bonus have to be before Pip heads for the cheese? Below a point, Pip still bumps, but that's unfinished exploration, not hacking."]],
    draw(t, st) { const B = BV[st.ci ?? 4], S = summ(B), t0 = t - (st.changed ?? 0); maze({ t }); if (B > 0) crumbs();
      const P = S.F.P; let m; const loopAt = P.findIndex((p, i) => i > 0 && p[0] === P[i - 1][0] && p[1] === P[i - 1][1]);
      if (!S.F.ok && loopAt > 0) { const tw = (loopAt - 1) * .5; m = t0 < tw + .5 ? walker(P.slice(0, loopAt), t0 - .5, .5) : bumpLoop(t0 - tw, P[loopAt][0], P[loopAt][1], P[loopAt][2]); }
@@ -176,6 +190,7 @@ const STEPS = [
      trail(P.slice(0, Math.min(P.length, (m.k ?? P.length) + 1)), .5); pip(m.x, m.y, m.face, t);
      card([`crumb reward: +${B} per step on a crumb`, S.farm ? 'Pip: stays on a crumb, bumping' : `Pip: goes to the cheese, ${P.length - 1} steps`, `walks reaching the cheese, last 50: ${S.cheese}`, { s: `best plan, if Pip knew the maze: ${S.bestFarm ? 'bump' : 'cheese'}`, c: C.soft }], 10, { lh: 21, fs: 16, y: 292 }); } },
  { h: 'Recap', p: ['An agent optimises **exactly what you reward**, not what you meant. Gaps between the two get found: Pip bumped a rock on a crumb, a boat circled for points.', 'When a measure becomes a target, it stops being a good measure. The stronger the optimiser, the more this matters: watch behaviour, test widely, and patch.'],
+   say: [["So, an agent optimises exactly what you reward, not what you meant."], [["Pip bumped a rock on a crumb. A boat circled for points.", [30, 292, 340, 87]]], ["The stronger the optimiser, the more this matters. Watch behaviour, test widely, and patch."]],
    draw(t) { maze({ t }); crumbs(); const m = bumpLoop(t, FARM[0], FARM[1], BUMPM); pip(m.x, m.y, m.face, t);
      card(['agents optimise the reward, not the intent', 'loopholes get found (Pip, CoastRunners)', 'Goodhart: measure as target stops measuring', 'stronger agents find more gaps'], t - .3, { gap: 1 }); } },
 ];

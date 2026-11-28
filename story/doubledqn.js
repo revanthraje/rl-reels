@@ -281,26 +281,31 @@ const gapChart = (ser, o = {}) => chart(Object.assign({ x0: 64, x1: 356, y0: 250
 const STEPS = [
  { h: 'The max in the target', p: ['Pip now trains the full DQN: replay memory, plus the frozen copy refreshed every 100 updates. A card’s target is the reward plus 0.9 × the **largest** of the copy’s four Q-values at the landing spot.', 'That word “largest” hides a problem. To see it, leave the meadow for a moment and play with plain numbers.'],
    shot: [3, 9],
+   say: [["Pip now trains the full DQN, with replay and a frozen copy."], [["Look at the target. It takes the largest of the copy's four values.", [30, 292, 340, 64]], ["That one word, largest, hides a problem.", [30, 292, 340, 64]]], ["To see it, let's leave the meadow and play with plain numbers."]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); card(['target = reward + 0.9 × largest Q of the copy', { s: '                                   ↑ this max', c: C.roseInk }], t - 2, { gap: 1.4 }); } },
  { h: 'Four moves worth nothing', p: [`Imagine a spot where all four moves are truly worth exactly 0. Pip does not know that; its guesses are 0 plus a bell-shaped random error, typically about ${SIG} either way. One round of guesses: ${R4.rs[0].a.map(sg).join(', ')}.`, `The largest guess is ${sg(Math.max(...R4.rs[0].a))}. If the target uses the largest, it says this spot is worth ${sg(Math.max(...R4.rs[0].a))}, not 0.`],
    shot: [3, 10],
+   say: [[["Imagine a spot where every move is truly worth zero.", [50, 76, 300, 120]], ["Pip doesn't know that. Its guesses each carry a random error.", [50, 76, 300, 120]], ["Watch them appear, one by one.", [50, 76, 300, 120]]], [["Now pick the largest. It's above zero.", [50, 76, 300, 120]], ["So the target says this spot is worth something, when it's worth nothing.", [30, 292, 340, 87]]]],
    draw(t) { spotScene(t, 1 - clamp(t - .2)); labels(84, 112, 56, clamp(t - .5)); guessRow(R4.rs[0].a, 84 - 28 + 28, 124, { a: i => clamp(t - 1 - i * .5), hi: t > 4 ? R4.am(R4.rs[0].a) : -1 });
      txt('truly worth: 0, 0, 0, 0', W / 2, 90, { s: 16, c: C.soft, a: clamp(t - .3) });
      if (t > 4.5) txt(`largest guess: ${sg(Math.max(...R4.rs[0].a))}`, W / 2, 180, { s: 18, c: C.goldInk, a: clamp(t - 4.5) });
      card(['true value of every move: 0', `guess = 0 + random error (typically ${SIG})`, { s: 'the max picks whichever guess came out highest', c: C.soft }], t - 6, { gap: 1.2 }); } },
  { h: 'Roll again', p: [`New round, new errors. Each yellow box is that round’s largest guess. A single guess is right on average: over ${NR} rounds, the guesses for “up” average ${sg(R4.one)}.`, `But the largest guess was above 0 in ${R4.pos} of ${NR} rounds, averaging ${sg(R4.max)}. The max keeps picking the lucky errors. An error that always leans one way is a **bias**: here an **overestimation bias**.`],
    shot: [4, 12],
+   get say() { return [[["Roll again, and again. Watch the yellow box in each row, the round's largest guess.", [50, 20, 300, 270]]], [["Now the averages.", [60, 286, 300, 100]], "A single guess is right on average, close to zero.", `But the largest one averages ${f2(R4.max)}.`], ["The max keeps picking the lucky errors. An error that always leans one way is a bias. Here, an overestimation bias."]]; },
    draw(t) {  labels(84, 30); for (let i = 0; i < 8; i++) { const r = R4.rs[i]; guessRow(r.a, 84, 42 + i * 30, { a: () => clamp(t - .3 - i * .7), hi: R4.am(r.a) }); }
      if (t > 6.5) zeroBar(150, 330, 310, 380, [R4.one, R4.max], [C.teal, C.yellow], ['one guess', 'the largest'], { u: clamp((t - 6.5) / 1.5), max: .15 });
      if (t > 6.5) txt(`averages over ${NR} rounds`, W / 2, 292, { s: 14, c: C.soft, a: clamp(t - 6.5) }); } },
  { h: 'It spreads backwards', p: ['In Q-learning and DQN the target is reward + 0.9 × the largest Q-value where Pip lands. Those Q-values are noisy: the network is still partly wrong, and the wobble adds chance. So the target leans high.', 'It does not stay there. The spot one move earlier learns from that inflated number, the spot before from that one: the optimism travels back along Pip’s routes.'],
    shot: [3, 10],
+   say: [["Back in the meadow, Pip's values are noisy too. The network is still partly wrong. So the max in its target leans high."], [["And it doesn't stay put.", [64, 8, 272, 268]], ["Watch the labels walk backwards along the route.", [64, 8, 272, 268]], ["Each spot learns from the inflated one after it.", [64, 8, 272, 268]]]],
    draw(t) { D.meadow({ t }); const pts = [[.15, .2], [.3, .2], [.45, .2], [.6, .2], [.75, .2]];
      pts.forEach(([x, y], i) => { dot(D.px(x), D.py(y), 5, C.ink); if (i) arrow(D.px(pts[i - 1][0]) + 7, D.py(y), D.px(x) - 7, D.py(y), 1800 + i, { c: C.soft, w: 1.3 }); });
      for (let i = 4; i >= 0; i--) { const a = clamp(t - 1 - (4 - i) * 1.1); if (a <= 0) continue; txt('too high', D.px(pts[i][0]), D.py(pts[i][1]) - 18 - (i % 2) * 14, { s: 13, c: C.roseInk, a }); }
      card(['noisy guesses at the landing spot', '→ max leans high → target too high', { s: '→ the spot before learns it, and so on back', c: C.roseInk }], t - 1.5, { gap: 1.3 }); } },
  { h: 'Two opinions', p: ['The fix needs two independent sets of guesses, A and B. Let A **choose** the move: the one with A’s largest guess. Then let B **score** that move, with B’s guess for it.', 'B’s error has nothing to do with A’s, so B’s number is just 0 plus a fresh random error: no longer lucky on purpose.'],
    shot: [4, 11],
+   say: [["The fix needs two independent sets of guesses."], [["Set A chooses the move, the one with A's largest guess.", [40, 30, 320, 80]], ["Then set B scores that same move.", [40, 108, 320, 80]]], [["B's error has nothing to do with A's luck.", [30, 292, 340, 87]], "So B's number is just a fresh random error. No longer lucky on purpose."]],
    draw(t) {  labels(84, 40); const r = R4.rs[0], m = R4.am(r.a);
      txt('A', 60, 66, { s: 18, c: C.goldInk }); guessRow(r.a, 84, 53, { hi: t > 2 ? m : -1 }); if (t > 2) txt('A chooses: ' + MN[m], W / 2, 102, { s: 16, c: C.goldInk, a: clamp(t - 2) });
      if (t > 3.5) { txt('B', 60, 138, { s: 18, c: '#3f8582', a: clamp(t - 3.5) }); guessRow(r.b, 84, 125, { a: () => clamp(t - 3.5), hi: t > 5 ? m : -1, hcol: '#bfe0de' }); }
@@ -308,11 +313,13 @@ const STEPS = [
      card([`largest of A: ${sg(r.a[m])}  (lucky)`, `B’s guess for the same move: ${sg(r.b[m])}`, { s: 'choose with one set, score with the other', c: C.soft }], t - 6.5, { gap: 1.2 }); } },
  { h: 'Back to zero', p: [`Over the same ${NR} rounds, the largest guess averaged ${sg(R4.max)}. Choosing with A and scoring with B averaged ${sg(R4.dbl)}: the bias is gone.`, 'This trick is called **Double Q-learning**. Hado van Hasselt proposed it in 2010 for tables of Q-values, keeping two tables and letting each pick moves for the other.'],
    shot: [3, 9],
+   say: [[["Here are the averages over all the rounds.", [50, 60, 320, 150]], ["The single guess and the largest, as before.", [50, 60, 320, 150]], ["And now, A picks, B scores. Right back near zero.", [50, 60, 320, 150]]], ["This trick is Double Q-learning. Hado van Hasselt proposed it in twenty ten, with two tables that pick moves for each other."]],
    draw(t) {  txt(`averages over ${NR} rounds, all moves truly worth 0`, W / 2, 70, { s: 15, c: C.soft });
      zeroBar(150, 330, 120, 190, [R4.one, R4.max, R4.dbl], [C.teal, C.yellow, '#9fc9c7'], ['one guess', 'the largest', 'A picks, B scores'], { u: clamp((t - .5) / 1.5), max: .15, gap: 40 });
      card(['the max of noisy guesses: too high', 'pick with one, score with the other: fair', { s: 'Double Q-learning, van Hasselt 2010', c: C.soft }], t - 3, { gap: 1.2 }); } },
  { h: 'DQN already has two', p: ['DQN already has two networks, live and frozen copy. **Double DQN**, by van Hasselt, Guez and Silver, 2015, uses them as A and B: at the landing spot the live one chooses the move, the copy scores it. Nothing else changes.', 'The copy lags the live one by up to 100 updates, so their errors are only **partly** independent. The bias shrinks, maybe not fully.'],
    shot: [3, 10],
+   say: [["Here's the neat part. DQN already has two networks."], [["Double DQN uses them as A and B.", [30, 60, 340, 133]], ["The live network chooses the move. The copy scores it.", [40, 284, 330, 104]]], ["The copy only lags a little behind, so their errors are partly shared. The bias shrinks, but maybe not all the way."]],
    draw(t) { D.meadow({ t }); dimScene(.65);
      card(['DQN:', '   target = reward + 0.9 × copy’s largest Q', 'Double DQN:', { s: '   live network chooses the move m', c: C.goldInk }, { s: '   target = reward + 0.9 × copy’s Q for m', c: '#3f8582' }], t - .5, { y: 60, gap: 1.2 });
      const a = clamp(t - 6); if (a > 0) { D.drawNet(NETS[0], { x: 50, y: 306, w: 110, h: 76 }, { a, wa: .8 }); txt('live: chooses', 105, 296, { s: 14, c: C.goldInk, a });
@@ -320,6 +327,7 @@ const STEPS = [
  { get h() { return 'One real card'; }, get p() { const N = nums(), c = N.card; return [`At the corner (${fx(c.x)}, ${fx(c.y)}), Double DQN run, ${c.s} moves in, the copy favours “${MN[c.mc]}”, ${f2(c.qc[c.mc])}; the live network prefers “${MN[c.ml]}”, bumping the fence. DQN would use ${f2(c.qc[c.mc])}; Double DQN, the copy’s “${MN[c.ml]}”, ${f2(c.qc[c.ml])}.`,
      `On a simple route, up the left and along the top, “up” first is worth about ${f2(N.route[0])}, “down” first ${f2(N.route[1])}. DQN was about right; Double DQN **underestimates**: it can err low too.`]; },
    shot: [4, 11],
+   get say() { const c = nums().card; return [[["Here's one real card, landing in the corner.", [64, 8, 272, 268]]], [`The copy favours ${MN[c.mc]}. The live network prefers ${MN[c.ml]}.`, ["So DQN and Double DQN read different numbers from the copy.", [20, 286, 360, 124]]], [["Check the simple route at the bottom. Double DQN can err low, too. It underestimates here.", [20, 286, 360, 124]]]]; },
    draw(t) { if (busyKeys(['d0'])) return; const N = nums(), c = N.card; D.meadow({ t }); dot(D.px(c.x), D.py(c.y), 5, C.ink); txt('landed here', D.px(c.x), D.py(c.y) - 16, { s: 14 });
      labels(84, 296); txt('live', 50, 321, { s: 15, c: C.goldInk, al: 'right' }); guessRow(c.ql, 84, 308, { hi: t > 1.5 ? c.ml : -1 });
      txt('copy', 50, 357, { s: 15, c: '#3f8582', al: 'right' }); guessRow(c.qc, 84, 344, { a: () => clamp(t - 2.5), hi: t > 4 ? c.ml : -1, hcol: '#bfe0de' });
@@ -327,11 +335,13 @@ const STEPS = [
      if (t > 7) txt(`simple route: up first ${f2(N.route[0])}, down first ${f2(N.route[1])}`, W / 2, 410, { s: 14, c: C.soft, a: clamp(t - 7) }); } },
  { h: 'Estimates against reality', p: ['Does it matter in the meadow? At each of the 30 test spots, compare the network’s largest Q-value, its **estimate**, with what Pip really gets: the average discounted return of 5 walks from there following its largest Q-values.', 'The chart shows estimate minus reality, averaged over the spots and 8 runs, so the chance in single walks mostly averages out. Above 0: too optimistic.'],
    shot: [3, 10],
+   say: [["Does any of this matter in the meadow? Let's measure it."], [["At each of these thirty spots, compare what the network expects with what Pip really gets.", [64, 8, 272, 268]]], [["The gap is estimate minus reality.", [30, 292, 340, 87]], ["Above zero means too optimistic.", [30, 292, 340, 87]]]],
    draw(t) { D.meadow({ t }); dimScene(.3); D.TESTS.forEach(([x, y], i) => dot(D.px(x), D.py(y), 3, C.ink, clamp((t - .5) * 3 - i * .05)));
      card(['estimate: largest Q-value at the spot', 'reality: average return of 5 real walks', { s: 'gap = estimate − reality   (> 0: optimistic)', c: C.goldInk }], t - 2.5, { gap: 1.3 }); } },
  { get p() { const N = nums(); return [`Eight runs each, averaged. Orange, DQN: ${f2(N.gq[0])} too high after 1000 moves, ${f2(N.mq)} averaged over eight checks. Teal, Double DQN: ${f2(N.gd[0])} at first, then near 0, sometimes below: ${f2(N.md)} on average.`,
      `The gap is mostly early: by 8000 moves both are ${f2(N.gq[7])} too high. Counting misses either way, Double DQN is off by ${f2(N.absd)}, DQN by ${f2(N.mq)}. Cheese reached: ${f1(N.evq)} and ${f1(N.evd)} of 30 spots.`]; },
    h: 'The bias shrinks', shot: [5, 12],
+   get say() { const N = nums(); return [[["Watch the two lines, averaged over eight runs.", [40, 28, 330, 236]], `Orange, DQN, starts ${f2(N.gq[0])} too high.`, ["Teal, Double DQN, drops near zero, sometimes below.", [40, 28, 330, 236]]], [["The gap is mostly early. By the end, both are close.", [40, 28, 330, 236]], ["Reaching the cheese, they score about the same.", [30, 296, 340, 87]]]]; },
    draw(t) { if (busyKeys(QK.concat(DK))) return; const N = nums(), n = clamp(Math.floor((t - .5) * 1.5), 0, 8);
      const c = gapChart([{ v: N.gq, col: '#c4581f', w: 2.4, n }, { v: N.gd, col: '#3f8582', w: 2.4, n }], { title: 'estimate − reality, average of 8 runs' });
      ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.grey; ctx.beginPath(); ctx.moveTo(64, c.Y(0)); ctx.lineTo(356, c.Y(0)); ctx.stroke(); ctx.restore();
@@ -339,6 +349,7 @@ const STEPS = [
  { get p() { const N = nums(), r = MOVES_N.map(RND); return ['Back to the plain numbers. Drag the number of **moves**, all truly worth 0, and see a thousand rounds.',
      `More moves give the max more chances to catch a lucky error: with ${MOVES_N[0]} moves the largest guess averages ${sg(r[0].max)}, with ${MOVES_N[3]} it averages ${sg(r[3].max)}. Choosing with A and scoring with B stays near 0 every time.`]; },
    h: 'Your turn', ctl: { label: 'moves', values: MOVES_N, def: 1, fmt: v => v, onChange: st => {} }, shot: [3, 9],
+   say: [["Your turn. Drag the number of moves, all truly worth zero."], [["Watch the rows. More boxes, more chances for one lucky error.", [20, 20, 360, 220]]], [["So the largest guess climbs higher.", [60, 280, 300, 90]], ["A picks, B scores stays near zero every time.", [60, 280, 300, 90]]]],
    draw(t, st) { const n = MOVES_N[st.ci ?? 1], r = RND(n), u = clamp((t - (st.changed ?? 0)) / 1.2), w = n <= 4 ? 56 : n <= 8 ? 36 : 17;
       for (let i = 0; i < 5; i++) { const rr = r.rs[i]; guessRow(rr.a, W / 2 - (n * (w + 6) - 6) / 2, 30 + i * 32, { w, hi: r.am(rr.a), a: () => clamp((t - (st.changed ?? 0)) * 3 - i * .4) }); }
      if (n > 8) txt('yellow: each round’s largest guess', W / 2, 205, { s: 13, c: C.soft });
@@ -346,10 +357,12 @@ const STEPS = [
      zeroBar(150, 330, 290, 360, [r.max, r.dbl], [C.yellow, '#9fc9c7'], ['the largest', 'A picks, B scores'], { u, max: .25, gap: 40 }); } },
  { h: 'Where it’s used', p: ['Van Hasselt, Guez and Silver found that DQN’s value estimates on several Atari games were far above the scores it really earned. Double DQN brought them down and played better on many games.', 'The same worry shaped later methods. TD3 (2018) keeps two critics and trusts the **smaller** of their two guesses. Rainbow (2017) bundles Double DQN with other upgrades.'],
    shot: [3, 9],
+   say: [["On Atari games, DQN's value estimates sat far above the scores it really earned. Double DQN brought them down, and played better on many games."], [["The same worry shaped later methods.", [30, 100, 340, 110]], ["TD3 keeps two critics and trusts the smaller one.", [30, 100, 340, 110]], ["Rainbow bundles Double DQN with other upgrades.", [30, 100, 340, 110]]]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); dimScene(.6);
      card(['2010  Double Q-learning (van Hasselt)', '2015  Double DQN: live picks, copy scores', '2017  Rainbow: Double DQN plus other upgrades', '2018  TD3: trust the smaller of two critics'], t - .5, { y: 100, gap: 1.2 }); } },
  { h: 'Recap', p: ['The largest of several noisy guesses is too high on average. DQN’s target takes exactly such a max, so its numbers lean optimistic, and the optimism spreads backwards.', '**Double DQN** lets the live network choose the move and the frozen copy score it. Their errors are only partly shared, so most lucky high guesses stop getting in for free.'],
    shot: [3, 9],
+   say: [["The largest of several noisy guesses is too high, on average. DQN's target takes exactly that max, and the optimism spreads backwards."], [["Double DQN lets the live network choose, and the copy score.", [30, 100, 340, 110]], "Same two networks, one line changed."]],
    draw(t) { D.meadow({ t }); D.pipAt(.1, .1, 1, t); dimScene(.5);
      card(['max of noisy guesses: biased upward', 'DQN target = r + 0.9 × copy’s max', 'Double DQN: live chooses, copy scores', { s: 'same networks, one line changed', c: C.soft }], t - .3, { y: 100, gap: 1 }); } },
 ];

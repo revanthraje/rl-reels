@@ -166,6 +166,7 @@ function waitNote(c) { if (ready(c)) return false; txt('simulating 8 runs…', W
 const STEPS = [
  { h: 'How hard to jump?', p: ['Back to the jump from the SAC reel. Pip stands on a ledge and picks a **jump strength**: how many metres it flies. Any number will do: 0.5, 0.71, 0.7034.', 'The cheese lies 0.7 metres out. Landing right on it pays 1; a bit short or long pays less, following the curve below. The reward is paid on landing.'],
    shot: [4, 11],
+   say: [["Welcome back to Pip's ledge. This time, every action is a number."], [["Pip picks how hard to jump. Watch a few tries.", [16, 90, 368, 180]], "Too soft, too hard, and then just right."], [["The gold curve shows the reward for each strength. It peaks at zero point seven metres.", [50, 286, 320, 116]]]],
    draw(t) { ledges(t); const demo = [{ a: .5, l: .5 }, { a: .82, l: .82 }, { a: .7, l: .7 }], k = clamp(Math.floor((t - 1) / 2.2), 0, 2), u = (t - 1 - k * 2.2) / 1.3;
      const p = t < 1 ? jumpPos(0, 0, 0, 0) : jumpPos(demo[k].a, demo[k].l, 0, u); pipAt(p, t);
      if (t > 1 && u > 1) txt(`${demo[k].a} m: reward ${f2(rew(demo[k].l))}`, X(demo[k].l), GY - 44, { s: 15, c: C.goldInk, a: clamp((u - 1) * 3) });
@@ -173,6 +174,7 @@ const STEPS = [
        demo.forEach((d, i) => { if (i <= k) dot(X(d.a), CY0 - rew(d.a) * (CY0 - CY1), 3.5, C.goldInk, a); }); } } },
  { h: 'A row of ledges', p: ['The cheese ledge is **narrow**, 0.4 to 1.0 metres. Miss it: Pip falls in the stream, reward 0, run over. Land on it: from its front edge, the next crumb is again 0.7 metres out.', 'Wind shifts each landing a few centimetres. Crumbs vary from nothing to double, 1 on average, so reward is curve × crumb: real rewards are noisy too. γ (gamma): 0.9.'],
    shot: [4, 11],
+   say: [["Now a row of ledges, and a stream between them."], [["Watch the first jump land, and Pip jump again.", [16, 90, 368, 180]], ["Then a jump that's too long. Splash. The run is over.", [16, 90, 368, 180]]], [["Wind nudges each landing, and crumbs vary in size. So rewards are noisy, too.", [30, 292, 340, 110]]]],
    draw(t) { ledges(t); const js = [{ a: .68, l: .7, d: 0 }, { a: 1.12, l: 1.1, d: 1 }], k = t < 4.5 ? 0 : 1, u = (t - (k ? 4.5 : 1)) / 1.6;
      pipAt(t < 1 ? jumpPos(0, 0, 0, 0) : oneJump(js[k], t, k ? 4.5 : 1, 1.6), t);
      if (k === 0 && u > 1) txt('landed: next gap, next crumb', X(.7), GY - 46, { s: 14, c: C.goldInk, a: clamp((u - 1) * 2) * (1 - clamp(t - 4)) });
@@ -181,6 +183,7 @@ const STEPS = [
      if (t > 7) card(['land within 0.3 m of the crumb: reward, jump again', { s: 'land off the ledge: reward 0, run over', c: C.roseInk }, { s: 'wind: landing shifts by about 0.05 m', c: C.soft }, { s: 'crumb size: 0 to 2, average 1 · γ = 0.9', c: C.soft }], t - 7, { gap: 1, lh: 22, fs: 16 }); } },
  { h: 'No menu to pick from', p: ['DQN kept one Q-value per move and took the **biggest**: up, right, down or left, four numbers to compare. Here the move is a number, and there are endlessly many of them. Taking the max means searching them all, at every jump.', 'Chop strengths into steps? A robot arm with 7 joints and 10 settings each has 10 million combinations to compare, every single step.'],
    shot: [3, 10],
+   say: [[["DQN kept one score per move, and took the biggest. Four numbers to compare.", [40, 30, 320, 240]]], [["But a strength can be any number at all.", [16, 90, 368, 180]], ["Zero point seven? Zero point seven one? There's no end to the list.", [16, 90, 368, 180]]], [["Even chopping into steps fails. A robot arm with seven joints has ten million combinations.", [30, 292, 340, 87]]]],
    draw(t) { const names = ['up', 'right', 'down', 'left'], qs = [.31, .52, .18, .27];
      if (t < 4.8) alpha(1, () => { const fa = clamp(t - .3) * (1 - clamp((t - 4) * 1.5)); if (fa <= 0) return; ctx.globalAlpha = fa; txt('DQN: one score per move', W / 2, 40, { s: 17, a: fa });
        qs.forEach((q, i) => { const x = 90 + i * 74, h = q * 260; box(x - 18, 210 - h, 36, h, i === 1 ? C.gold : C.yellow, fa); rrect(x - 18, 210 - h, 36, h, 1400 + i, { c: C.line, w: 1 }); txt(names[i], x, 224, { s: 14, c: C.soft, a: fa }); txt(f2(q), x, 200 - h, { s: 14, c: i === 1 ? C.goldInk : C.soft, a: fa }); });
@@ -191,12 +194,14 @@ const STEPS = [
      if (t > 8) card(['4 moves: compare 4 numbers', { s: 'a strength: endlessly many to compare', c: C.roseInk }, { s: '7 joints × 10 settings: 10 million', c: C.roseInk }], t - 8, { gap: 1.1 }); } },
  { h: 'A critic for any strength', p: [`The **critic** scores any strength: **Q(s, a)**, the reward expected from jumping a now and the actor’s clean answer ever after, each later jump times another 0.9. Here s is always a gap’s edge.`, `Dashed: the true Q if the actor answers 0.7. Jumping 0.7 is worth ${f2(PERFECT)}; past the cliffs at 0.4 and 1.0 Pip falls. The critic must learn this curve.`],
    shot: [4, 11],
+   get say() { return [["So the critic scores any strength. How much reward to expect from this jump, and every jump after."], [["Watch the dashed curve. It's the true score, if Pip always jumps zero point seven.", [50, 286, 320, 116]], `The peak is about ${f2(PERFECT)}.`, ["Past the cliffs on either side, Pip falls.", [50, 286, 320, 116]]], ["The critic has to learn this curve."]]; },
    draw(t) { ledges(t); pipAt(jumpPos(0, 0, 0, 0), t); chartFrame({ title: 'score Q for each strength' }); trueCurve(GAP, { p: ease((t - 1) / 2.5) });
      if (t > 4) { const y = CY(PERFECT); dot(X(GAP), y, 3.5, C.ink); txt(`${f2(PERFECT)} at 0.7 m`, X(GAP) + 8, y - 10, { s: 13, al: 'left', a: clamp(t - 4) }); }
      if (t > 6) { txt('falls', X(.3), CY(1.4), { s: 13, c: C.roseInk, a: clamp(t - 6) }); txt('falls', X(1.1), CY(1.4), { s: 13, c: C.roseInk, a: clamp(t - 6) }); }
      if (t > 2) card([`jumping 0.7: ${R07.toFixed(3)} per jump on average (wind)`, `${R07.toFixed(3)} + 0.9 × ${R07.toFixed(3)} + 0.81 × … = ${R07.toFixed(3)} ÷ 0.1 ≈ ${f2(PERFECT)}`], t - 8.5, { y: 14, w: 340, lh: 22, fs: 15 }); } },
  { h: 'An actor that just answers', p: ['The **actor** answers each situation with one strength. No chances, no dice: same situation, same answer. A **deterministic** actor.', 'Earlier reels needed chances so a small nudge made a small change; a strength is a smooth number, so nudging it already does. In real tasks the actor is a network, situation in, action out; here, one number, starting at 0.3 metres. Pip falls.'],
    shot: [3, 9],
+   say: [["The actor is simpler still. It answers each situation with one strength. No dice, no chances."], [["Here, the actor is just one number, starting at zero point three metres.", [16, 90, 368, 180]], ["Watch the jump. Too short. Pip falls.", [16, 90, 368, 180]]], ["A strength is already a smooth number, so a small nudge makes a small change."]],
    draw(t) { ledges(t); const j = { a: .3, l: .3, d: 1 };
      const p = t < 3 ? jumpPos(0, 0, 0, 0) : oneJump(j, t, 3, 1.8); pipAt(p, t);
      alpha(clamp(t - .5), () => { rrect(120, 30, 160, 64, 1600, { fill: C.card }); txt('actor', 200, 46, { s: 15, c: '#3f8582' }); txt('gap’s edge  →  0.3 m', 200, 72, { s: 17 }); });
@@ -205,11 +210,13 @@ const STEPS = [
  { h: 'Teaching the critic', p: ['Like DQN, the critic’s **target** = reward + 0.9 × its score for the next jump. But the next jump comes from the actor, not the best move. A fall’s target is its reward, 0.',
    `Jump ${CAP.t}: Pip jumps ${f2(CAP.a)}, lands ${f2(CAP.l)}: reward ${f2(CAP.curve)} × crumb ${f2(CAP.crumb)} = ${f2(CAP.r)}. Next jump: ${f2(CAP.mt)}, scored ${f2(CAP.qn)}. Target ${f2(CAPY)} beats the critic’s ${f2(CAP.q)}, so its curve rises there.`],
    shot: [4, 12],
+   get say() { return [["The critic learns like DQN. Its target is the reward, plus zero point nine times its score for the next jump."], [["Watch this jump land.", [16, 90, 368, 180]], "The next jump comes from the actor, not from searching for the best."], [["Here the target beats the critic's old score, so its curve rises at that spot.", [30, 286, 340, 120]]]]; },
    draw(t) { ledges(t); const j = { a: CAP.a, l: CAP.l, d: CAP.d }, p = t < .8 ? jumpPos(0, 0, 0, 0) : oneJump(j, t, .8, 1.5); pipAt(p, t);
      if (t > 2.4) bubble(`+${f2(CAP.r)}`, X(CAP.l), GY - 30, t - 2.4);
      card([`reward ${f2(CAP.r)}`, `+ 0.9 × score of the actor’s next jump (${f2(CAP.mt)}): ${f2(CAP.qn)}`, { s: `target  =  ${f2(CAP.r)} + 0.9 × ${f2(CAP.qn)}  =  ${f2(CAPY)}`, c: C.goldInk }, { s: `critic now says ${f2(CAP.q)}: nudge up`, c: C.soft }, { s: 'fell?  target = reward, 0', c: C.roseInk }], t - 3, { gap: 1.4, lh: 22, fs: 16 }); } },
  { h: 'Try a little around it', p: ['Always the same answer means the critic sees only one strength and cannot tell whether harder or softer is better. So in training, every jump gets random **noise**: a bell curve with a spread of 0.1 metres around the actor’s answer.', 'DDPG explored like this too. Noise is only for the jumps Pip makes; the target’s next jump uses the actor’s clean answer.'],
    shot: [3, 9],
+   say: [["If the actor always gives the same answer, the critic only ever sees one strength. It can't tell if harder or softer is better."], [["So in training, every jump gets a little random noise.", [16, 90, 368, 180]], ["Watch the bell. Jumps scatter around the actor's answer.", [16, 90, 368, 180]]]],
    draw(t) { ledges(t); const m = .45, bell = (d, a = 1) => { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(111,183,180,.3)'; ctx.strokeStyle = '#3f8582'; ctx.lineWidth = 1.6; ctx.beginPath();
        for (let i = 0; i <= 120; i++) { const x = i / 100, y = GY - 24 - 60 * Math.exp(-(((x - m) / .1) ** 2) / 2); i ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); } ctx.stroke(); ctx.restore(); };
      bell(0, clamp(t - .5)); txt('actor 0.45', X(m), GY - 94, { s: 14, c: '#3f8582', a: clamp(t - .5) });
@@ -219,6 +226,7 @@ const STEPS = [
      if (t > 7.5) card(['training jump = actor’s answer + noise', { s: 'noise: bell curve, spread 0.1 m', c: C.soft }], t - 7.5, { gap: 1.2 }); } },
  { h: 'Climb the critic’s slope', p: ['How can the actor improve without trying every strength? It asks the critic: if I jumped a little harder, would your score rise? That is the **slope** of the critic’s curve at the actor’s strength.', `It steps uphill: new strength = old + 0.01 × slope. At jump ${SNAP.t} of the first run: actor ${f2(SNAP.m)}, slope there ${f2(SNAPS)}, so the actor moves to ${f2(SNAPN)}.`],
    shot: [4, 11],
+   get say() { return [["How does the actor improve, without trying every strength? It asks the critic."], [["If I jumped a little harder, would your score rise?", [50, 286, 320, 116]], ["That's the slope of the critic's curve, at the actor's strength.", [50, 286, 320, 116]]], [`So the actor steps uphill, here from ${f2(SNAP.m)} to ${f2(SNAPN)}.`]]; },
    draw(t) { ledges(t); pipAt(jumpPos(0, 0, 0, 0), t); chartFrame({ title: `the critic’s curve at jump ${SNAP.t} (note the scale)`, top: SNAPTOP }); criticCurve(SNAP.w, { p: ease((t - .5) / 2), top: SNAPTOP });
      const m = t > 7.5 ? lerp(SNAP.m, SNAPN, ease((t - 7.5) / 1)) : SNAP.m;
      if (t > 2.5) actorMark(m, Qw(SNAP.w, m), { a: clamp(t - 2.5), label: `actor ${f2(m)}`, dx: -34, qtop: SNAPTOP });
@@ -227,6 +235,7 @@ const STEPS = [
      if (t > 5) card([`slope at ${f2(SNAP.m)}:  ${f2(SNAPS)}  (rose line)`, `${f2(SNAP.m)} + 0.01 × ${f2(SNAPS)}  =  ${f2(SNAPN)}`], t - 5, { y: 14, lh: 22, fs: 15, gap: 1.3 }); } },
  { h: 'Many knobs', p: ['Real actors are networks of many knobs. Multiply two slopes: the critic’s, score per metre of strength, and each knob’s, strength moved per turn.', 'The product, by the chain rule, is how much each knob raises the score; backpropagation computes it; each knob moves a small step times it. So it is still a policy gradient. Our one-number actor makes the knob’s slope 1.'],
    shot: [4, 11],
+   say: [["Real actors are networks, with many knobs."], [["The critic says how much the score changes per metre.", [16, 50, 380, 150]], ["Each knob says how many metres it moves the strength.", [16, 50, 380, 150]]], [["Multiply the two, and each knob knows which way to turn.", [30, 220, 340, 110]], "That's the chain rule. So it's still a policy gradient."]],
    draw(t) { box(0, 0, W, 285, C.bg); const bx = [[18, 'situation', C.card], [108, 'actor', '#dbecea'], [208, 'strength', C.card], [298, 'critic', '#f6e7c8']], y = 70;
      bx.forEach(([x, l, f], i) => { if (t < .3 + i * .5) return; rrect(x, y, 80, 40, 2200 + i, { fill: f }); txt(l, x + 40, y + 20, { s: 15 }); if (i) arrow(x - 12, y + 20, x - 2, y + 20, 2210 + i, { c: C.soft }); });
      if (t > 2.3) { arrow(378, y + 20, 392, y + 20, 2215, { c: C.soft }); txt('score', 384, y - 8, { s: 13, c: C.soft }); }
@@ -237,6 +246,7 @@ const STEPS = [
      if (t > 8) card(['score per turn of a knob  =', '     (score per metre) × (metres per turn)', { s: 'nudge each knob by step × that', c: C.goldInk }, { s: 'here: one knob, the strength itself, × 1', c: C.soft }], t - 8, { y: 220, gap: 1.1, fs: 16, lh: 22 }); } },
  { h: 'Borrowed from DQN', p: ['Two Deep RL tricks keep this steady. A **replay buffer**: after each jump the critic studies 8 random stored jumps, not just the latest.', '**Target networks**: the next jump is scored by slow copies, moved 2 percent toward the real ones per jump, so targets hold still under the critic. The actor gets a slow copy too: the target asks it for the next jump.'],
    shot: [3, 10],
+   say: [["Two tricks from DQN keep this steady."], [["A replay buffer. After every jump, the critic studies eight random old ones.", [16, 20, 200, 140]]], [["And target copies. Slow copies of the critic and the actor build the targets, so they hold still.", [230, 20, 160, 170]]]],
    draw(t) { const R = rng(9); box(0, 0, W, 285, C.bg);
      alpha(clamp(t - .3), () => { txt('replay buffer: every jump so far', 110, 34, { s: 15, c: C.goldInk });
        for (let i = 0; i < 40; i++) { const x = 30 + (i % 10) * 17, y = 54 + Math.floor(i / 10) * 20, pick = [3, 11, 17, 22, 26, 31, 35, 38].includes(i) && t > 2.5; rrect(x, y, 13, 15, 1700 + i, { fill: pick ? C.gold : C.card, c: C.line, w: 1 }); }
@@ -248,6 +258,7 @@ const STEPS = [
      if (t > 7) card(['replay: learn from 8 random old jumps', { s: 'target copies: slow, steady targets', c: '#3f8582' }, { s: 'noise on the jump: keeps exploring', c: C.soft }], t - 7, { y: 200, gap: 1.1 }); } },
  { h: 'DDPG', p: [`Actor climbing a critic, plus replay, target copies and noise: **DDPG**, Deep Deterministic Policy Gradient, by Lillicrap and colleagues, 2015. Pip’s first run, sped up.`, `Of the first 50 jumps, ${F50} end in the stream. By jump 100 the actor says ${f2(MAT(100))}, and stays near 0.7. In jumps 100 to 400 Pip falls only ${FALLS_AFTER === 1 ? 'once' : FALLS_AFTER + ' times'}: exploring noise can still send it off.`],
    shot: [3, 8, 13],
+   say: [["Put it all together, and you get DDPG, deep deterministic policy gradient. Lillicrap and colleagues, twenty fifteen."], [["Here's Pip's first run, sped up. Early jumps often end in the stream.", [16, 90, 368, 180]]], [["Watch the actor's dot climb the gold curve, and settle near zero point seven.", [50, 286, 320, 116]], "After that, Pip rarely falls."]],
    draw(t) { ledges(t); const D = .6, nf = t < 6 ? t / D : Math.min(399.99, 10 + (t - 6) / 6 * 390), n = Math.floor(nf), j = SJ[n], u = nf - n; pipAt(t > 12.2 ? jumpPos(0, 0, 0, 0) : jumpPos(j.a, j.l, j.d, u * 1.1), t);
      if (t > 6 && t < 12.2) txt('sped up', X(.15), GY - 70, { s: 14, c: C.soft });
      const li = clamp(Math.floor((n + 1) / P.every) - 1, 0, SL.length - 1), lg = SL[li];
@@ -257,6 +268,7 @@ const STEPS = [
      for (let i = 0; i <= n; i++) if (SJ[i].d) dot(18 + (i % 100) * 3.6, 60 + Math.floor(i / 100) * 9, 1.8, C.rose); } },
  { h: 'The critic catches up', p: [`Gold: critic’s score of the actor’s jump; dashed: true worth. The actor found 0.7 by about jump ${SL[MT].t}; the critic about ${CATCH}: a worth near 9 builds one reward plus 0.9 × an older guess at a time, as in TD, and the slow copy slows it more.`, `Dips: the actor drifted, to ${f2(DIP.m)} at jump ${DIP.t}, paying less. Finally: critic ${f2(SEND.q)}, truth ${f2(SEND.tv)}.`],
    shot: [4, 11],
+   say: [["The actor finds a good jump fast. The critic takes longer."], [["Gold is the critic's score. Dashed is the true worth.", [50, 50, 320, 220]], ["Watch gold climb slowly, one reward at a time, like TD.", [50, 50, 320, 220]], ["The dips are when the actor drifted.", [50, 50, 320, 220]]]],
    draw(t) { const n = clamp(Math.floor((t - 1) * 50), 0, SL.length), x0 = 70, x1 = 360, y0 = 260, y1 = 60, Xi = i => x0 + i / (SL.length - 1) * (x1 - x0), Yq = q => y0 - q / 10 * (y0 - y1);
      rline(x0 - 4, y0, x1 + 4, y0, 980, { c: C.line, w: 1, once: true }); rline(x0 - 4, y0, x0 - 4, y1 - 4, 981, { c: C.line, w: 1, once: true });
      txt('0', x0 - 14, y0, { s: 12, c: C.soft }); txt('10', x0 - 16, y1, { s: 12, c: C.soft }); txt('jump 50', x0, y0 + 12, { s: 12, c: C.soft, al: 'left' }); txt('jump ' + P.T, x1, y0 + 12, { s: 12, c: C.soft, al: 'right' });
@@ -267,6 +279,7 @@ const STEPS = [
      if (n >= SL.length) card([`after ${P.T} jumps:  critic ${f2(SEND.q)},  truth ${f2(SEND.tv)}`, { s: `actor ${f2(SEND.m)}`, c: '#3f8582' }], t - 5.5, { y: 306, gap: 1.2 }); } },
  { h: 'Too optimistic', p: [`From jump ${GW0} on, this critic is too high by ${f2(STAVG)} on average, believing in reward that never comes. At jump ${SN2.t}: critic ${f2(SN2.q)}, truth ${f2(SN2.tv)}. Why? The actor seeks the critic’s highest point, including spots too high by sampling luck. Every target leans on that inflated score, copying the error back, jump after jump.`, 'Double DQN saw this: the max picks lucky guesses.'],
    shot: [4, 11],
+   say: [["But look closer. This critic ends up too optimistic. It believes in reward that never comes."], [["Why? The actor seeks the critic's highest point.", [50, 286, 320, 116]], ["Including spots that look high only by luck.", [50, 286, 320, 116]]], ["Every target leans on that inflated score, and the error is copied back, jump after jump. Double DQN saw the same thing."]],
    draw(t) { const m = SN2.m, sx = d => 40 + (d - .45) / .5 * 320, top = 10.2, bot = 7.6, sy = q => 250 - (q - bot) / (top - bot) * 200;
      rline(36, 250, 364, 250, 990, { c: C.line, w: 1, once: true }); [.5, .6, .7, .8, .9].forEach((d, i) => txt(d + ' m', sx(d), 262, { s: 12, c: C.soft }));
      txt(`close-up near the top, jump ${SN2.t} of the first run`, 40, 30, { s: 13, c: C.soft, al: 'left' }); txt(String(bot), 26, 250, { s: 12, c: C.soft }); txt('10', 26, sy(10), { s: 12, c: C.soft });
@@ -278,12 +291,14 @@ const STEPS = [
      if (t > 6) card(['actor sits where the critic is highest', { s: 'targets lean on that score: the error is copied back', c: C.roseInk }], t - 6, { gap: 1.4 }); } },
  { h: 'Not just bad luck', get p() { return [`Run DDPG 8 times with different dice. The chart: the critic’s score of its own jump minus true worth, averaged over the 8 runs, from jump ${GW0} to ${P.T}, once the critics have caught up. Above the dashed zero line the critic is too optimistic, below too pessimistic.`, `DDPG stays above zero: too high by ${f2(agg(0).mean)} on average, and in ${agg(0).pos} of the 8 runs.`]; },
    shot: [4, 11],
+   say: [["Was that bad luck? Let's run DDPG eight times."], [["The line shows the critic's score minus the true worth.", [50, 290, 320, 112]], ["Above the dashed zero, too optimistic.", [50, 290, 320, 112]], ["DDPG stays above zero.", [50, 290, 320, 112]]]],
    draw(t) { ledges(t, { next: 0 }); pipAt(jumpPos(0, 0, 0, 0), t); box(0, 290, W, 130, C.bg); if (waitNote(0)) return; const A = agg(0);
      gapFrame(clamp(t - .5)); if (t > 2.5) gapLine(A.gap, CCOL[0], { p: ease((t - 2.5) / 2.5) });
      if (t > 5.5) { A.fin.forEach((v, k) => dot(GX1 + 10, GYv(v), 2.6, CCOL[0], .7)); tag(`DDPG ${sg2(A.mean)}`, 200, GYv(A.mean) - 14, CCOL[0]); }
      card([`DDPG, 8 runs: too high by ${f2(A.mean)} on average`, { s: `too high in ${A.pos} of 8 runs (dots on the right)`, c: C.soft }], t - 7, { y: 14, gap: 1.2, fs: 16 }); } },
  { h: 'TD3, fix one: two critics', get p() { return ['In 2018, Scott Fujimoto, Herke van Hoof and David Meger proposed **TD3**, Twin Delayed DDPG: three fixes. First: train **two critics**, each studying its own random old jumps, and build one shared target from the **smaller** of their scores. The actor climbs the first critic.', `Both rarely share a lucky high guess. Over the same 8 runs, the average gap shrinks from ${f2(agg(0).mean)} to ${f2(agg(1).mean)}.`]; },
    shot: [4, 11],
+   say: [["In twenty eighteen, Fujimoto, van Hoof and Meger proposed TD3, with three fixes."], ["Fix one. Train two critics, and build the target from the smaller score."], [["Two critics rarely share the same lucky guess. Watch the new line drop toward zero.", [50, 290, 320, 112]]]],
    draw(t) { box(0, 0, W, 285, C.bg); if (waitNote(1)) return; const A = agg(0), B = agg(1);
      alpha(clamp(t - .3), () => { const z = B.runs[0].log[B.runs[0].log.length - 1], q1 = Qw(z.w, z.m), q2 = Qw(z.w1, z.m), lo = Math.min(q1, q2);
        rrect(60, 40, 110, 60, 1900, { fill: '#f6e7c8' }); txt('critic 1', 115, 60, { s: 15 }); txt(f2(q1), 115, 84, { s: 16, c: C.goldInk });
@@ -293,6 +308,7 @@ const STEPS = [
      if (t > 6.5) { tag(`DDPG ${sg2(A.mean)}`, 150, GYv(A.mean) - 12, CCOL[0]); tag(`two critics ${sg2(B.mean)}`, 290, GYv(B.mean) + 14, CCOL[1]); } } },
  { h: 'Fix two: let the critic settle', get p() { return ['Second: update the actor and slow copies only every **second** jump; the critics learn every jump. Why? The actor chases the critic’s peak; if the critic still wobbles, the actor chases the wobble.', `In this small task it changes nothing visible: the gap is ${f2(agg(2).mean)}${f2(agg(2).mean) === f2(agg(1).mean) ? ', same as two critics alone' : `, against ${f2(agg(1).mean)} without the delay, a difference within run-to-run luck`}. The TD3 authors aimed it at large networks, whose critics take longer to settle.`]; },
    shot: [4, 11],
+   say: [["Fix two. Update the actor only every second jump, and let the critics settle in between."], ["If the critic still wobbles, the actor chases the wobble."], [["In this small task, it makes no real difference.", [50, 290, 320, 112]], "It matters more for large networks, whose critics take longer to settle."]],
    draw(t) { box(0, 0, W, 285, C.bg); if (waitNote(2)) return; const B = agg(1), D = agg(2);
      const row = (y, lab, every, col) => { txt(lab, 40, y, { s: 15, al: 'left', c: col }); for (let i = 0; i < 10; i++) { const on = i % every === 0, u = clamp(t - .5 - i * .25); if (u > 0) dot(150 + i * 22, y, on ? 6 : 3, on ? col : C.grey, u); } };
      row(70, 'critics learn', 1, C.goldInk); row(110, 'actor + copies', 2, '#3f8582'); txt('jump  1  2  3  …', 150, 140, { s: 13, c: C.soft, al: 'left', a: clamp(t - 3) });
@@ -301,6 +317,7 @@ const STEPS = [
      if (t > 7.5) { tag(`two critics ${sg2(B.mean)}`, 150, GYv(B.mean) - 14, CCOL[1]); tag(`+ delay ${sg2(D.mean)}`, 300, GYv(D.mean) + 16, CCOL[2]); } } },
  { h: 'Fix three: blur the target', get p() { return [`Third: jiggle the target’s next jump by a spread of ${P.SM} metres, at most ${2 * P.SM}, so a narrow false peak cannot lift the target.`, `All three fixes read ${f2(agg(3).mean)}, mostly by design: the critic values a jiggled, clumsier jumper, truly worth ${f2(agg(3).sdiff)} less. Against that, TD3 is off by ${Math.abs(agg(3).meanJ) < .005 ? 'less than 0.01' : sg2(agg(3).meanJ)}, the dashed line. Its authors called a small underestimate safer anyway.`]; },
    shot: [4, 11],
+   say: [["Fix three. Jiggle the next jump inside the target a little."], ["Then a narrow false peak can't lift the target."], [["The new line sits a bit lower. That's mostly by design. The critic now values a slightly clumsier jumper.", [50, 290, 320, 112]], "Measured against the jumper it really values, TD3 is very close."]],
    draw(t) { ledges(t, { next: 0 }); if (waitNote(3)) return; const D = agg(2), T3 = agg(3), m = SEND.m;
      box(0, 0, W, 150, C.bg);
      alpha(clamp(t - .3), () => { txt('next jump scored at the actor’s strength…', W / 2, 30, { s: 15 }); });
@@ -314,6 +331,7 @@ const STEPS = [
  { h: 'Your turn', ctl: { label: 'fixes', values: [0, 1, 2, 3], def: 3, fmt: v => ['DDPG', '+ 2 critics', '+ delay', 'TD3'][v], onChange: st => {} },
    get p() { return ['Drag to add TD3’s fixes one at a time: thin lines: the 8 runs; thick: their average. TD3’s gap is measured against the jiggled jumper it really values.', `Each run’s average gap: DDPG ${f2(Math.min(...agg(0).fin))} to ${f2(Math.max(...agg(0).fin))}, two critics ${f2(Math.min(...agg(1).fin))} to ${f2(Math.max(...agg(1).fin))}. Pip jumps about equally well in all four: with one hump, false optimism has nowhere to lure the actor. In big tasks it can.`]; },
    shot: [3, 9],
+   say: [["Your turn. Add TD3's fixes one at a time."], [["The thin lines are the eight runs. The thick line is their average.", [50, 290, 320, 112]]], ["Notice Pip jumps about equally well in all four. With one simple hump, false optimism has nowhere to lure the actor. In big tasks, it can."]],
    draw(t, st) { const c = st.ci ?? 3; ledges(t, { next: 0 }); box(0, 290, W, 130, C.bg); if (waitNote(c)) return; const A = agg(c);
      const j = SJ[300 + Math.floor(t / 1.6) % 60], u = (t % 1.6) / 1.4; pipAt(jumpPos(A.m, A.m, 0, u), t);
      txt(`${CFG[c].name}`, W / 2, 24, { s: 18, c: CCOL[c] });
@@ -321,6 +339,7 @@ const STEPS = [
      const J = c === 3; gapFrame(); A.runs.forEach((r, k) => gapLine(r.log.map(x => x.q - (J ? x.tvj : x.tv)), CCOL[c], { a: .25, w: 1 })); gapLine(J ? A.gapJ : A.gap, CCOL[c], { w: 2.4 }); } },
  { h: 'Where it’s used', p: ['DDPG (2015) learned over 20 simulated physics tasks, like swinging up a pole, grasping, walking and driving, many straight from camera pixels. TD3 (2018) clearly beat it on standard simulated robot benchmarks like Hopper and HalfCheetah.', 'Today TD3 is a common starting point for continuous control, robot arms included. Soft Actor-Critic, in its own reel, also uses two critics, but a policy with spread.'],
    shot: [3, 9],
+   say: [["DDPG learned over twenty simulated physics tasks, like swinging up a pole, walking, and driving."], [["TD3 clearly beat it on standard robot benchmarks.", [30, 292, 340, 87]], "Today TD3 is a common starting point for continuous control. Soft actor-critic also uses two critics."]],
    draw(t) { ledges(t); const D = 1.4, k = Math.floor(t / D) % 40, j = SJ[340 + k], u = (t % D) / 1.2; pipAt(jumpPos(j.a, j.l, j.d, u), t);
      const R = (x, y, ph) => { rline(x, y, x + 30 * Math.cos(ph), y - 30 * Math.sin(ph), 2000, { w: 3 }); rcircle(x, y, 5, 2001, { fill: C.grey }); const x2 = x + 30 * Math.cos(ph), y2 = y - 30 * Math.sin(ph); rline(x2, y2, x2 + 24 * Math.cos(ph - 1), y2 - 24 * Math.sin(ph - 1), 2002, { w: 3 }); };
      if (t > 1) { const ph = 1 + .3 * Math.sin(t * 1.3), ph2 = ph - 1 + .4 * Math.sin(t * .9); rrect(30, 140, 50, 14, 2003, { fill: C.grey });
@@ -330,6 +349,7 @@ const STEPS = [
      if (t > 3) card(['DDPG, 2015: 20+ simulated physics tasks', 'TD3, 2018: beat it on Hopper, HalfCheetah', { s: 'see also: Soft Actor-Critic', c: '#3f8582' }], t - 3, { gap: 1.2 }); } },
  { h: 'Recap', p: ['When actions are numbers, no max over them all is possible. **DDPG**: a deterministic actor climbs the slope of a critic Q(s, a), with exploring noise, a replay buffer and slow target copies.', 'The actor seeks the critic’s peaks, so the critic turns optimistic. **TD3** takes the smaller of two critics, which removed the optimism here, delays the actor and blurs the target action.'],
    shot: [3, 9],
+   say: [["So, when actions are numbers, you can't take a max over them all."], [["DDPG lets a deterministic actor climb the critic's slope, with noise, replay, and slow copies.", [30, 292, 340, 110]], "The critic turns optimistic. TD3 trusts the smaller of two critics, delays the actor, and blurs the target."]],
    draw(t) { ledges(t); pipAt(jumpPos(0, 0, 0, 0), t);
      card(['actor: situation → one action, no dice', 'actor step = slope of the critic at its action', 'critic target = reward + γ × Q(next, actor’s action)', { s: 'TD3: smaller of two critics, delay, blur', c: '#3f8582' }], t - .3, { y: 296, gap: 1, fs: 16, lh: 22 }); } },
 ];
